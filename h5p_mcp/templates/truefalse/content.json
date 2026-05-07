@@ -1,0 +1,27 @@
+{
+  "title": "Sample True/False",
+  "question": "<p>The sky is blue.</p>",
+  "correct": "true",
+  "l10n": {
+    "trueText": "True",
+    "falseText": "False",
+    "score": "You got @score of @total points",
+    "checkAnswer": "Check",
+    "showSolutionButton": "Show solution",
+    "tryAgain": "Retry",
+    "correctAnswerMessage": "Correct!",
+    "wrongAnswerMessage": "Not quite."
+  },
+  "behaviour": {
+    "enableRetry": true,
+    "enableSolutionsButton": true,
+    "enableCheckButton": true,
+    "autoCheck": false,
+    "confirmCheckDialog": false,
+    "confirmRetryDialog": false
+  },
+  "feedback": {
+    "correct": "",
+    "wrong": ""
+  }
+}

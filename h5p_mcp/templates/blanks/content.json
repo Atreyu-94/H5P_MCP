@@ -1,0 +1,18 @@
+{
+  "title": "Sample Fill in the Blanks",
+  "text": "<p>The capital of France is *Paris*.</p>",
+  "behaviour": {
+    "caseSensitive": false,
+    "enableRetry": true,
+    "enableSolutionsButton": true,
+    "enableCheckButton": true,
+    "instantFeedback": false,
+    "confirmCheckDialog": false,
+    "confirmRetryDialog": false
+  },
+  "l10n": {
+    "checkAnswer": "Check",
+    "showSolutionButton": "Show solution",
+    "tryAgain": "Retry"
+  }
+}

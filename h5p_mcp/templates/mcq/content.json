@@ -1,0 +1,39 @@
+{
+  "question": "<p>What is 2 + 2?</p>",
+  "answers": [
+    { "text": "<p>3</p>", "correct": false, "tipsAndFeedback": { "tip": "", "chosenFeedback": "", "notChosenFeedback": "" } },
+    { "text": "<p>4</p>", "correct": true,  "tipsAndFeedback": { "tip": "", "chosenFeedback": "", "notChosenFeedback": "" } }
+  ],
+  "overallFeedback": [
+    { "from": 0, "to": 100, "feedback": "" }
+  ],
+  "behaviour": {
+    "enableRetry": true,
+    "enableSolutionsButton": true,
+    "enableCheckButton": true,
+    "type": "auto",
+    "singlePoint": true,
+    "randomAnswers": true,
+    "showSolutionsRequiresInput": true,
+    "autoCheck": false,
+    "passPercentage": 100,
+    "showScorePoints": true
+  },
+  "UI": {
+    "checkAnswerButton": "Check",
+    "submitAnswerButton": "Submit",
+    "showSolutionButton": "Show solution",
+    "tryAgainButton": "Retry",
+    "tipsLabel": "Show tip",
+    "scoreBarLabel": "You got :num out of :total points",
+    "tipAvailable": "Tip available",
+    "feedbackAvailable": "Feedback available",
+    "readFeedback": "Read feedback",
+    "wrongAnswer": "Wrong answer",
+    "correctAnswer": "Correct answer",
+    "shouldCheck": "Should have been checked",
+    "shouldNotCheck": "Should not have been checked",
+    "noInput": "Please answer before viewing the solution"
+  }
+}
+

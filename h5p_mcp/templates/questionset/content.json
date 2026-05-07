@@ -1,0 +1,33 @@
+{
+  "title": "Sample Question Set",
+  "introPage": {
+    "showIntroPage": true,
+    "title": "Quiz",
+    "introduction": "<p>Answer the following questions.</p>",
+    "startButtonText": "Start"
+  },
+  "progressText": "Question @current of @total",
+  "disableBackwardsNavigation": false,
+  "randomQuestions": false,
+  "endGame": {
+    "showResultPage": true,
+    "showSolutionButton": true,
+    "showRetryButton": true,
+    "noResultMessage": "<p>Finished.</p>",
+    "message": "<p>Your result:</p>",
+    "scoreString": "You got @score of @total points",
+    "finishButtonText": "Finish",
+    "solutionButtonText": "Show solution",
+    "retryButtonText": "Retry"
+  },
+  "override": {
+    "checkButton": "Check",
+    "nextButton": "Next",
+    "prevButton": "Back",
+    "showSolutionButton": "Show solution",
+    "retryButton": "Retry"
+  },
+  "passPercentage": 50,
+  "questions": []
+}
+

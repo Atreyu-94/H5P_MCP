@@ -1,0 +1,161 @@
+# H5P MCP Quiz Generator (Python)
+
+Generate **valid H5P quiz packages (`.h5p`)** from **pure Python** via an **MCP server** (FastMCP). Designed to be used by **Claude Desktop**, **Cursor**, or any MCP-compatible agent—**no frontend** required.
+
+This project outputs real H5P package structure:
+
+- `h5p.json`
+- `content/content.json`
+
+It **does not bundle H5P libraries** (that’s normal for content exports). Your target platform (Moodle, Lumi, etc.) must have these content types installed:
+
+- `H5P.MultiChoice`
+- `H5P.TrueFalse`
+- `H5P.Blanks`
+- `H5P.QuestionSet`
+
+## Project structure
+
+```
+h5p_mcp/
+├── server.py
+├── requirements.txt
+├── README.md
+├── templates/
+│   ├── mcq/
+│   ├── truefalse/
+│   └── blanks/
+├── generators/
+│   ├── mcq_generator.py
+│   ├── truefalse_generator.py
+│   └── blanks_generator.py
+├── exporters/
+│   └── h5p_exporter.py
+├── validators/
+│   └── quiz_validator.py
+├── utils/
+│   ├── zip_utils.py
+│   └── file_utils.py
+├── models/
+│   └── quiz_models.py
+└── exports/
+```
+
+## Setup
+
+### Requirements
+- Python **3.12+**
+
+### Install
+
+From the `h5p_mcp/` directory:
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+## Run the MCP server
+
+```bash
+python -m h5p_mcp.server
+```
+
+By default this runs an MCP stdio server (ideal for Claude Desktop / Cursor integrations).
+
+## Connect to Claude Desktop
+
+In Claude Desktop, add an MCP server configuration pointing to your Python executable and `server.py`.
+
+Example (conceptual):
+
+- Command: `python`
+- Args: `["C:\\Users\\msij\\Desktop\\MCP_H5p\\h5p_mcp\\server.py"]`
+
+## Connect to Cursor
+
+In Cursor, configure an MCP server and point it at the same `python server.py` entrypoint.
+
+## MCP tools provided
+
+- `create_mcq_quiz(title, question, choices, correct_answer, explanation)`
+- `create_true_false_quiz(title, question, correct_answer, explanation)`
+- `create_fill_blanks_quiz(title, text, answers)`
+- `create_questionset_quiz(title, intro, questions, pass_percentage)`
+- `export_h5p(quiz_data, output_name)`
+- `validate_h5p(path)`
+- Bonus:
+  - `export_h5p_batch(quizzes, name_prefix)`
+  - `markdown_to_quizzes(markdown)`
+  - `h5p_prompt_helpers()`
+
+## Example prompts for an AI agent
+
+### Create and export an MCQ
+
+Ask your agent to:
+
+- Call `create_mcq_quiz` with:
+  - title: “Basic Math”
+  - question: “What is 2 + 2?”
+  - choices: ["3","4","5"]
+  - correct_answer: "4"
+  - explanation: "2 + 2 equals 4."
+- Then call `export_h5p` with:
+  - quiz_data: (result from create tool)
+  - output_name: "basic_math_mcq"
+
+### Create and export a Fill in the Blanks
+
+Use blanks text with **asterisk-wrapped answers** (H5P.Blanks convention):
+
+- text: `"The capital of France is *Paris*."`
+
+And provide answers list to validate:
+- answers: ["Paris"]
+
+## Generate sample `.h5p` files
+
+Run:
+
+```bash
+python -m h5p_mcp.server --generate-samples
+```
+
+This writes a **set of sample `.h5p` files** (including a mixed-type `QuestionSet`) into `exports/`.
+
+## Markdown-to-quiz format (bonus)
+
+```text
+### MCQ: Basic Math
+Q: What is 2 + 2?
+- [ ] 3
+- [x] 4
+- [ ] 5
+Explanation: 2 + 2 equals 4.
+
+### TF: Astronomy
+Q: The Earth orbits the Sun.
+A: true
+Explanation: It takes about one year.
+
+### Blanks: Capitals
+Text: The capital of France is *Paris*.
+Answers: Paris
+```
+
+Then:
+- Call `markdown_to_quizzes(markdown)` to get canonical quiz objects
+- Call `export_h5p_batch(quizzes, name_prefix)` to export them
+
+## Notes on Moodle / Lumi compatibility
+
+- The produced `.h5p` contains content JSON compatible with the declared library.
+- Moodle/Lumi must already include the relevant H5P libraries (content types).
+- Validation in this repo checks package shape + JSON sanity and detects obvious issues early.
+
+## License
+
+MIT (add your preferred license if needed).
+
