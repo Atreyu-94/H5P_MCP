@@ -3,6 +3,14 @@ Comprehensive test suite for h5p_mcp – covers every quiz type supported by
 the server and exports each one as a real .h5p file that is then validated.
 """
 from __future__ import annotations
+from h5p_mcp.validators.quiz_validator import validate_h5p_package, validate_quiz_data
+from h5p_mcp.models.quiz_models import (
+    FillBlanksQuiz,
+    MCQQuiz,
+    QuestionSetQuiz,
+    TrueFalseQuiz,
+)
+from h5p_mcp.exporters.h5p_exporter import H5PExporter
 
 import json
 import sys
@@ -16,14 +24,6 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from h5p_mcp.exporters.h5p_exporter import H5PExporter
-from h5p_mcp.models.quiz_models import (
-    FillBlanksQuiz,
-    MCQQuiz,
-    QuestionSetQuiz,
-    TrueFalseQuiz,
-)
-from h5p_mcp.validators.quiz_validator import validate_h5p_package, validate_quiz_data
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -113,11 +113,13 @@ class TestMCQModel:
 
 class TestTrueFalseModel:
     def test_valid_true(self):
-        q = TrueFalseQuiz(title="T", question="Earth orbits the Sun.", correct_answer=True)
+        q = TrueFalseQuiz(
+            title="T", question="Earth orbits the Sun.", correct_answer=True)
         assert q.correct_answer is True
 
     def test_valid_false(self):
-        q = TrueFalseQuiz(title="F", question="Humans breathe underwater.", correct_answer=False)
+        q = TrueFalseQuiz(
+            title="F", question="Humans breathe underwater.", correct_answer=False)
         assert q.correct_answer is False
 
     def test_model_dump_round_trip(self):
@@ -138,7 +140,8 @@ class TestFillBlanksModel:
 
     def test_missing_asterisks_raises(self):
         with pytest.raises(Exception):
-            FillBlanksQuiz(title="Bad", text="No blanks here.", answers=["Paris"])
+            FillBlanksQuiz(title="Bad", text="No blanks here.",
+                           answers=["Paris"])
 
     def test_answer_not_in_text_raises(self):
         with pytest.raises(Exception):
@@ -170,9 +173,12 @@ class TestQuestionSetModel:
             intro="Test intro.",
             pass_percentage=70,
             questions=[
-                MCQQuiz(title="MCQ", question="Q?", choices=["A", "B"], correct_answer="A"),
-                TrueFalseQuiz(title="TF", question="True?", correct_answer=True),
-                FillBlanksQuiz(title="Blanks", text="Fill *this*.", answers=["this"]),
+                MCQQuiz(title="MCQ", question="Q?", choices=[
+                        "A", "B"], correct_answer="A"),
+                TrueFalseQuiz(title="TF", question="True?",
+                              correct_answer=True),
+                FillBlanksQuiz(
+                    title="Blanks", text="Fill *this*.", answers=["this"]),
             ],
         )
 
@@ -394,7 +400,8 @@ class TestTrueFalseExport:
         _assert_valid_h5p(result.output_path)
 
     def test_h5p_json_main_library(self, exporter):
-        quiz = TrueFalseQuiz(title="TF Lib", question="Q?", correct_answer=True)
+        quiz = TrueFalseQuiz(
+            title="TF Lib", question="Q?", correct_answer=True)
         result = exporter.export(quiz, output_name="test_tf_library_check")
         h5p = _read_h5p_json(result.output_path)
         assert h5p["mainLibrary"] == "H5P.TrueFalse"
@@ -430,10 +437,24 @@ class TestFillBlanksExport:
         _assert_valid_h5p(result.output_path)
 
     def test_h5p_json_main_library(self, exporter):
-        quiz = FillBlanksQuiz(title="Blanks Lib", text="Fill *this*.", answers=["this"])
+        quiz = FillBlanksQuiz(title="Blanks Lib",
+                              text="Fill *this*.", answers=["this"])
         result = exporter.export(quiz, output_name="test_blanks_library_check")
         h5p = _read_h5p_json(result.output_path)
         assert h5p["mainLibrary"] == "H5P.Blanks"
+
+    def test_blanks_text_is_in_questions_field(self, exporter):
+        quiz = FillBlanksQuiz(
+            title="Blanks Field Mapping",
+            text="The capital of France is *Paris*.",
+            answers=["Paris"],
+        )
+        result = exporter.export(
+            quiz, output_name="test_blanks_question_field")
+        content = _read_content_json(result.output_path)
+        assert "questions" in content
+        assert content["questions"]
+        assert "*Paris*" in content["questions"][0]["question"]
 
 
 class TestQuestionSetExport:
@@ -475,7 +496,8 @@ class TestQuestionSetExport:
         _assert_valid_h5p(result.output_path)
 
     def test_h5p_json_main_library(self, exporter):
-        result = exporter.export(self._mixed_qs(), output_name="test_qs_library_check")
+        result = exporter.export(
+            self._mixed_qs(), output_name="test_qs_library_check")
         h5p = _read_h5p_json(result.output_path)
         assert h5p["mainLibrary"] == "H5P.QuestionSet"
 
@@ -484,8 +506,10 @@ class TestQuestionSetExport:
             title="QS – MCQ Only",
             intro="Only MCQ questions.",
             questions=[
-                MCQQuiz(title="Q1", question="1+1?", choices=["1", "2", "3"], correct_answer="2"),
-                MCQQuiz(title="Q2", question="2+2?", choices=["3", "4", "5"], correct_answer="4"),
+                MCQQuiz(title="Q1", question="1+1?",
+                        choices=["1", "2", "3"], correct_answer="2"),
+                MCQQuiz(title="Q2", question="2+2?",
+                        choices=["3", "4", "5"], correct_answer="4"),
             ],
         )
         result = exporter.export(qs, output_name="test_qs_mcq_only")
@@ -496,8 +520,10 @@ class TestQuestionSetExport:
             title="QS – TF Only",
             intro="Only True/False questions.",
             questions=[
-                TrueFalseQuiz(title="TF1", question="Sky is blue.", correct_answer=True),
-                TrueFalseQuiz(title="TF2", question="Ice is hot.", correct_answer=False),
+                TrueFalseQuiz(title="TF1", question="Sky is blue.",
+                              correct_answer=True),
+                TrueFalseQuiz(title="TF2", question="Ice is hot.",
+                              correct_answer=False),
             ],
         )
         result = exporter.export(qs, output_name="test_qs_tf_only")
@@ -515,9 +541,12 @@ class TestBatchExport:
         from h5p_mcp.server import export_h5p_batch
 
         quizzes = [
-            MCQQuiz(title="Batch MCQ", question="Q?", choices=["A", "B"], correct_answer="A").model_dump(),
-            TrueFalseQuiz(title="Batch TF", question="True?", correct_answer=False).model_dump(),
-            FillBlanksQuiz(title="Batch Blanks", text="Fill *blank*.", answers=["blank"]).model_dump(),
+            MCQQuiz(title="Batch MCQ", question="Q?", choices=[
+                    "A", "B"], correct_answer="A").model_dump(),
+            TrueFalseQuiz(title="Batch TF", question="True?",
+                          correct_answer=False).model_dump(),
+            FillBlanksQuiz(title="Batch Blanks", text="Fill *blank*.",
+                           answers=["blank"]).model_dump(),
         ]
         result = export_h5p_batch(quizzes, name_prefix="batch_test")
         assert result["count"] == 3
@@ -542,17 +571,20 @@ class TestExportH5PTool:
         return path
 
     def test_export_mcq_via_tool(self):
-        quiz = MCQQuiz(title="Tool Export MCQ", question="Q?", choices=["A", "B"], correct_answer="B").model_dump()
+        quiz = MCQQuiz(title="Tool Export MCQ", question="Q?", choices=[
+                       "A", "B"], correct_answer="B").model_dump()
         path = self._run(quiz, "tool_export_mcq")
         _assert_valid_h5p(path)
 
     def test_export_tf_via_tool(self):
-        quiz = TrueFalseQuiz(title="Tool Export TF", question="True?", correct_answer=True).model_dump()
+        quiz = TrueFalseQuiz(title="Tool Export TF",
+                             question="True?", correct_answer=True).model_dump()
         path = self._run(quiz, "tool_export_tf")
         _assert_valid_h5p(path)
 
     def test_export_blanks_via_tool(self):
-        quiz = FillBlanksQuiz(title="Tool Export Blanks", text="Fill *me*.", answers=["me"]).model_dump()
+        quiz = FillBlanksQuiz(title="Tool Export Blanks",
+                              text="Fill *me*.", answers=["me"]).model_dump()
         path = self._run(quiz, "tool_export_blanks")
         _assert_valid_h5p(path)
 
@@ -561,7 +593,8 @@ class TestExportH5PTool:
             title="Tool Export QS",
             intro="Intro.",
             questions=[
-                MCQQuiz(title="Q", question="Q?", choices=["A", "B"], correct_answer="A"),
+                MCQQuiz(title="Q", question="Q?", choices=[
+                        "A", "B"], correct_answer="A"),
             ],
         ).model_dump()
         path = self._run(qs, "tool_export_qs")
@@ -575,7 +608,8 @@ class TestExportH5PTool:
 
 class TestValidateH5PTool:
     def test_validates_generated_mcq(self, exporter):
-        quiz = MCQQuiz(title="Val MCQ", question="Q?", choices=["A", "B"], correct_answer="A")
+        quiz = MCQQuiz(title="Val MCQ", question="Q?",
+                       choices=["A", "B"], correct_answer="A")
         result = exporter.export(quiz, output_name="test_validate_mcq")
         from h5p_mcp.server import validate_h5p
 
@@ -584,7 +618,8 @@ class TestValidateH5PTool:
         assert val["errors"] == []
 
     def test_validates_generated_tf(self, exporter):
-        quiz = TrueFalseQuiz(title="Val TF", question="Q?", correct_answer=True)
+        quiz = TrueFalseQuiz(
+            title="Val TF", question="Q?", correct_answer=True)
         result = exporter.export(quiz, output_name="test_validate_tf")
         from h5p_mcp.server import validate_h5p
 
@@ -592,7 +627,8 @@ class TestValidateH5PTool:
         assert val["ok"] is True
 
     def test_validates_generated_blanks(self, exporter):
-        quiz = FillBlanksQuiz(title="Val Blanks", text="Fill *X*.", answers=["X"])
+        quiz = FillBlanksQuiz(title="Val Blanks",
+                              text="Fill *X*.", answers=["X"])
         result = exporter.export(quiz, output_name="test_validate_blanks")
         from h5p_mcp.server import validate_h5p
 
@@ -603,7 +639,8 @@ class TestValidateH5PTool:
         quiz = QuestionSetQuiz(
             title="Val QS",
             intro="",
-            questions=[TrueFalseQuiz(title="TF", question="Q?", correct_answer=False)],
+            questions=[TrueFalseQuiz(
+                title="TF", question="Q?", correct_answer=False)],
         )
         result = exporter.export(quiz, output_name="test_validate_qs")
         from h5p_mcp.server import validate_h5p

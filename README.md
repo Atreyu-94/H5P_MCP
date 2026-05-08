@@ -70,8 +70,15 @@ In Claude Desktop, add an MCP server configuration pointing to your Python execu
 
 Example (conceptual):
 
-- Command: `python`
-- Args: `["C:\\Users\\msij\\Desktop\\MCP_H5p\\h5p_mcp\\server.py"]`
+```json
+"H5P_MCP": {
+      "command": "python",
+      "args": ["-m", "h5p_mcp.server"],
+      "env": {
+        "PYTHONPATH": "C:\\Users\\msij\\Desktop\\MCP_H5p"
+      }
+    }
+```
 
 ## Connect to Cursor
 
@@ -157,5 +164,5 @@ Then:
 
 ## License
 
-MIT (add your preferred license if needed).
+Apache 2.
 

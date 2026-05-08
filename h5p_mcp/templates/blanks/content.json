@@ -1,6 +1,7 @@
 {
   "title": "Sample Fill in the Blanks",
-  "text": "<p>The capital of France is *Paris*.</p>",
+  "text": "<p>Fill in the missing words.</p>",
+  "questions": ["<p>The capital of France is *Paris*.</p>"],
   "behaviour": {
     "caseSensitive": false,
     "enableRetry": true,

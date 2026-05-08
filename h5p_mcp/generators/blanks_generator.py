@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from h5p_mcp.models.quiz_models import FillBlanksQuiz
-from h5p_mcp.utils.html_utils import escape_html
+from h5p_mcp.utils.html_utils import as_paragraph, escape_html
 
 
 def _escape_html_preserve_asterisk(text: str) -> str:
@@ -33,9 +33,14 @@ class BlanksGenerator:
     def generate_content_json(self, quiz: FillBlanksQuiz) -> dict[str, Any]:
         template = json.loads(self._template_path.read_text(encoding="utf-8"))
 
-        template["title"] = quiz.title
-        # H5P.Blanks expects HTML string; answers are asterisk-wrapped in text.
-        template["text"] = f"<p>{_escape_html_preserve_asterisk(quiz.text)}</p>"
+        template["title"] = "Fill in the missing words."
+        # In H5P.Blanks, `text` is task description and `questions` carries blanks.
+        template["text"] = as_paragraph(quiz.title)
+
+        # Split the text into lines and process each line for blanks
+        questions = quiz.text.split("\n")
+
+        template["questions"] = questions
 
         # Better UX defaults for language learning / practice questions.
         template.setdefault("behaviour", {})
@@ -43,5 +48,3 @@ class BlanksGenerator:
         template["behaviour"].setdefault("enableSolutionsButton", True)
 
         return template
-
-

@@ -37,11 +37,14 @@ class H5PExporter:
 
     def __init__(self, *, export_dir: str | None = None, templates_dir: str | None = None) -> None:
         self._export_dir = resolve_export_dir(export_dir)
-        self._templates_dir = Path(templates_dir) if templates_dir else Path(__file__).resolve().parents[1] / "templates"
+        self._templates_dir = Path(templates_dir) if templates_dir else Path(
+            __file__).resolve().parents[1] / "templates"
 
         self._mcq = MCQGenerator(self._templates_dir / "mcq" / "content.json")
-        self._tf = TrueFalseGenerator(self._templates_dir / "truefalse" / "content.json")
-        self._blanks = BlanksGenerator(self._templates_dir / "blanks" / "content.json")
+        self._tf = TrueFalseGenerator(
+            self._templates_dir / "truefalse" / "content.json")
+        self._blanks = BlanksGenerator(
+            self._templates_dir / "blanks" / "content.json")
         self._qs = QuestionSetGenerator(
             template_path=self._templates_dir / "questionset" / "content.json",
             templates_dir=self._templates_dir,
@@ -53,9 +56,11 @@ class H5PExporter:
 
         content_json = self._generate_content_json(quiz)
         h5p_json = self._build_h5p_manifest(quiz)
-        content_json = self._ensure_content_metadata(content_json, title=quiz.title)
+        content_json = self._ensure_content_metadata(
+            content_json, title=quiz.title)
 
-        logger.info("Exporting quiz type=%s title=%s -> %s", quiz.type.value, quiz.title, out_path)
+        logger.info("Exporting quiz type=%s title=%s -> %s",
+                    quiz.type.value, quiz.title, out_path)
 
         with temp_workdir(prefix="h5p_mcp_export_") as wd:
             root = wd
@@ -140,4 +145,3 @@ def _library_for_type(qtype: QuizType) -> tuple[str, int, int]:
     if qtype == QuizType.questionset:
         return ("H5P.QuestionSet", 1, 20)
     raise ValueError(f"Unsupported QuizType: {qtype}")
-
