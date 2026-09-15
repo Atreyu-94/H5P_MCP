@@ -59,7 +59,8 @@ def resolve_export_dir(configured: str | None) -> Path:
     Resolve export directory with an environment override.
     """
     env = os.environ.get("H5P_MCP_EXPORT_DIR")
-    base = Path(env or configured or Path(__file__).resolve().parents[1] / "exports")
+    # Installed tools must not store user activities in site-packages or uv's cache.
+    base = Path(env or configured or Path.cwd() / "exports").expanduser().resolve()
     ensure_dir(base)
     return base
 

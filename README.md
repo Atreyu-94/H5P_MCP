@@ -44,45 +44,94 @@ h5p_mcp/
 ## Setup
 
 ### Requirements
-- Python **3.12+**
+- [uv](https://docs.astral.sh/uv/getting-started/installation/).
+- Python **3.12+**; uv can download the interpreter selected by `.python-version`.
 
-### Install
+### Development from a checkout
 
-From the `h5p_mcp/` directory:
+Run from the repository root:
 
-```bash
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
+```powershell
+uv sync --locked
+uv run --locked pytest
+uv run --locked h5p-mcp
 ```
 
-## Run the MCP server
+`pyproject.toml` declares the package and dependencies. Commit `uv.lock` to keep
+development and CI environments reproducible. Upgrade dependencies deliberately
+with `uv lock --upgrade`, then rerun the tests. The supported dependency ranges
+start at the versions used in the migration audit.
 
-```bash
-python -m h5p_mcp.server
+The server uses MCP stdio. `uv run --locked python -m h5p_mcp.server` remains
+available. A pip compatibility installation is `python -m pip install .` from
+the root (or `python -m pip install -r h5p_mcp/requirements.txt`); pip does not use
+`uv.lock`.
+
+### Run the installed tool with uvx
+
+From a checkout, build and test the distributable wheel:
+
+```powershell
+uv build
+uvx --from ./dist/h5p_mcp-0.1.0-py3-none-any.whl h5p-mcp --help
 ```
 
-By default this runs an MCP stdio server (ideal for Claude Desktop / Cursor integrations).
+Once this migration has been committed and pushed, clients can install directly
+from GitHub without a checkout. Replace `COMMIT` with the full commit SHA that
+contains the packaging changes:
 
-## Connect to Claude Desktop
+```powershell
+uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@COMMIT" h5p-mcp
+```
 
-In Claude Desktop, add an MCP server configuration pointing to your Python executable and `server.py`.
+There is no PyPI publication in this migration. `uvx h5p-mcp` is not an
+installation instruction for this fork. uvx resolves the package's dependencies
+independently of the checkout's `uv.lock`; pinning a Git commit fixes the source,
+but does not freeze every transitive dependency. Use the locked checkout when
+exact dependency reproduction is required.
 
-Example (conceptual):
+### Export location
+
+Set `H5P_MCP_EXPORT_DIR` to an absolute, writable directory for generated activities.
+If omitted, files go to `exports/` in the server's working directory. Earlier
+versions wrote inside `h5p_mcp/exports`; installed tools now keep user files out
+of their installation and uv cache. Existing activities are not moved.
+
+### Connect an MCP client
+
+For development, use an absolute checkout path (replace the example paths):
 
 ```json
-"H5P_MCP": {
-      "command": "python",
-      "args": ["-m", "h5p_mcp.server"],
-      "env": {
-        "PYTHONPATH": "C:\\Users\\msij\\Desktop\\MCP_H5p"
-      }
+{
+  "mcpServers": {
+    "H5P_MCP": {
+      "command": "uv",
+      "args": ["run", "--directory", "D:/path/H5P_MCP", "--locked", "--no-dev", "h5p-mcp"],
+      "env": {"H5P_MCP_EXPORT_DIR": "D:/path/activities"}
     }
+  }
+}
 ```
 
-## Connect to Cursor
+For an installed release, replace `command` with `uvx` and `args` with
+`["--from", "git+https://github.com/Atreyu-94/H5P_MCP.git@COMMIT", "h5p-mcp"]`.
+Keep the explicit export directory. Use the full executable path if the desktop
+client cannot find uv on its PATH. The same stdio command works in clients such
+as Claude Desktop and Cursor; adapt the enclosing configuration to the client.
 
-In Cursor, configure an MCP server and point it at the same `python server.py` entrypoint.
+### Verify the wheel through MCP
+
+After `uv build`, run the same stdio test against the isolated wheel installation:
+
+```powershell
+$env:H5P_MCP_TEST_COMMAND = ConvertTo-Json -Compress -InputObject @("uvx", "--from", (Resolve-Path ./dist/h5p_mcp-0.1.0-py3-none-any.whl).Path, "h5p-mcp")
+uv run --locked pytest tests/test_mcp_stdio.py -q
+Remove-Item Env:H5P_MCP_TEST_COMMAND
+```
+
+The test launches the server outside the checkout and exports all four activity
+types, checking that the packaged JSON templates are available. This is a
+packaging/protocol test, not a Moodle import or grading test.
 
 ## MCP tools provided
 
@@ -127,7 +176,7 @@ And provide answers list to validate:
 Run:
 
 ```bash
-python -m h5p_mcp.server --generate-samples
+uv run --locked h5p-mcp --generate-samples
 ```
 
 This writes a **set of sample `.h5p` files** (including a mixed-type `QuestionSet`) into `exports/`.
