@@ -29,13 +29,15 @@ if str(ROOT) not in sys.path:
 # Helpers
 # ---------------------------------------------------------------------------
 
-EXPORT_DIR = ROOT / "h5p_mcp" / "exports" / "test_outputs"
+@pytest.fixture(autouse=True)
+def isolated_exports(tmp_path, monkeypatch):
+    monkeypatch.setenv("H5P_MCP_EXPORT_DIR", str(tmp_path / "exports"))
 
 
-@pytest.fixture(scope="session")
-def exporter(tmp_path_factory):
+@pytest.fixture
+def exporter(tmp_path):
     """One exporter that writes all test .h5p files to a dedicated directory."""
-    out = EXPORT_DIR
+    out = tmp_path / "exports"
     out.mkdir(parents=True, exist_ok=True)
     return H5PExporter(export_dir=str(out))
 
@@ -454,7 +456,8 @@ class TestFillBlanksExport:
         content = _read_content_json(result.output_path)
         assert "questions" in content
         assert content["questions"]
-        assert "*Paris*" in content["questions"][0]["question"]
+        assert isinstance(content["questions"][0], str)
+        assert "*Paris*" in content["questions"][0]
 
 
 class TestQuestionSetExport:

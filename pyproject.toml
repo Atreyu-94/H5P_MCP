@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "h5p-mcp"
+version = "0.1.0"
+description = "Create H5P activities through an MCP server"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = ["fastmcp>=4.0.3,<5", "pydantic>=2.13.5,<3"]
+
+[project.scripts]
+h5p-mcp = "h5p_mcp.server:main"
+
+[dependency-groups]
+dev = ["pytest>=9.1.1,<10", "mcp>=2.2,<3"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["h5p_mcp"]
+exclude = ["h5p_mcp/exports/**", "h5p_mcp/requirements.txt"]
+
+[tool.hatch.build.targets.sdist]
+include = ["h5p_mcp", "tests", "pyproject.toml", "README.md", "LICENSE", "uv.lock", ".python-version"]
+exclude = ["h5p_mcp/exports/**", "**/__pycache__/**"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

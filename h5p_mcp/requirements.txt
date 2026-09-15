@@ -1,2 +1,4 @@
-fastmcp>=0.4.0
-pydantic>=2.7.0
+# Compatibility installer: run from the repository root with
+# pip install -r h5p_mcp/requirements.txt
+# pyproject.toml owns dependencies; uv.lock provides the reproducible environment.
+.
