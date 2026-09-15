@@ -43,6 +43,52 @@ h5p_mcp/
 
 ## Setup
 
+### Educational skill over MCP
+
+The server publishes `h5p-authoring`, a single skill for designing and exporting
+the four supported activity types. Its source is
+[`SKILL.md`](h5p_mcp/skills/h5p-authoring/SKILL.md), included in the wheel and sdist.
+It covers learning objectives, item selection, answer explanations, export,
+validation and the Moodle handoff.
+
+The implementation uses the public FastMCP extension API and the
+[SEP-2640 Skills specification](https://github.com/modelcontextprotocol/ext-skills/blob/main/specification/stable/skills.mdx):
+
+- Capability: `extensions["io.modelcontextprotocol/skills"] = {}`.
+- Protocol revision tested: `2026-07-28`.
+- `skills/list` returns the one-page catalog; `skills/get` accepts
+  `{"uri": "skill://h5p-authoring/SKILL.md"}`.
+- Read the file through `resources/read` at that URI. Catalog entries include
+  the complete frontmatter, raw-byte SHA-256 digest and byte count.
+- No optional `resources/directory/read` support is advertised.
+
+Content and its manifest are captured together at server startup. Restart after
+editing the skill. Clients must support the extension to discover and activate
+it as a skill; ordinary MCP clients can read it as a resource. Reading alone does
+not activate it. Host loading must retain the originating server identity,
+verify the held manifest and frontmatter, and apply the host's approval policy.
+No client-specific plugin is required by this server implementation.
+
+`tests/test_skills_stdio.py` is a reference-client integration test: it checks
+discovery, retrieval, integrity and invalid requests, then creates and exports
+Spanish activities of all four types. It uses a fixed educational fixture, not
+an autonomous LLM. Native desktop skill activation, pedagogical effectiveness
+and Moodle import/playback/grading are not established by this test.
+
+Run it against the checkout with `uv run --locked pytest tests/test_skills_stdio.py`.
+To exercise the built wheel via uvx in an isolated environment:
+
+```powershell
+uv build
+$wheel = (Resolve-Path ./dist/h5p_mcp-0.1.0-py3-none-any.whl).Path
+$env:H5P_MCP_TEST_COMMAND = ConvertTo-Json -Compress -InputObject @('uvx', '--from', $wheel, 'h5p-mcp')
+try {
+    uv run --locked pytest tests/test_skills_stdio.py tests/test_mcp_stdio.py
+} finally {
+    Remove-Item Env:H5P_MCP_TEST_COMMAND
+}
+```
+
 ### Requirements
 - [uv](https://docs.astral.sh/uv/getting-started/installation/).
 - Python **3.12+**; uv can download the interpreter selected by `.python-version`.
