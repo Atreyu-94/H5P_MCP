@@ -410,6 +410,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
     { name = "pydantic" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -422,6 +423,7 @@ dev = [
 requires-dist = [
     { name = "fastmcp", specifier = ">=4.0.3,<5" },
     { name = "pydantic", specifier = ">=2.13.5,<3" },
+    { name = "pyyaml", specifier = ">=6,<7" },
 ]
 
 [package.metadata.requires-dev]

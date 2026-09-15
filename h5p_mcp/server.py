@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
+from h5p_mcp.skills_extension import register_authoring_skill
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.quiz_models import FillBlanksQuiz, MCQQuiz, QuestionSetQuiz, QuizModel, TrueFalseQuiz
@@ -32,6 +33,7 @@ def _configure_logging() -> None:
 
 
 mcp = FastMCP("h5p-quiz-generator")
+register_authoring_skill(mcp)
 
 
 @mcp.tool()
