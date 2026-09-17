@@ -37,6 +37,46 @@ register_authoring_skill(mcp)
 
 
 @mcp.tool()
+def list_h5p_activities(query: str = "", installed_only: bool = False,
+                        refresh: bool = False, offset: int = 0, limit: int = 20) -> dict[str, Any]:
+    """Discover Hub activities and installed versions. Cached/offline by default.
+
+    refresh=True explicitly contacts the H5P Hub and updates the local catalog.
+    Paginated results distinguish availability from supported MCP authoring.
+    core_compatible refers to the Hub version, not every installed version.
+    """
+    if offset < 0 or not 1 <= limit <= 100:
+        raise ValueError("offset must be non-negative and limit must be between 1 and 100")
+    from h5p_mcp.lumi_backend import run_lumi
+    return run_lumi("discover", query=query, installed_only=installed_only,
+                    refresh=refresh, offset=offset, limit=limit)
+
+
+@mcp.tool()
+def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
+                            minor_version: int | None = None,
+                            install_if_missing: bool = False) -> dict[str, Any]:
+    """Read native semantics.json and library metadata, including dependencies.
+
+    With no version, select the newest installed major/minor. Provide both
+    version numbers to read an exact installed version. By default no download
+    occurs. install_if_missing=True explicitly downloads the current Hub version
+    and dependencies when the requested library is absent. It never upgrades an
+    already installed version. Schemas do not imply generic export support.
+    """
+    import re
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", machine_name):
+        raise ValueError("Invalid library machine name")
+    if (major_version is None) != (minor_version is None):
+        raise ValueError("Provide both major_version and minor_version, or neither")
+    if major_version is not None and (major_version < 0 or minor_version < 0):
+        raise ValueError("Library version numbers must be non-negative")
+    from h5p_mcp.lumi_backend import run_lumi
+    return run_lumi("schema", machine_name=machine_name, major_version=major_version,
+                    minor_version=minor_version, install_if_missing=install_if_missing)
+
+
+@mcp.tool()
 def create_mcq_quiz(
     title: str,
     question: str,
