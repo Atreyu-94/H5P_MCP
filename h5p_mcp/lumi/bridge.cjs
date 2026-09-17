@@ -57,7 +57,7 @@ async function main(request) {
     // Validation always starts with EMPTY library storage. Installed libraries
     // must not conceal a broken or content-only export.
     const editor = await editorAt(job, request.action === 'validate' ? path.join(job, 'libraries') : libraries);
-    if (request.action === 'catalog') return { libraries: await catalog(editor) };
+    if (request.action === 'catalog') return { libraries: await catalog(editor), core: editor.config.h5pVersion };
     if (request.action === 'validate') {
       const imported = await editor.packageImporter.addPackageLibrariesAndTemporaryFiles(request.path, user);
       return { ok: true, errors: [], warnings: [], engine: 'Lumi', libraries: imported.installedLibraries.length };

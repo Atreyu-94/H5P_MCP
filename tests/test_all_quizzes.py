@@ -356,7 +356,7 @@ class TestMCQExport:
         h5p = _read_h5p_json(result.output_path)
         assert h5p["mainLibrary"] == "H5P.MultiChoice"
 
-    def test_content_json_has_metadata(self, exporter):
+    def test_manifest_has_title(self, exporter):
         quiz = MCQQuiz(
             title="MCQ – Meta",
             question="Q?",
@@ -364,9 +364,7 @@ class TestMCQExport:
             correct_answer="X",
         )
         result = exporter.export(quiz, output_name="test_mcq_meta")
-        content = _read_content_json(result.output_path)
-        assert "metadata" in content
-        assert content["metadata"]["title"] == "MCQ – Meta"
+        assert _read_h5p_json(result.output_path)["title"] == quiz.title
 
 
 class TestTrueFalseExport:

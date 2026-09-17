@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@lumieducation/h5p-server": "10.0.4"
+    "@lumieducation/h5p-server": "file:lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz"
   }
 }
