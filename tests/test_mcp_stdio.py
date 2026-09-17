@@ -26,7 +26,13 @@ def test_installed_mcp_stdio(tmp_path):
             async with ClientSession(reader, writer) as session:
                 await session.initialize()
                 names = {tool.name for tool in (await session.list_tools()).tools}
-                assert {"create_true_false_quiz", "export_h5p", "validate_h5p"} <= names
+                assert {"create_true_false_quiz", "export_h5p", "validate_h5p",
+                        "list_h5p_activities", "get_h5p_activity_schema"} <= names
+                schema = await session.call_tool("get_h5p_activity_schema", {"machine_name": "H5P.QuestionSet"})
+                assert not schema.is_error, schema
+                schema_data = schema.structured_content or json.loads(schema.content[0].text)
+                assert schema_data["library"] == "H5P.QuestionSet 1.21"
+                assert schema_data["semantics"]
                 examples = [
                     {"type": "mcq", "title": "MCQ", "question": "Two?", "choices": ["2", "3"], "correct_answer": "2"},
                     {"type": "truefalse", "title": "TF", "question": "True?", "correct_answer": True},
