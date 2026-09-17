@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@lumieducation/h5p-server": "10.0.4"
+  }
+}

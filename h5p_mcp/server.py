@@ -325,7 +325,17 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="H5P Quiz Generator MCP Server")
     parser.add_argument("--generate-samples", action="store_true", help="Generate sample .h5p files and exit")
+    parser.add_argument("--setup-lumi", action="store_true", help="Install the Node backend and H5P libraries once")
+    parser.add_argument("--lumi-package", action="append", default=[], help="Install libraries from a trusted local .h5p during setup; repeatable")
     args = parser.parse_args()
+
+    if args.lumi_package and not args.setup_lumi:
+        parser.error("--lumi-package requires --setup-lumi")
+    if args.setup_lumi:
+        import json
+        from h5p_mcp.lumi_backend import setup_lumi
+        print(json.dumps(setup_lumi(args.lumi_package), ensure_ascii=False))
+        return
 
     if args.generate_samples:
         paths = _generate_samples()
