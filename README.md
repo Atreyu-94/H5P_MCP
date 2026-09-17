@@ -1,13 +1,13 @@
 # H5P MCP Quiz Generator (Python)
 
-Generate **valid H5P quiz packages (`.h5p`)** from **pure Python** via an **MCP server** (FastMCP). Designed to be used by **Claude Desktop**, **Cursor**, or any MCP-compatible agent—**no frontend** required.
+Generate H5P quiz packages (`.h5p`) via a Python MCP server (FastMCP), with Lumi's Node.js backend for packaging and import validation. No frontend is required for generation.
 
 This project outputs real H5P package structure:
 
 - `h5p.json`
 - `content/content.json`
 
-It **does not bundle H5P libraries** (that’s normal for content exports). Your target platform (Moodle, Lumi, etc.) must have these content types installed:
+Exports include the installed H5P libraries and dependencies for these content types:
 
 - `H5P.MultiChoice`
 - `H5P.TrueFalse`
@@ -253,11 +253,14 @@ Then:
 
 ## Notes on Moodle / Lumi compatibility
 
-- The produced `.h5p` contains content JSON compatible with the declared library.
-- Moodle/Lumi must already include the relevant H5P libraries (content types).
-- Validation in this repo checks package shape + JSON sanity and detects obvious issues early.
+- Run `uv run h5p-mcp --setup-lumi` once with Node.js **22.12 or newer** and npm installed. Setup downloads npm dependencies and H5P libraries from the Hub. For uvx installations, pass `--setup-lumi` to the same pinned `h5p-mcp` command used by the client.
+- The backend is built from Lumi commit `efcfeebc6d7ae349f4fb708e2f44284151f77558`, supporting Core **1.28.0**. This is an interim upstream development build, not an official stable release. Its source, license and compiled server are bundled in the npm archive; `h5p_mcp/lumi/provenance.json` records the SHA and checksum. `build-upstream.ps1` rebuilds it from pinned upstream source.
+- Runtime dependencies are installed from the lockfile into a versioned user cache. Export does not install dependencies or contact the Hub. `H5P_MCP_DATA_DIR` overrides the cache location. Explicit `--lumi-package PATH` arguments during setup install libraries from trusted local packages instead of the Hub.
+- Exports contain content and libraries, and never overwrite an existing output. The receiving Moodle/Lumi must support the Core API required by those libraries and permit library installation. This does not upgrade Lumi Desktop.
+- Validation imports each package into empty temporary library storage. It does not prove playback, accessibility or Moodle grading. Test those in the target platform before classroom use.
+- Core 1.28 has stricter file validation; SVG and office attachments are not enabled by default. Current templates retain English interface labels.
 
 ## License
 
-Apache 2.
+The Python project uses Apache 2.0. The bundled Lumi server and its corresponding source use GPL-3.0-or-later; its LICENSE is included inside the npm archive. Dependency licenses remain their respective authors'.
 

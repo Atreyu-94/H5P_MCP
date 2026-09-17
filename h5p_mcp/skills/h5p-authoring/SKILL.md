@@ -67,14 +67,16 @@ defensible answer. Do not equate a correct click with demonstrated mastery.
 
 ## Moodle handoff
 
-The export contains content, not H5P libraries. Report the actual library names
+The export contains content and H5P libraries packaged by Lumi. Report the actual library names
 and versions in the returned `h5p_json` dependencies so the teacher can check the
 target Moodle installation. Learner text can be in Spanish or another language,
 but current templates include English interface labels and language metadata;
 do not promise full localization.
 
-`validate_h5p` is a limited structural check; it does not establish H5P semantic
-validity, accessibility, successful Moodle import, playback or grade transfer.
+`validate_h5p` checks JSON structure and imports the package into empty Lumi
+storage. It does not establish full H5P semantic validity, accessibility,
+successful Moodle import, playback or grade transfer. The backend uses Core 1.28;
+check the destination's Core requirements independently of the authoring backend.
 For classroom readiness, check import, one correct and incorrect response,
 feedback, keyboard interaction and completion/scoring in the target Moodle.
 Report checks not performed. Upload or publish only when the user requested it.
