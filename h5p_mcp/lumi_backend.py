@@ -18,7 +18,7 @@ def data_dir() -> Path:
     if configured:
         return Path(configured).expanduser().resolve()
     base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".cache"))
-    return (base / "h5p-mcp" / "lumi").resolve()
+    return (base / "h5p-mcp" / "lumi" / "core-1.28").resolve()
 
 
 def runtime_dir() -> Path:
@@ -29,14 +29,14 @@ def runtime_dir() -> Path:
 def _node() -> str:
     node = shutil.which("node")
     if not node:
-        raise RuntimeError("Node.js 20+ is required by Lumi. Install Node.js, then run h5p-mcp --setup-lumi.")
+        raise RuntimeError("Node.js 22.12+ is required by Lumi. Install Node.js, then run h5p-mcp --setup-lumi.")
     return node
 
 
 def _invoke(action: str, **payload) -> dict:
     runtime = runtime_dir()
     if not (runtime / ".ready").is_file():
-        raise RuntimeError("Lumi is not initialized. Run h5p-mcp --setup-lumi once (requires Node.js 20+ and npm).")
+        raise RuntimeError("Lumi is not initialized. Run h5p-mcp --setup-lumi once (requires Node.js 22.12+ and npm).")
     env = dict(os.environ, H5P_MCP_LUMI_RUNTIME=str(runtime))
     env.pop("DEBUG", None)  # Keep the child protocol quiet regardless of caller logging.
     request = {"action": action, "data_dir": str(data_dir()), **payload}
@@ -68,8 +68,8 @@ def run_lumi(action: str, **payload) -> dict:
 def setup_lumi(packages: list[str] | None = None) -> dict:
     node = _node()
     version = subprocess.check_output([node, "--version"], text=True).strip()
-    if int(version.lstrip("v").split(".")[0]) < 20:
-        raise RuntimeError("Lumi requires Node.js 20 or later")
+    if tuple(map(int, version.lstrip("v").split(".")[:2])) < (22, 12):
+        raise RuntimeError("Lumi requires Node.js 22.12 or later")
     npm = shutil.which("npm.cmd" if os.name == "nt" else "npm")
     if not npm:
         raise RuntimeError("npm is required for h5p-mcp --setup-lumi")
@@ -81,6 +81,11 @@ def setup_lumi(packages: list[str] | None = None) -> dict:
             runtime.mkdir(parents=True, exist_ok=True)
             for name in ("package.json", "package-lock.json"):
                 shutil.copyfile(SOURCE / name, runtime / name)
+            manifest = json.loads((SOURCE / "provenance.json").read_text(encoding="utf-8"))
+            archive = SOURCE / manifest["archive"]
+            if hashlib.sha256(archive.read_bytes()).hexdigest() != manifest["sha256"]:
+                raise RuntimeError("Lumi package checksum mismatch")
+            shutil.copyfile(archive, runtime / archive.name)
             # Shell-free execution; scripts from downloaded dependencies are disabled.
             subprocess.run([npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund"],
                            cwd=runtime, check=True, timeout=300)
