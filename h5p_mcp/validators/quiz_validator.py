@@ -9,6 +9,7 @@ from zipfile import ZipFile
 from pydantic import TypeAdapter, ValidationError
 
 from h5p_mcp.models.quiz_models import QuizModel, QuizType
+from h5p_mcp.lumi_backend import run_lumi
 
 # TypeAdapter is required for validating against a union type alias (X | Y | Z).
 # Plain union aliases don't expose .model_validate() the way BaseModel subclasses do.
@@ -34,14 +35,9 @@ def validate_quiz_data(quiz_data: dict[str, Any]) -> QuizModel:
 
 def validate_h5p_package(path: str | Path) -> H5PValidationResult:
     """
-    Validate a .h5p file (zip) for required structure and JSON sanity.
+    Validate JSON roots, then import with Lumi into empty temporary storage.
 
-    This is not a full H5P semantics validator, but it catches the common
-    reasons Moodle/Lumi will reject a package:
-    - missing h5p.json
-    - missing content/content.json
-    - invalid JSON
-    - missing mainLibrary / preloadedDependencies
+    Requires a self-contained package. Import validation is not playback testing.
     """
     p = Path(path)
     errors: list[str] = []
@@ -73,11 +69,10 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
                     if not isinstance(deps, list) or not deps:
                         errors.append("'preloadedDependencies' must be a non-empty list.")
 
-            if isinstance(content_json, dict):
-                # Title lives inside the metadata block (added by _ensure_content_metadata).
-                meta_title = content_json.get("metadata", {}).get("title", "")
-                if not meta_title:
-                    errors.append("content.json missing metadata.title.")
+            if not isinstance(h5p_json, dict):
+                errors.append("h5p.json must contain a JSON object.")
+            if not isinstance(content_json, dict):
+                errors.append("content/content.json must contain a JSON object.")
 
             if isinstance(h5p_json, dict) and isinstance(content_json, dict):
                 main = h5p_json.get("mainLibrary")
@@ -94,6 +89,13 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
     except Exception as e:  # noqa: BLE001
         errors.append(f"Failed to read zip: {e}")
 
+    if not errors:
+        try:
+            report = run_lumi("validate", path=str(p.resolve()))
+            errors.extend(report.get("errors", []))
+            warnings.extend(report.get("warnings", []))
+        except RuntimeError as error:
+            errors.append(str(error))
     return H5PValidationResult(ok=len(errors) == 0, errors=errors, warnings=warnings)
 
 
