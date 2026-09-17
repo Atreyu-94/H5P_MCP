@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import json
 import logging
-import uuid
+import os
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -12,8 +12,8 @@ from h5p_mcp.generators.mcq_generator import MCQGenerator
 from h5p_mcp.generators.questionset_generator import QuestionSetGenerator
 from h5p_mcp.generators.truefalse_generator import TrueFalseGenerator
 from h5p_mcp.models.quiz_models import FillBlanksQuiz, MCQQuiz, QuestionSetQuiz, QuizModel, QuizType, TrueFalseQuiz
-from h5p_mcp.utils.file_utils import resolve_export_dir, safe_filename, temp_workdir, write_json
-from h5p_mcp.utils.zip_utils import zip_dir
+from h5p_mcp.utils.file_utils import resolve_export_dir, safe_filename
+from h5p_mcp.lumi_backend import run_lumi
 
 
 logger = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ class H5PExporter:
 
     The resulting .h5p includes:
     - h5p.json
-    - content/content.json
+    - content/content.json and all libraries resolved and packaged by Lumi
     """
 
     def __init__(self, *, export_dir: str | None = None, templates_dir: str | None = None) -> None:
@@ -55,31 +55,21 @@ class H5PExporter:
         out_path = self._export_dir / f"{out_stem}.h5p"
 
         content_json = self._generate_content_json(quiz)
-        h5p_json = self._build_h5p_manifest(quiz)
-        content_json = self._ensure_content_metadata(
-            content_json, title=quiz.title)
 
         logger.info("Exporting quiz type=%s title=%s -> %s",
                     quiz.type.value, quiz.title, out_path)
 
-        with temp_workdir(prefix="h5p_mcp_export_") as wd:
-            root = wd
-            content_dir = root / "content"
-            content_dir.mkdir(parents=True, exist_ok=True)
-
-            write_json(root / "h5p.json", h5p_json)
-            write_json(content_dir / "content.json", content_json)
-
-            tmp_zip = root / f"{out_stem}.zip"
-            zip_dir(root, tmp_zip)
-
-            # Move into place as .h5p
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            if out_path.exists():
-                out_path.unlink()
-            tmp_zip.replace(out_path)
-
-        return ExportResult(output_path=out_path, h5p_json=h5p_json, content_json=content_json)
+        if out_path.exists():
+            raise FileExistsError(f"Export already exists; choose a new output_name: {out_path}")
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(prefix=".lumi-", dir=out_path.parent) as work:
+            package = Path(work) / "activity.h5p"
+            result = run_lumi("export", content=content_json, title=quiz.title,
+                              main_library=_library_for_type(quiz.type), path=str(package))
+            # Same-filesystem, exclusive publication: no partial output or overwrite,
+            # including two concurrent exports with the same output name.
+            os.link(package, out_path)
+        return ExportResult(output_path=out_path, h5p_json=result["h5p_json"], content_json=result["content_json"])
 
     def _generate_content_json(self, quiz: QuizModel) -> dict[str, Any]:
         if isinstance(quiz, MCQQuiz):
@@ -92,56 +82,14 @@ class H5PExporter:
             return self._qs.generate_content_json(quiz)
         raise ValueError(f"Unsupported quiz model: {type(quiz).__name__}")
 
-    def _build_h5p_manifest(self, quiz: QuizModel) -> dict[str, Any]:
-        main_library, major, minor = _library_for_type(quiz.type)
-        # Keep this minimal. Some validators reject unknown or mis-typed keys.
-        return {
-            "title": quiz.title,
-            "language": "en",
-            "mainLibrary": main_library,
-            "embedTypes": ["div"],
-            "preloadedDependencies": [
-                {
-                    "machineName": main_library,
-                    "majorVersion": major,
-                    "minorVersion": minor,
-                }
-            ],
-        }
-
-    def _ensure_content_metadata(self, content_json: dict[str, Any], *, title: str) -> dict[str, Any]:
-        """
-        Ensure content.json includes a spec-friendly metadata block.
-
-        Many platforms expect metadata on content, not in h5p.json.
-        """
-        if not isinstance(content_json, dict):
-            raise ValueError("content_json must be a dict")
-
-        meta = content_json.get("metadata")
-        if not isinstance(meta, dict):
-            meta = {}
-
-        meta.setdefault("title", title)
-        meta.setdefault("license", "U")
-        meta.setdefault("defaultLanguage", "en")
-        meta.setdefault("authors", [])
-        meta.setdefault("changes", [])
-        meta.setdefault("extraTitle", str(uuid.uuid4()))
-
-        content_json["metadata"] = meta
-        return content_json
-
-
-def _library_for_type(qtype: QuizType) -> tuple[str, int, int]:
-    # These version numbers are commonly installed; platforms tolerate mismatch
-    # as long as a compatible library is installed. Keep conservative defaults.
+def _library_for_type(qtype: QuizType) -> str:
+    # Version resolution belongs to Lumi's installed library catalog.
     if qtype == QuizType.mcq:
-        return ("H5P.MultiChoice", 1, 16)
+        return "H5P.MultiChoice"
     if qtype == QuizType.truefalse:
-        return ("H5P.TrueFalse", 1, 8)
+        return "H5P.TrueFalse"
     if qtype == QuizType.blanks:
-        return ("H5P.Blanks", 1, 14)
+        return "H5P.Blanks"
     if qtype == QuizType.questionset:
-        return ("H5P.QuestionSet", 1, 20)
+        return "H5P.QuestionSet"
     raise ValueError(f"Unsupported QuizType: {qtype}")
