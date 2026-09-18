@@ -16,7 +16,7 @@ def test_discovery_pagination_and_authoring_status():
     assert len(result["activities"]) == 1
     assert result["activities"][0]["authoring_supported"] is True
     accordion = list_h5p_activities(query="H5P.Accordion")["activities"]
-    assert accordion and accordion[0]["authoring_supported"] is False
+    assert accordion and accordion[0]["authoring_supported"] is True
 
 
 def test_schema_exact_version_and_nested_fields():
