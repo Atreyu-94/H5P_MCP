@@ -67,6 +67,29 @@ dimensions and embeds files, preserving source files. Missing and unreferenced
 asset mappings are rejected. Remote HTTP(S) media remain URLs and need network
 access during playback. Core 1.28 may reject SVG/office attachments by default.
 
+## Mathematical notation
+
+Write LaTeX explicitly as `\( ... \)` (inline), `\[ ... \]` or `$$ ... $$`
+(display). JSON requires doubled backslashes. The MCP scans nested content and
+feedback for delimiters and returns a `mathematics` report during creation.
+Unicode text such as `kg/m³` is not automatically converted to LaTeX.
+
+Install the official [MathDisplay addon](https://h5p.org/mathematical-expressions)
+explicitly with `h5p-mcp --setup-lumi --lumi-package <absolute path>`.
+It is an addon, not a runnable Hub activity. Missing MathDisplay blocks LaTeX
+authoring/export with setup instructions; export never downloads it. When math
+is detected, exports include `H5P.MathDisplay 1.0` as an explicit preloaded
+dependency and package its installed files through Lumi. Content without LaTeX
+does not gain that dependency.
+
+Keep mathematical answer tokens in Blanks, DragText and MarkTheWords plain when
+their parsers require it; render formulas in rich-text prompts and feedback.
+MathDisplay renders notation; it does not grade symbolic equivalence, validate
+TeX syntax or automatically translate plain formulas. Test dynamic feedback and
+each chosen content type in the destination. Moodle must permit installation of
+the bundled library in the H5P integration used by the activity. Updating Core
+alone does not enable math rendering.
+
 ## Breaking migration
 
 Removed: `create_mcq_quiz`, `create_true_false_quiz`, `create_fill_blanks_quiz`,

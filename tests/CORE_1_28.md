@@ -1,5 +1,29 @@
 # Core 1.28 verification
 
+## MathDisplay (2026-09-17)
+
+Official addon: H5P.MathDisplay 1.0.50 from
+https://h5p.org/sites/default/files/h5p-math-display-1-0-50.h5p
+SHA-256: `c35a7c4dcaef8afcc416dc9c13d1225afcc7522b092afb840b30f6963042f91b`.
+Install explicitly with the local-package setup CLI before running math tests.
+
+Math checks cover recursive delimiter detection, missing-addon diagnostics,
+explicit preloaded dependency, unique ZIP entries, fresh Lumi import and no addon
+leakage into plain exports. The exporter limits addon files to explicit
+dependencies because upstream otherwise appends all cached addons, including
+ones already exported.
+
+The mixed physics QuestionSet was traversed in Chrome: 24 questions, 21 with
+math in prompts or feedback. MathJax containers rendered; no TeX error elements,
+uncaught JS errors or HTTP failures were observed. Speech-worker cancellation
+warnings occurred during rapid navigation; assistive reading was not validated.
+Moodle rendering/grade transfer remain destination checks.
+
+Set `H5P_MCP_MATH_SMOKE=1` when invoking `lumi_browser_smoke.cjs` with a directory
+of mathematical QuestionSet packages. Optional `H5P_MCP_MATH_SCREENSHOT` is an
+absolute PNG output path. The host supplies `urlLibraries` for dynamically
+loaded MathJax assets as well as ordinary library scripts.
+
 ## Native workflow replacement (2026-09-17)
 
 - Python suite: **44 passed**, replacing fixed-model tests with native semantic
