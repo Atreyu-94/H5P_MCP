@@ -1,2 +1,2 @@
-"""H5P MCP Quiz Generator (package root)."""
+"""Schema-driven H5P MCP authoring (package root)."""
 
