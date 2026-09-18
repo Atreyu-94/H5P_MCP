@@ -42,6 +42,7 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
   });
   try {
     const names = (await fs.readdir(packages)).filter(n => n.endsWith('.h5p'));
+    if (!names.length) throw new Error('No H5P packages to test');
     for (const [index, name] of names.entries()) {
       const folder = path.join(root, `activity-${index}`);
       await fs.mkdir(folder);
@@ -69,7 +70,13 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       await frame.locator('.h5p-content').waitFor({ state: 'visible' });
       const start = frame.getByRole('button', { name: /^Start/ });
       if (await start.count()) await start.first().click();
-      const controls = await frame.locator('button, input, [role="radio"], [role="checkbox"]').count();
+      const panel = frame.locator('.h5p-panel-button').first();
+      if (await panel.count()) {
+        await panel.click();
+        if (await panel.getAttribute('aria-expanded') !== 'true') throw new Error(`${name}: panel did not expand`);
+        await frame.locator('.h5p-panel-content p').first().waitFor({ state: 'visible' });
+      }
+      const controls = await frame.locator('button, input, [role="button"], [role="radio"], [role="checkbox"]').count();
       if (!controls) throw new Error(`${name}: no interactive controls`);
       const answer = frame.locator('input[type="text"]:visible').first();
       if (await answer.count()) await answer.fill('test');
@@ -79,9 +86,10 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       if (await check.count()) await check.click();
       const score = await page.evaluate(() => {
         const activity = H5P.instances[0];
-        return { score: activity.getScore(), maximum: activity.getMaxScore() };
+        if (typeof activity.getScore !== 'function') return { graded: false };
+        return { graded: true, score: activity.getScore(), maximum: activity.getMaxScore() };
       });
-      if (!Number.isFinite(score.score) || !(score.maximum > 0)) throw new Error(`${name}: invalid score`);
+      if (score.graded && (!Number.isFinite(score.score) || !(score.maximum > 0))) throw new Error(`${name}: invalid score`);
       if (errors.length) throw new Error(`${name}: ${errors.join('; ')}`);
       console.log(JSON.stringify({ name, controls, ...score, errors }));
       await page.close();

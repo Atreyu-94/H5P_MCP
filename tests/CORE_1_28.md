@@ -1,5 +1,29 @@
 # Core 1.28 verification
 
+## Native workflow replacement (2026-09-17)
+
+- Python suite: **44 passed**, replacing fixed-model tests with native semantic
+  checks, defaults, exact nested versions, five real package roundtrips,
+  embedded PNG bytes/source preservation and partial batch results. Retains Core
+  1.28/1.29 import gates, missing-library, JSON-root and non-overwrite regressions.
+- Wheel and sdist built successfully. **Three stdio tests passed** against the
+  wheel via isolated uvx, including skill discovery/integrity and the new tools.
+- Chrome/Core 1.28: **five native packages passed**. TrueFalse, MultiChoice,
+  Blanks and QuestionSet exposed answer controls and numeric scores; Accordion
+  expanded its panel and displayed nested AdvancedText. No uncaught JavaScript
+  exceptions or HTTP resource errors were observed.
+- PNG embedding was checked by archive bytes and fresh Lumi import, not browser
+  playback. Audio/video and other Hub activities were not exercised in this run.
+- No new Moodle import, grading or accessibility test was performed for this
+  workflow. These checks do not establish support for every editor widget.
+
+Fixtures are in `test_native_authoring.py` (`EXAMPLES`). Export them using
+`Activity` and `H5PExporter` into a fresh directory to repeat the browser check;
+the former `--generate-samples` CLI and fixed templates were removed. Integration
+prerequisites and installation instructions are in the root README.
+
+## Earlier fixed-generator baseline
+
 Verified on Windows, 2026-09-17, with Node 26.7 and Chrome headless.
 Backend: Lumi commit `efcfeebc6d7ae349f4fb708e2f44284151f77558`.
 Browser Core assets: official `h5p/h5p-php-library` commit
