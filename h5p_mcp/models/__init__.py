@@ -1,2 +1,2 @@
-"""Pydantic models for quiz schemas."""
+"""Pydantic contract for native H5P activities."""
 
