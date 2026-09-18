@@ -8,9 +8,16 @@ const { createRequire } = require('node:module');
 const load = createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || __dirname, 'package.json'));
 const { H5PEditor, H5PConfig, fsImplementations: stores } = load('@lumieducation/h5p-server');
 const { prepareActivity } = require('./authoring.cjs');
+const { attachMathDependency } = require('./math.cjs');
 const user = { id: 'local-author', name: 'Local author', email: '', type: 'local' };
 
-async function editorAt(root, libraries) {
+class ExportLibraryStorage extends stores.FileLibraryStorage {
+  // Lumi appends ALL installed addons, even ones already in the dependency
+  // graph. Exports use explicit dependencies to avoid duplicates/cache leakage.
+  async listAddons() { return []; }
+}
+
+async function editorAt(root, libraries, explicitDependencies = false) {
   await fsp.mkdir(root, { recursive: true });
   await fsp.mkdir(libraries, { recursive: true });
   for (const name of ['cache.json', 'config.json']) {
@@ -21,7 +28,8 @@ async function editorAt(root, libraries) {
   const config = new H5PConfig(new stores.JsonStorage(path.join(root, 'config.json')));
   await config.load();
   config.sendUsageStatistics = false;
-  return new H5PEditor(cache, config, new stores.FileLibraryStorage(libraries),
+  const LibraryStorage = explicitDependencies ? ExportLibraryStorage : stores.FileLibraryStorage;
+  return new H5PEditor(cache, config, new LibraryStorage(libraries),
     new stores.FileContentStorage(path.join(root, 'content')),
     new stores.DirectoryTemporaryFileStorage(path.join(root, 'temporary')));
 }
@@ -114,7 +122,7 @@ async function main(request) {
   try {
     // Validation always starts with EMPTY library storage. Installed libraries
     // must not conceal a broken or content-only export.
-    const editor = await editorAt(job, request.action === 'validate' ? path.join(job, 'libraries') : libraries);
+    const editor = await editorAt(job, request.action === 'validate' ? path.join(job, 'libraries') : libraries, request.action === 'export');
     if (request.action === 'catalog') return { libraries: await catalog(editor), core: editor.config.h5pVersion };
     if (request.action === 'validate') {
       const imported = await editor.packageImporter.addPackageLibrariesAndTemporaryFiles(request.path, user);
@@ -132,6 +140,7 @@ async function main(request) {
     const metadata = { title: activity.title, language: activity.language, license: activity.license,
       embedTypes: ['div'], mainLibrary: mainLibrary.split(' ')[0] };
     const id = await editor.saveOrUpdateContent(undefined, params, metadata, mainLibrary, user);
+    await attachMathDependency(editor, id, user);
     const output = fs.createWriteStream(request.path, { flags: 'wx' });
     const done = finished(output);
     // Attach immediately to avoid unhandled rejection if export fails first.

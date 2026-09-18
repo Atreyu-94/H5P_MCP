@@ -3,6 +3,7 @@
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
+const { inspectMath } = require('./math.cjs');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 async function prepareActivity(editor, activity, user, upload = false) {
@@ -125,8 +126,11 @@ async function prepareActivity(editor, activity, user, upload = false) {
   }
   const entries = await schema(activity.library, 'library', true);
   const params = entries ? await fields(entries, activity.params, 'params', 0) : activity.params;
+  const mathematics = await inspectMath(editor.libraryManager, params);
+  if (mathematics.error) errors.push(mathematics.error);
+  if (mathematics.detected) warnings.add('LaTeX requires MathDisplay at playback. Check TeX syntax and rendering in the destination; this is not a symbolic answer checker.');
   for (const id of Object.keys(assets)) if (!usedAssets.has(id)) fail(`assets.${id}`, 'asset is not referenced in a native media field');
-  return { ok: errors.length === 0, errors, warnings: [...warnings], activity: { ...activity, params } };
+  return { ok: errors.length === 0, errors, warnings: [...warnings], mathematics, activity: { ...activity, params } };
 }
 
 module.exports = { prepareActivity };

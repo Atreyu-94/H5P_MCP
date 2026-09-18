@@ -84,6 +84,8 @@ def create_h5p_activity(title: str, library: str, params: dict[str, Any],
     Media use path="asset:<id>" and assets={<id>: absolute local path}.
     Checks are structural; editor-widget logic and playback still need testing.
     No library download occurs here.
+    LaTeX delimiters are detected recursively. The mathematics report identifies
+    MathDisplay; missing installation blocks export. Use \\( ... \\) or \\[ ... \\].
     """
     activity = Activity(title=title, library=library, params=params, language=language,
                         license=license, assets=assets or {})
