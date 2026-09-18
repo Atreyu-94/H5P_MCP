@@ -11,11 +11,15 @@ const { H5PPlayer, H5PConfig, fsImplementations: stores } = load('@lumieducation
 const PackageImporter = load('@lumieducation/h5p-server/build/src/PackageImporter').default;
 const { chromium } = createRequire(path.join(upstream, 'package.json'))('@playwright/test');
 const mime = load('mime-types');
+const { containsLatex } = require('../h5p_mcp/lumi/math.cjs');
+// Optional math mode checks rendering on every question, including feedback.
+const mathMode = process.env.H5P_MCP_MATH_SMOKE === '1';
 const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
 
 (async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'lumi-browser-'));
   const pages = new Map();
+  const contentParams = [];
   let browser;
   const server = http.createServer(async (req, res) => {
     try {
@@ -50,10 +54,12 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
         { includeLibraries: true, includeContent: true, includeMetadata: true });
       const metadata = JSON.parse(await fs.readFile(path.join(folder, 'h5p.json')));
       const params = JSON.parse(await fs.readFile(path.join(folder, 'content/content.json')));
+      contentParams.push(params);
       const config = new H5PConfig(undefined, { baseUrl: '', coreUrl: '/core',
         librariesUrl: `/activity-${index}`, contentFilesUrl: `/activity-${index}/content`, contentUserStateSaveInterval: false });
       const player = new H5PPlayer(new stores.FileLibraryStorage(folder),
-        new stores.FileContentStorage(path.join(root, `store-${index}`)), config);
+        new stores.FileContentStorage(path.join(root, `store-${index}`)), config,
+        { urlLibraries: `/activity-${index}` });
       const html = await player.render('1', user, 'en', { metadataOverride: metadata, parametersOverride: params });
       pages.set(`/play-${index}`, html);
     }
@@ -62,14 +68,49 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
     for (const [index, name] of names.entries()) {
       const page = await browser.newPage();
       const errors = [];
-      page.on('pageerror', error => errors.push(error.message));
-      page.on('response', response => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
+      page.on('pageerror', error => { errors.push(error.message); console.error(error.message); });
+      page.on('response', response => { if (response.status() >= 400) { errors.push(`${response.status()} ${response.url()}`); console.error(errors.at(-1)); } });
       await page.goto(`http://127.0.0.1:${server.address().port}/play-${index}`);
       await page.waitForFunction(() => window.H5P?.instances?.length > 0);
       const frame = page.frames().find(f => f !== page.mainFrame()) || page.mainFrame();
       await frame.locator('.h5p-content').waitFor({ state: 'visible' });
-      const start = frame.getByRole('button', { name: /^Start/ });
-      if (await start.count()) await start.first().click();
+      const start = frame.getByRole('button', { name: /^(Start|Comenzar)/ });
+      if (contentParams[index].introPage?.showIntroPage) await start.first().click();
+      if (mathMode) {
+        const questions = contentParams[index].questions;
+        if (!questions?.length) throw new Error('Math smoke expects a QuestionSet');
+        let renderedQuestions = 0;
+        for (let i = 0; i < questions.length; i++) {
+          const parameters = questions[i].params;
+          const check = frame.getByRole('button').filter({ hasText: /^(Comprobar|Check)$/ });
+          await check.waitFor({ state: 'visible' });
+          const prompt = parameters.question || parameters.taskDescription || parameters.text;
+          if (containsLatex(prompt)) await frame.locator('mjx-container:visible, .MathJax:visible').first().waitFor();
+          const inputs = frame.locator('input[type="text"]:visible');
+          for (let j = 0; j < await inputs.count(); j++) await inputs.nth(j).fill('999');
+          const choice = frame.locator('[role="radio"]:visible, [role="option"]:visible').first();
+          if (await choice.count()) await choice.click();
+          await check.click();
+          if (containsLatex(parameters)) {
+            await frame.locator('mjx-container:visible, .MathJax:visible').first().waitFor();
+            // Wait for newly revealed feedback, not just an already rendered prompt.
+            const feedback = frame.locator('.h5p-question-feedback:visible');
+            if (containsLatex(parameters.overallFeedback || parameters.behaviour?.feedbackOnWrong)) {
+              await feedback.locator('mjx-container, .MathJax').first().waitFor({ state: 'visible' });
+            }
+            renderedQuestions++;
+          }
+          if (await frame.locator('mjx-merror:visible, [data-mjx-error]:visible, .MathJax_Error:visible').count()) throw new Error(`Math syntax error in question ${i + 1}`);
+          console.log(JSON.stringify({ question: i + 1, math: containsLatex(parameters) }));
+          if (i === 11 && process.env.H5P_MCP_MATH_SCREENSHOT) await page.screenshot({ path: process.env.H5P_MCP_MATH_SCREENSHOT, fullPage: true });
+          await page.evaluate(() => H5P.instances[0].moveQuestion(1));
+        }
+        if (!renderedQuestions) throw new Error('No math questions tested');
+        if (errors.length) throw new Error(errors.join('; '));
+        console.log(JSON.stringify({ name, renderedQuestions, errors }));
+        await page.close();
+        continue;
+      }
       const panel = frame.locator('.h5p-panel-button').first();
       if (await panel.count()) {
         await panel.click();
