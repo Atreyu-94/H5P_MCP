@@ -57,6 +57,20 @@ paths fail. Remote HTTP(S) media remain remote and may fail offline.
 Successful files remain if another item fails; inspect `succeeded` and individual
 results, not just `count`. Retry failed items with fresh names.
 
+## Mathematical expressions
+
+Use explicit LaTeX delimiters `\( ... \)` or `\[ ... \]` for mathematical
+typesetting (escape backslashes in JSON). Do not assume Unicode superscripts or
+plain fractions activate the renderer. Creation returns a `mathematics` report;
+missing MathDisplay produces an error with explicit local-package installation
+instructions. Export bundles the installed addon as a preloaded dependency.
+
+For blanks, draggable tokens and selectable words, preserve the content type's
+answer syntax and matching rules. Put complex formulas in rich-text prompts and
+explanations when LaTeX would interfere with token parsing. Check both initial
+formulas and feedback revealed after answering. Rendering is not symbolic answer
+evaluation. Verify library installation and rendering in the target Moodle.
+
 ## Moodle handoff
 
 Exports contain content, local assets and installed library dependencies. The
