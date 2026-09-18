@@ -7,7 +7,7 @@ import pytest
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.lumi_backend import SOURCE, run_lumi
-from h5p_mcp.models.quiz_models import TrueFalseQuiz
+from h5p_mcp.models.activity import Activity
 from h5p_mcp.validators.quiz_validator import validate_h5p_package
 
 
@@ -21,7 +21,7 @@ def test_pinned_backend_identity():
 @pytest.fixture
 def package(tmp_path):
     return H5PExporter(export_dir=str(tmp_path)).export(
-        TrueFalseQuiz(title="Core compatibility", question="True?", correct_answer=True),
+        Activity(title="Core compatibility", library="H5P.TrueFalse 1.8", params={"question": "True?", "correct": "true"}),
         output_name="original",
     ).output_path
 
@@ -56,7 +56,7 @@ def test_existing_export_preserved(package):
     before = package.read_bytes()
     with pytest.raises(FileExistsError):
         H5PExporter(export_dir=str(package.parent)).export(
-            TrueFalseQuiz(title="Replacement", question="False?", correct_answer=False),
+            Activity(title="Replacement", library="H5P.TrueFalse 1.8", params={"question": "False?", "correct": "false"}),
             output_name=package.stem,
         )
     assert package.read_bytes() == before

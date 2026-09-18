@@ -6,14 +6,7 @@ from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
 
-from pydantic import TypeAdapter, ValidationError
-
-from h5p_mcp.models.quiz_models import QuizModel, QuizType
 from h5p_mcp.lumi_backend import run_lumi
-
-# TypeAdapter is required for validating against a union type alias (X | Y | Z).
-# Plain union aliases don't expose .model_validate() the way BaseModel subclasses do.
-_QUIZ_ADAPTER: TypeAdapter[QuizModel] = TypeAdapter(QuizModel)
 
 
 @dataclass(frozen=True)
@@ -21,16 +14,6 @@ class H5PValidationResult:
     ok: bool
     errors: list[str]
     warnings: list[str]
-
-
-def validate_quiz_data(quiz_data: dict[str, Any]) -> QuizModel:
-    """
-    Validate and coerce the canonical quiz schema using Pydantic.
-    """
-    try:
-        return _QUIZ_ADAPTER.validate_python(quiz_data)
-    except ValidationError as e:
-        raise ValueError(e.json(indent=2)) from e
 
 
 def validate_h5p_package(path: str | Path) -> H5PValidationResult:
@@ -73,18 +56,6 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
                 errors.append("h5p.json must contain a JSON object.")
             if not isinstance(content_json, dict):
                 errors.append("content/content.json must contain a JSON object.")
-
-            if isinstance(h5p_json, dict) and isinstance(content_json, dict):
-                main = h5p_json.get("mainLibrary")
-                if main and isinstance(main, str):
-                    expected = {
-                        "H5P.MultiChoice": QuizType.mcq,
-                        "H5P.TrueFalse": QuizType.truefalse,
-                        "H5P.Blanks": QuizType.blanks,
-                        "H5P.QuestionSet": QuizType.questionset,
-                    }
-                    if main not in expected:
-                        warnings.append(f"Unknown mainLibrary '{main}'. Package may still import if installed.")
 
     except Exception as e:  # noqa: BLE001
         errors.append(f"Failed to read zip: {e}")

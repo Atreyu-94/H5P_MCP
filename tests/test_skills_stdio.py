@@ -95,34 +95,27 @@ def test_skills_stdio_authoring(tmp_path):
             with pytest.raises(MCPError):
                 await client.read_resource("skill://h5p-authoring/../../server.py")
 
-            # Spanish learning task: distinguish evaporation from condensation.
-            # Follow the skill's create -> compose -> export -> validate workflow.
-            scenarios = [
-                ("create_mcq_quiz", {"title": "Evaporación", "question": "El agua líquida pasa a vapor. ¿Qué proceso ocurre?", "choices": ["Evaporación", "Condensación", "Congelación"], "correct_answer": "Evaporación", "explanation": "La evaporación convierte líquido en gas; la condensación realiza el cambio inverso."}),
-                ("create_true_false_quiz", {"title": "Condensación", "question": "En la condensación, el vapor de agua pasa a líquido.", "correct_answer": True, "explanation": "El cambio de gas a líquido es condensación."}),
-                ("create_fill_blanks_quiz", {"title": "Cambio de estado", "text": "El paso de líquido a gas se llama *evaporación*.", "answers": ["evaporación"]}),
-            ]
-            children = []
-            for name, args in scenarios:
-                result = await client.call_tool(name, args)
-                children.append(result.data)
-            result = await client.call_tool("create_questionset_quiz", {"title": "Cambios de estado", "intro": "Distingue evaporación y condensación.", "questions": children, "pass_percentage": 50})
-            activities = children + [result.data]
-            for index, activity in enumerate(activities):
-                exported = await client.call_tool("export_h5p", {"quiz_data": activity, "output_name": f"estados_{index}"})
-                path = Path(exported.data["output_path"])
-                assert path.parent == tmp_path / "activities"
-                report = await client.call_tool("validate_h5p", {"path": str(path)})
-                assert report.data["ok"], report.data
-                with zipfile.ZipFile(path) as archive:
-                    manifest = json.loads(archive.read("h5p.json"))
-                    body = json.loads(archive.read("content/content.json"))
-                    assert manifest["preloadedDependencies"]
-                    assert isinstance(body, dict)
-                    if index == 0:
-                        assert sum(a["correct"] for a in body["answers"]) == 1
-                        assert "condensación" in body["overallFeedback"][0]["feedback"]
-                    if index == 3:
-                        assert len(body["questions"]) == 3
+            # Follow the distributed skill: discover -> schema -> prepare -> export -> import.
+            catalog = await client.call_tool("list_h5p_activities", {"query": "H5P.Accordion"})
+            assert catalog.data["activities"]
+            for name in ("H5P.Accordion", "H5P.AdvancedText"):
+                schema = await client.call_tool("get_h5p_activity_schema", {"machine_name": name})
+                assert schema.data["semantics"]
+            prepared = await client.call_tool("create_h5p_activity", {
+                "title": "Cambios de estado", "library": "H5P.Accordion 1.0", "language": "es",
+                "params": {"panels": [{"title": "Evaporaci\u00f3n", "content": {
+                    "library": "H5P.AdvancedText 1.1", "params": {"text": "<p>L\u00edquido a gas.</p>"}}}]}})
+            assert prepared.data["ok"], prepared.data
+            exported = await client.call_tool("export_h5p", {"activity": prepared.data["activity"], "output_name": "estados"})
+            path = Path(exported.data["output_path"])
+            assert path.parent == tmp_path / "activities"
+            report = await client.call_tool("validate_h5p", {"path": str(path)})
+            assert report.data["ok"], report.data
+            with zipfile.ZipFile(path) as archive:
+                manifest = json.loads(archive.read("h5p.json"))
+                body = json.loads(archive.read("content/content.json"))
+                assert manifest["language"] == "es"
+                assert body["panels"][0]["title"] == "Evaporaci\u00f3n"
+                assert body["panels"][0]["content"]["library"] == "H5P.AdvancedText 1.1"
 
     asyncio.run(asyncio.wait_for(check(), timeout=90))
