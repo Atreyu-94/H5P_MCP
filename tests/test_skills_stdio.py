@@ -110,7 +110,7 @@ def test_skills_stdio_authoring(tmp_path):
             path = Path(exported.structured_content["output_path"])
             assert path.parent == tmp_path / "activities"
             report = await client.call_tool("validate_h5p", {"path": str(path)})
-            assert report.data["ok"], report.data
+            assert report.structured_content["ok"], report.structured_content
             with zipfile.ZipFile(path) as archive:
                 manifest = json.loads(archive.read("h5p.json"))
                 body = json.loads(archive.read("content/content.json"))
