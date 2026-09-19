@@ -92,7 +92,9 @@ def create_h5p_activity(title: str, library: str, params: dict[str, Any],
     activity = Activity(title=title, library=library, params=params, language=language,
                         license=license, assets=assets or {})
     report = run_lumi("prepare", activity=activity.model_dump())
-    report["verification"] = verification(structure="passed", semantics="passed" if report["ok"] else "failed")
+    excessive = any(d["code"] in {"INPUT_TOO_DEEP", "INPUT_TOO_LARGE"} for d in report["diagnostics"])
+    report["verification"] = verification(structure="failed" if excessive else "passed",
+                                           semantics="not_run" if excessive else "passed" if report["ok"] else "failed")
     return report
 
 

@@ -38,7 +38,7 @@ class H5PExporter:
         out_path = self._export_dir / f"{safe_filename(output_name)}.h5p"
 
         if out_path.exists():
-            raise FileExistsError(f"Export already exists; choose a new output_name: {out_path}")
+            raise FileExistsError(f"OUTPUT_EXISTS: Export already exists; choose a new output_name: {out_path}")
         out_path.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix=".lumi-", dir=out_path.parent) as work:
             package = Path(work) / "activity.h5p"
