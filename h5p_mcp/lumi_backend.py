@@ -11,7 +11,7 @@ import tempfile
 import time
 
 from filelock import FileLock
-from h5p_mcp.limits import limit
+from h5p_mcp.limits import limit, check_tree
 
 class BackendError(RuntimeError):
     def __init__(self, message, code="BACKEND_ERROR", details=None):
@@ -50,6 +50,7 @@ def _invoke(action: str, **payload) -> dict:
     env = dict(os.environ, H5P_MCP_LUMI_RUNTIME=str(runtime))
     env.pop("DEBUG", None)  # Keep the child protocol quiet regardless of caller logging.
     request = {"action": action, "data_dir": str(data_dir()), **payload}
+    check_tree(request)
     encoded = json.dumps(request, ensure_ascii=False)
     if len(encoded.encode("utf-8")) > limit("JSON_BYTES", 16777216):
         raise BackendError("JSON byte budget exceeded", "INPUT_TOO_LARGE")

@@ -139,9 +139,9 @@ async function main(request) {
       report.activity.preparation = manifest;
     }
     if (request.action === 'prepare') return report;
-    if (!report.ok) throw new Error(report.errors.join('\n'));
+    if (!report.ok) throw Object.assign(new Error(report.errors.join('\n')), {code:'INVALID_PARAMETER', details:report.diagnostics});
     const uploaded = await prepareActivity(editor, report.activity, user, true);
-    if (!uploaded.ok) throw new Error(uploaded.errors.join('\n'));
+    if (!uploaded.ok) throw Object.assign(new Error(uploaded.errors.join('\n')), {code:'INVALID_PARAMETER', details:uploaded.diagnostics});
     const activity = uploaded.activity;
     const mainLibrary = activity.library;
     const params = activity.params;
