@@ -13,3 +13,5 @@ class Activity(BaseModel):
     language: str = Field(default="en", min_length=2, max_length=20)
     license: str = "U"
     assets: dict[str, str] = Field(default_factory=dict, description="Map asset IDs to absolute local file paths. Reference with asset:<id> in native media path fields.")
+
+    preparation: dict[str, Any] | None = Field(default=None, description="Opaque dependency manifest returned by preparation; preserve it for stale-input detection.")

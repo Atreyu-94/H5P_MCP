@@ -7,8 +7,18 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import tempfile
+import time
 
 from filelock import FileLock
+from h5p_mcp.limits import limit
+
+class BackendError(RuntimeError):
+    def __init__(self, message, code="BACKEND_ERROR", details=None):
+        super().__init__(f"{code}: {message}")
+        self.code = code
+        self.details = details
+
 
 SOURCE = Path(__file__).resolve().parent / "lumi"
 
@@ -40,19 +50,39 @@ def _invoke(action: str, **payload) -> dict:
     env = dict(os.environ, H5P_MCP_LUMI_RUNTIME=str(runtime))
     env.pop("DEBUG", None)  # Keep the child protocol quiet regardless of caller logging.
     request = {"action": action, "data_dir": str(data_dir()), **payload}
-    try:
-        process = subprocess.run(
-            [_node(), str(SOURCE / "bridge.cjs")], input=json.dumps(request, ensure_ascii=False),
-            text=True, encoding="utf-8", capture_output=True, env=env, timeout=300,
-        )
-    except subprocess.TimeoutExpired as error:
-        raise RuntimeError(f"Lumi {action} exceeded 300 seconds") from error
-    try:
-        result = json.loads(process.stdout)
-    except ValueError as error:
-        raise RuntimeError(f"Lumi did not return JSON: {process.stderr[-2000:]}") from error
+    encoded = json.dumps(request, ensure_ascii=False)
+    if len(encoded.encode("utf-8")) > limit("JSON_BYTES", 16777216):
+        raise BackendError("JSON byte budget exceeded", "INPUT_TOO_LARGE")
+    # Files bound output memory; polling also enforces output and wall-clock budgets.
+    with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, tempfile.TemporaryFile() as errors:
+        incoming.write(encoded.encode("utf-8"))
+        incoming.seek(0)
+        process = subprocess.Popen([_node(), str(SOURCE / "bridge.cjs")], stdin=incoming,
+                                   stdout=outgoing, stderr=errors, env=env)
+        deadline = time.monotonic() + limit("SECONDS", 300)
+        try:
+            while process.poll() is None:
+                if time.monotonic() >= deadline:
+                    raise BackendError(f"Lumi {action} timed out", "BACKEND_TIMEOUT")
+                if any(os.fstat(f.fileno()).st_size > limit("OUTPUT_BYTES", 33554432) for f in (outgoing, errors)):
+                    raise BackendError("Backend output budget exceeded", "OUTPUT_TOO_LARGE")
+                time.sleep(0.05)
+        finally:
+            # Also executed on KeyboardInterrupt/caller-side exceptions.
+            if process.poll() is None:
+                process.kill()
+            process.wait()
+        if any(os.fstat(f.fileno()).st_size > limit("OUTPUT_BYTES", 33554432) for f in (outgoing, errors)):
+            raise BackendError("Backend output budget exceeded", "OUTPUT_TOO_LARGE")
+        outgoing.seek(0)
+        errors.seek(max(0, os.fstat(errors.fileno()).st_size - 2000))
+        stderr = errors.read().decode("utf-8", errors="replace")
+        try:
+            result = json.load(outgoing)
+        except ValueError as error:
+            raise BackendError(f"Lumi did not return JSON: {stderr}") from error
     if process.returncode:
-        raise RuntimeError("Lumi: " + "; ".join(result.get("errors", [process.stderr[-2000:]])))
+        raise BackendError("; ".join(result.get("errors", [stderr])), result.get("code", "BACKEND_ERROR"), result.get("details"))
     return result
 
 

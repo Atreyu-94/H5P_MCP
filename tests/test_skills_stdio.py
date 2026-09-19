@@ -105,9 +105,9 @@ def test_skills_stdio_authoring(tmp_path):
                 "title": "Cambios de estado", "library": "H5P.Accordion 1.0", "language": "es",
                 "params": {"panels": [{"title": "Evaporaci\u00f3n", "content": {
                     "library": "H5P.AdvancedText 1.1", "params": {"text": "<p>L\u00edquido a gas.</p>"}}}]}})
-            assert prepared.data["ok"], prepared.data
-            exported = await client.call_tool("export_h5p", {"activity": prepared.data["activity"], "output_name": "estados"})
-            path = Path(exported.data["output_path"])
+            assert prepared.structured_content["ok"], prepared.structured_content
+            exported = await client.call_tool("export_h5p", {"activity": prepared.structured_content["activity"], "output_name": "estados"})
+            path = Path(exported.structured_content["output_path"])
             assert path.parent == tmp_path / "activities"
             report = await client.call_tool("validate_h5p", {"path": str(path)})
             assert report.data["ok"], report.data
