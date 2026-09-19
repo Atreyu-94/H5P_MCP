@@ -22,7 +22,7 @@ packages = ["h5p_mcp"]
 exclude = ["h5p_mcp/exports/**", "h5p_mcp/requirements.txt", "**/node_modules/**"]
 
 [tool.hatch.build.targets.sdist]
-include = ["h5p_mcp", "tests", "pyproject.toml", "README.md", "LICENSE", "uv.lock", ".python-version"]
+include = ["h5p_mcp", "tests", "pyproject.toml", "README.md", "HARDENING.md", "LICENSE", "uv.lock", ".python-version"]
 exclude = ["h5p_mcp/exports/**", "**/__pycache__/**", "**/node_modules/**"]
 
 [tool.pytest.ini_options]

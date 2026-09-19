@@ -195,3 +195,8 @@ selection. Browser/Core evidence is in [tests/CORE_1_28.md](tests/CORE_1_28.md).
 Python project: Apache 2.0. Bundled Lumi server and corresponding source:
 GPL-3.0-or-later, with LICENSE included in the npm archive. Other dependencies
 retain their authors' licenses.
+
+## Authoring guarantees and reproducible tests
+
+See [HARDENING.md](HARDENING.md) for preparation manifests, stable diagnostics,
+resource limits, verification stages and isolated integration tests.
