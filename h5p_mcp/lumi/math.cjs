@@ -2,9 +2,14 @@
 const MATH_LIBRARY = { machineName: 'H5P.MathDisplay', majorVersion: 1, minorVersion: 0 };
 
 function containsLatex(value) {
-  if (typeof value === 'string') return /\\\(|\\\[|\$\$/.test(value);
-  if (Array.isArray(value)) return value.some(containsLatex);
-  return value !== null && typeof value === 'object' && Object.values(value).some(containsLatex);
+  require('./limits.cjs').checkTree(value);
+  const stack = [value];
+  while (stack.length) {
+    const current = stack.pop();
+    if (typeof current === 'string' && /\\\(|\\\[|\$\$/.test(current)) return true;
+    if (current && typeof current === 'object') stack.push(...Object.values(current));
+  }
+  return false;
 }
 
 async function inspectMath(manager, params) {
