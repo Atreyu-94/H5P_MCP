@@ -1,0 +1,33 @@
+name: Test packaged MCP
+on: [push, pull_request]
+jobs:
+  tests:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ['3.12', '3.13']
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv sync --locked
+      - run: uv build
+      - name: Test installed wheel with isolated libraries
+        env:
+          H5P_MCP_ISOLATED_TESTS: '1'
+        run: |
+          $wheel = (Get-ChildItem dist/*.whl).FullName
+          uv pip install --reinstall $wheel
+          $python = if ($IsWindows) { Join-Path $pwd '.venv/Scripts/python.exe' } else { Join-Path $pwd '.venv/bin/python' }
+          $tests = Join-Path $env:RUNNER_TEMP 'h5p-tests'
+          Copy-Item tests $tests -Recurse
+          Set-Location $env:RUNNER_TEMP
+          & $python -m pytest $tests -q

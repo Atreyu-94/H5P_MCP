@@ -111,6 +111,27 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
         await page.close();
         continue;
       }
+      if (process.env.H5P_MCP_GRADING_SMOKE === '1') {
+        // Fixture contract: True is correct; exercise both feedback branches.
+        const choose = async label => {
+          await frame.locator('.h5p-true-false-answer').filter({hasText:new RegExp('^'+label)}).click();
+          await frame.getByRole('button').filter({hasText:/^Check$/}).click();
+        };
+        const score = () => page.evaluate(()=>({score:H5P.instances[0].getScore(),max:H5P.instances[0].getMaxScore(),answered:H5P.instances[0].getAnswerGiven()}));
+        await choose('False');
+        let result = await score();
+        if(result.score !== 0 || result.max !== 1 || !result.answered) throw new Error('Incorrect-answer grading failed');
+        if(containsLatex(contentParams[index])) await frame.locator('.h5p-question-feedback mjx-container').waitFor();
+        await frame.getByRole('button').filter({hasText:/^Retry$/}).click();
+        await choose('True');
+        result = await score();
+        if(result.score !== 1 || result.max !== 1 || !result.answered) throw new Error('Retry/correct-answer grading failed');
+        if(containsLatex(contentParams[index])) await frame.locator('.h5p-question-feedback mjx-container').waitFor();
+        if(errors.length) throw new Error(errors.join('; '));
+        console.log(JSON.stringify({name,wrong:0,correct:1,maximum:1,retry:true,answered:true,errors}));
+        await page.close();
+        continue;
+      }
       const panel = frame.locator('.h5p-panel-button').first();
       if (await panel.count()) {
         await panel.click();
