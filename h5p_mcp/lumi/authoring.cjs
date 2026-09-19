@@ -1,18 +1,27 @@
 // Generic native-semantics checks. This is not a replacement for browser tests
 // or every content type's editor widget/business rules.
 const fs = require('node:fs/promises');
+const {readBounded} = require('./media.cjs');
 const path = require('node:path');
 const { randomUUID } = require('node:crypto');
 const { inspectMath } = require('./math.cjs');
+const { checkTree, limit } = require('./limits.cjs');
+const { scalarErrors } = require('./semantics.cjs');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
 async function prepareActivity(editor, activity, user, upload = false) {
   const errors = [];
+  const diagnostics = [];
+  const identities = new Set();
+  let mediaBytes = 0;
+  try { checkTree(activity.params); } catch (error) {
+    return {ok:false, errors:[error.message], diagnostics:[{code:error.code, path:'params', message:error.message, retryable:false}], warnings:[], mathematics:{detected:false}, activity};
+  }
   const warnings = new Set(['Native field checks do not verify editor-widget rules, HTML safety, playback, accessibility or Moodle grading.']);
   const schemas = new Map();
   const usedAssets = new Set();
   const assets = activity.assets || {};
-  const fail = (at, message) => { errors.push(`${at}: ${message}`); };
+  const fail = (at, message, code = 'INVALID_PARAMETER') => { errors.push(`${at}: ${message}`); diagnostics.push({code, path:at, message, retryable:false}); };
   async function schema(library, at, top = false) {
     const match = /^([A-Za-z0-9][A-Za-z0-9_.-]*) ([0-9]+)\.([0-9]+)$/.exec(library || '');
     if (!match) { fail(at, 'expected exact library "Name major.minor"'); return; }
@@ -57,13 +66,26 @@ async function prepareActivity(editor, activity, user, upload = false) {
     const filename = assets[id];
     if (typeof filename !== 'string' || !path.isAbsolute(filename)) { fail(at, `missing absolute asset path for ${id}`); return value; }
     try {
-      if (!(await fs.stat(filename)).isFile()) throw new Error('not a file');
+      const real = await fs.realpath(filename);
+      const roots = process.env.H5P_MCP_ASSET_ROOTS ? JSON.parse(process.env.H5P_MCP_ASSET_ROOTS) : [];
+      if (roots.length) {
+        let allowed = false;
+        for (const root of roots) {
+          const relative = path.relative(await fs.realpath(root), real);
+          if (!relative || (!relative.startsWith('..' + path.sep) && relative !== '..' && !path.isAbsolute(relative))) allowed = true;
+        }
+        if (!allowed) throw new Error('asset outside authorized roots');
+      }
+      const stat = await fs.stat(real);
+      if (!stat.isFile()) throw new Error('not a file');
+      mediaBytes += stat.size;
+      if (stat.size > limit('ASSET_BYTES', 67108864) || mediaBytes > limit('MEDIA_BYTES', 268435456)) throw new Error('media byte budget exceeded');
       usedAssets.add(id);
       if (typeof value.mime !== 'string' || !value.mime) throw new Error('media mime is required');
       if (upload) {
         // Read a copy: upstream sanitizers/scanners must never mutate the source.
         const saved = await editor.saveContentFile(undefined, entry,
-          { name: path.basename(filename), mimetype: value.mime, data: await fs.readFile(filename) }, user);
+          { name: path.basename(filename), mimetype: value.mime, data: await readBounded(filename, limit('ASSET_BYTES', 67108864)) }, user);
         return { ...value, ...saved };
       }
     } catch (error) { fail(at, `asset ${id}: ${error.message}`); }
@@ -89,27 +111,22 @@ async function prepareActivity(editor, activity, user, upload = false) {
         if (!Array.isArray(value)) { fail(at, 'expected list'); return value; }
         if (entry.min != null && value.length < entry.min) fail(at, `minimum ${entry.min} items`);
         if (entry.max != null && value.length > entry.max) fail(at, `maximum ${entry.max} items`);
-        return Promise.all(value.map((v, i) => field(entry.field, v, `${at}[${i}]`, depth + 1)));
+        { const items = []; for (let i = 0; i < value.length; i++) items.push(await field(entry.field, value[i], `${at}[${i}]`, depth + 1)); return items; }
       case 'library': {
         if (!object(value)) { fail(at, 'expected library object'); return value; }
         if (!entry.options?.includes(value.library)) { fail(at, 'library is not an allowed exact version'); return value; }
         const entries = await schema(value.library, at);
-        return { ...value, subContentId: value.subContentId || randomUUID(),
+        const id = value.subContentId === undefined ? randomUUID() : value.subContentId;
+        if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) fail(`${at}.subContentId`, 'expected UUID', 'INVALID_SUBCONTENT_ID');
+        else if (identities.has(id.toLowerCase())) fail(`${at}.subContentId`, 'duplicate UUID', 'DUPLICATE_SUBCONTENT_ID');
+        else identities.add(id.toLowerCase());
+        return { ...value, subContentId: id,
           params: entries ? await fields(entries, value.params, `${at}.params`, depth + 1) : value.params };
       }
-      case 'text':
-        if (typeof value !== 'string') fail(at, 'expected text');
-        else if (entry.maxLength != null && value.length > entry.maxLength) fail(at, `maximum length ${entry.maxLength}`);
+      case 'text': case 'number':
+        for (const message of scalarErrors(entry, value)) fail(at, message);
         break;
       case 'boolean': if (typeof value !== 'boolean') fail(at, 'expected boolean'); break;
-      case 'number':
-        if (typeof value !== 'number' || !Number.isFinite(value)) fail(at, 'expected finite number');
-        else {
-          if (entry.min != null && value < entry.min) fail(at, `minimum ${entry.min}`);
-          if (entry.max != null && value > entry.max) fail(at, `maximum ${entry.max}`);
-          if (entry.decimals === 0 && !Number.isInteger(value)) fail(at, 'expected integer');
-        }
-        break;
       case 'select': {
         const options = (entry.options || []).map(o => o.value);
         const values = entry.multiple ? value : [value];
@@ -119,18 +136,18 @@ async function prepareActivity(editor, activity, user, upload = false) {
       case 'image': case 'file': return media(entry, value, at);
       case 'audio': case 'video':
         if (!Array.isArray(value)) { fail(at, 'expected media list'); return value; }
-        return Promise.all(value.map((v, i) => media(entry, v, `${at}[${i}]`)));
+        { const items = []; for (let i = 0; i < value.length; i++) items.push(await media(entry, value[i], `${at}[${i}]`)); return items; }
       default: fail(at, `unsupported semantic field type ${entry.type}`);
     }
     return value;
   }
   const entries = await schema(activity.library, 'library', true);
   const params = entries ? await fields(entries, activity.params, 'params', 0) : activity.params;
-  const mathematics = await inspectMath(editor.libraryManager, params);
+  const mathematics = errors.length ? {detected:false} : await inspectMath(editor.libraryManager, params);
   if (mathematics.error) errors.push(mathematics.error);
   if (mathematics.detected) warnings.add('LaTeX requires MathDisplay at playback. Check TeX syntax and rendering in the destination; this is not a symbolic answer checker.');
   for (const id of Object.keys(assets)) if (!usedAssets.has(id)) fail(`assets.${id}`, 'asset is not referenced in a native media field');
-  return { ok: errors.length === 0, errors, warnings: [...warnings], mathematics, activity: { ...activity, params } };
+  return { ok: errors.length === 0, errors, diagnostics, warnings: [...warnings], mathematics, activity: { ...activity, params } };
 }
 
 module.exports = { prepareActivity };
