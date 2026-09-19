@@ -54,3 +54,27 @@ def test_zip_rejected_before_backend(tmp_path, monkeypatch, case):
     report = validate_h5p_package(package)
     assert not report.ok
     assert any(word in ' '.join(report.errors) for word in ['Duplicate', 'budget', 'Unsafe'])
+
+
+def test_backend_deadline_and_details(tmp_path, monkeypatch):
+    from h5p_mcp import lumi_backend as backend
+    (tmp_path / '.ready').touch()
+    monkeypatch.setattr(backend, 'SOURCE', tmp_path)
+    monkeypatch.setattr(backend, 'runtime_dir', lambda: tmp_path)
+    monkeypatch.setenv('H5P_MCP_MAX_SECONDS', '1')
+    bridge = tmp_path / 'bridge.cjs'
+    bridge.write_text('setInterval(()=>{},1000)')
+    with pytest.raises(backend.BackendError) as error:
+        backend._invoke('test')
+    assert error.value.code == 'BACKEND_TIMEOUT'
+    bridge.write_text("process.stdout.write(JSON.stringify({code:'TEST_ERROR',errors:['test'],details:{field:'x'}}));process.exitCode=1")
+    with pytest.raises(backend.BackendError) as error:
+        backend._invoke('test')
+    assert error.value.details == {'field':'x'}
+
+
+def test_batch_budget_precedes_export(monkeypatch):
+    from h5p_mcp.server import export_h5p_batch
+    monkeypatch.setenv('H5P_MCP_MAX_BATCH', '1')
+    with pytest.raises(ValueError, match='BATCH_TOO_LARGE'):
+        export_h5p_batch([{}, {}])

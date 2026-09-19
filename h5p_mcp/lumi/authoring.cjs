@@ -15,7 +15,7 @@ async function prepareActivity(editor, activity, user, upload = false) {
   const identities = new Set();
   let mediaBytes = 0;
   try { checkTree(activity.params); } catch (error) {
-    return {ok:false, errors:[error.message], diagnostics:[{code:error.code, path:'params', message:error.message, retryable:false}], warnings:[], mathematics:{detected:false}, activity};
+    return {ok:false, errors:[error.message], diagnostics:[{code:error.code, path:'params', message:error.message, retryable:false}], warnings:[], mathematics:{detected:false}, activity:{...activity, params:{}}};
   }
   const warnings = new Set(['Native field checks do not verify editor-widget rules, HTML safety, playback, accessibility or Moodle grading.']);
   const schemas = new Map();
@@ -39,7 +39,7 @@ async function prepareActivity(editor, activity, user, upload = false) {
       const result = schemas.get(library);
       if (top && Number(result.metadata.runnable) !== 1) { fail(at, 'library is not runnable'); return; }
       return result.fields;
-    } catch (error) { fail(at, `library ${library} unavailable: ${error.message}`); }
+    } catch (error) { fail(at, `library ${library} unavailable: ${error.message}`, 'LIBRARY_NOT_INSTALLED'); }
   }
   async function fields(entries, value, at, depth) {
     if (!object(value)) { fail(at, 'expected object'); return value; }
@@ -144,7 +144,7 @@ async function prepareActivity(editor, activity, user, upload = false) {
   const entries = await schema(activity.library, 'library', true);
   const params = entries ? await fields(entries, activity.params, 'params', 0) : activity.params;
   const mathematics = errors.length ? {detected:false} : await inspectMath(editor.libraryManager, params);
-  if (mathematics.error) errors.push(mathematics.error);
+  if (mathematics.error) fail('params', mathematics.error, 'LIBRARY_NOT_INSTALLED');
   if (mathematics.detected) warnings.add('LaTeX requires MathDisplay at playback. Check TeX syntax and rendering in the destination; this is not a symbolic answer checker.');
   for (const id of Object.keys(assets)) if (!usedAssets.has(id)) fail(`assets.${id}`, 'asset is not referenced in a native media field');
   return { ok: errors.length === 0, errors, diagnostics, warnings: [...warnings], mathematics, activity: { ...activity, params } };

@@ -9,8 +9,10 @@ from h5p_mcp.skills_extension import register_authoring_skill
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.activity import Activity
+from h5p_mcp.models.reports import PreparationReport, ExportReport, ValidationReport, BatchReport, verification
 from h5p_mcp.lumi_backend import run_lumi
-from h5p_mcp.validators.quiz_validator import validate_h5p_package
+from h5p_mcp.limits import limit
+from h5p_mcp.validators.package_validator import validate_h5p_package
 
 
 def _configure_logging() -> None:
@@ -35,7 +37,7 @@ mcp = FastMCP("h5p-authoring")
 register_authoring_skill(mcp)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
 def list_h5p_activities(query: str = "", installed_only: bool = False,
                         refresh: bool = False, offset: int = 0, limit: int = 20) -> dict[str, Any]:
     """Discover Hub activities and installed versions. Cached/offline by default.
@@ -50,7 +52,7 @@ def list_h5p_activities(query: str = "", installed_only: bool = False,
                     refresh=refresh, offset=offset, limit=limit)
 
 
-@mcp.tool()
+@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
 def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
                             minor_version: int | None = None,
                             install_if_missing: bool = False) -> dict[str, Any]:
@@ -76,7 +78,7 @@ def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
 @mcp.tool()
 def create_h5p_activity(title: str, library: str, params: dict[str, Any],
                         language: str = "en", license: str = "U",
-                        assets: dict[str, str] | None = None) -> dict[str, Any]:
+                        assets: dict[str, str] | None = None) -> PreparationReport:
     """Prepare any installed runnable library using its exact native semantics.
 
     Read get_h5p_activity_schema first, including schemas for nested libraries.
@@ -89,11 +91,13 @@ def create_h5p_activity(title: str, library: str, params: dict[str, Any],
     """
     activity = Activity(title=title, library=library, params=params, language=language,
                         license=license, assets=assets or {})
-    return run_lumi("prepare", activity=activity.model_dump())
+    report = run_lumi("prepare", activity=activity.model_dump())
+    report["verification"] = verification(structure="passed", semantics="passed" if report["ok"] else "failed")
+    return report
 
 
 @mcp.tool()
-def export_h5p(activity: dict[str, Any], output_name: str) -> dict[str, Any]:
+def export_h5p(activity: Activity, output_name: str) -> ExportReport:
     """Recheck a native activity and export it with libraries and local assets.
 
     Pass the activity returned by create_h5p_activity after checking ok=true.
@@ -101,22 +105,24 @@ def export_h5p(activity: dict[str, Any], output_name: str) -> dict[str, Any]:
     """
     result = H5PExporter().export(Activity.model_validate(activity), output_name=output_name)
     return {"output_path": str(result.output_path), "h5p_json": result.h5p_json,
-            "content_json": result.content_json}
+            "content_json": result.content_json, "verification": verification(structure="passed", semantics="passed")}
 
 
 @mcp.tool()
-def validate_h5p(path: str) -> dict[str, Any]:
+def validate_h5p(path: str) -> ValidationReport:
     """Check JSON roots and import a package into empty Lumi storage, not playback."""
     res = validate_h5p_package(path)
-    return {"ok": res.ok, "errors": res.errors, "warnings": res.warnings}
+    return {"ok": res.ok, "errors": res.errors, "warnings": res.warnings, "verification": res.verification}
 
 
 @mcp.tool()
-def export_h5p_batch(activities: list[dict[str, Any]], name_prefix: str = "activity") -> dict[str, Any]:
+def export_h5p_batch(activities: list[Activity], name_prefix: str = "activity") -> BatchReport:
     """Export native activities independently, returning per-item errors and paths.
 
     Successful items remain on disk if another item fails; this is not atomic.
     """
+    if len(activities) > limit("BATCH", 50):
+        raise ValueError("BATCH_TOO_LARGE: maximum batch size exceeded")
     exporter = H5PExporter()
     results = []
     for idx, activity in enumerate(activities):

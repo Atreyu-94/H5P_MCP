@@ -8,6 +8,8 @@ const { createRequire } = require('node:module');
 const load = createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || __dirname, 'package.json'));
 const { H5PEditor, H5PConfig, fsImplementations: stores } = load('@lumieducation/h5p-server');
 const { prepareActivity } = require('./authoring.cjs');
+const {preparationManifest, sameManifest} = require('./manifest.cjs');
+const {limit} = require('./limits.cjs');
 const { attachMathDependency } = require('./math.cjs');
 const user = { id: 'local-author', name: 'Local author', email: '', type: 'local' };
 
@@ -130,6 +132,12 @@ async function main(request) {
     }
     if (!['prepare', 'export'].includes(request.action)) throw new Error('Unknown action');
     const report = await prepareActivity(editor, request.activity, user);
+    if (report.ok) {
+      const manifest = await preparationManifest(editor, libraries, report.activity, report.mathematics);
+      if (request.action === 'export' && request.activity.preparation && !sameManifest(request.activity.preparation, manifest))
+        throw Object.assign(new Error('Preparation dependencies changed; prepare again'), {code:'STALE_PREPARATION'});
+      report.activity.preparation = manifest;
+    }
     if (request.action === 'prepare') return report;
     if (!report.ok) throw new Error(report.errors.join('\n'));
     const uploaded = await prepareActivity(editor, report.activity, user, true);
@@ -153,6 +161,8 @@ async function main(request) {
       await done.catch(() => {});
       throw error;
     }
+    const finalManifest = await preparationManifest(editor, libraries, report.activity, report.mathematics);
+    if (!sameManifest(report.activity.preparation, finalManifest)) throw Object.assign(new Error('Dependencies changed during export'), {code:'STALE_PREPARATION'});
     const saved = await editor.getContent(id, user);
     return { h5p_json: saved.h5p, content_json: saved.params.params };
   } finally {
@@ -162,12 +172,20 @@ async function main(request) {
 
 let input = '';
 process.stdin.setEncoding('utf8');
-process.stdin.on('data', chunk => { input += chunk; });
+let inputBytes = 0;
+process.stdin.on('data', chunk => {
+  inputBytes += Buffer.byteLength(chunk);
+  if (inputBytes > limit('JSON_BYTES', 16777216)) {
+    process.stdout.write(JSON.stringify({ok:false, code:'INPUT_TOO_LARGE', errors:['JSON byte budget exceeded']}));
+    process.exit(1);
+  }
+  input += chunk;
+});
 process.stdin.on('end', async () => {
   try { process.stdout.write(JSON.stringify(await main(JSON.parse(input)))); }
   catch (error) {
     process.stderr.write(`${error.stack || error}\n`);
-    process.stdout.write(JSON.stringify({ ok: false, errors: [error.message], details: error.details || error.errors }));
+    process.stdout.write(JSON.stringify({ ok: false, code:error.code || 'BACKEND_ERROR', errors: [error.message], details: error.details || error.errors }));
     process.exitCode = 1;
   }
 });
