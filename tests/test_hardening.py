@@ -299,3 +299,26 @@ def test_cancel_while_waiting_for_lock(tmp_path, monkeypatch):
                 group.cancel_scope.cancel()
     with FileLock(str(tmp_path/'backend.lock')):
         anyio.run(exercise)
+
+
+def test_tool_deadline_is_not_reset_between_batch_operations(tmp_path, monkeypatch):
+    import anyio
+    import time
+    from h5p_mcp import lumi_backend as backend
+    from h5p_mcp.jobs import cancellable
+    monkeypatch.setenv('H5P_MCP_MAX_SECONDS','1')
+    monkeypatch.setattr(backend,'data_dir',lambda:tmp_path)
+    calls=[]
+    def invoke(*args,**kwargs):
+        calls.append(1)
+        time.sleep(0.15)
+        return {}
+    monkeypatch.setattr(backend,'_invoke',invoke)
+    @cancellable
+    def batch():
+        for _ in range(50): backend.run_lumi('export')
+    start=time.monotonic()
+    with pytest.raises(RuntimeError,match='BACKEND_TIMEOUT'):
+        anyio.run(batch)
+    assert 1 < len(calls) < 12
+    assert time.monotonic()-start < 2
