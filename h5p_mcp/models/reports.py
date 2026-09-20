@@ -27,6 +27,7 @@ class PreparationReport(TypedDict):
     warnings: list[str]
     mathematics: dict[str, Any]
     activity: dict[str, Any]
+    transformations: list[dict[str, Any]]
     verification: Verification
 
 

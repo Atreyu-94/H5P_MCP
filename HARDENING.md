@@ -2,10 +2,20 @@
 
 Preparation checks native field types, required fields/defaults, list bounds,
 select options, numeric bounds and decimal precision, explicit text regexps,
-and explicit plain-text length limits. HTML widgets ignore `maxLength` as H5P
-specifies. Values affecting answers are rejected rather than rounded. Widget
-business rules, HTML sanitization, accessibility and symbolic equivalence are
-not covered by these checks.
+and explicit plain-text length limits. The generic checker treats numeric `step`
+as an editor hint, not an enforced multiple, and ignores HTML `maxLength`.
+The pinned Lumi enforcer is then run on a copy: it sanitizes HTML/tags and can
+truncate HTML despite that generic rule. Any persisted change blocks preparation
+and export with `LUMI_TRANSFORMATION_REQUIRED`, reporting `transformations` with
+paths and before/after values. Review and explicitly resubmit a corrected value;
+answers and LaTeX are never silently rewritten by this adapter. Lumi's enforcer
+is incomplete, so this contrast is not a comprehensive HTML security guarantee.
+Widget business rules, accessibility and symbolic equivalence still need tests.
+
+Title/language/license are contrasted with Lumi's pinned save-metadata schema.
+Language also must be accepted by Intl.Locale. Valid BCP 47 tags that the H5P
+schema cannot store (for example es-419) receive INVALID_METADATA; they are not
+silently shortened. The supported intersection, not all BCP 47, is the contract.
 
 Missing nested `subContentId` values receive UUIDs. Supplied UUIDs must be valid
 and unique within the activity; valid identities survive repeated preparation.
@@ -63,6 +73,8 @@ The worker also rejects portable path collisions (NFC/lowercase); Python preflig
 additionally applies full Unicode case folding. The preflight and later import are not an immutable
 file snapshot. JSON reads are bounded. Node input and Python output collection are
 bounded. Process timeout and local interruption kill and reap the child.
+The parent owns the worker's TMP/TEMP/TMPDIR and removes its temporary files
+even when a hard kill prevents JavaScript finally blocks from executing.
 Output is monitored in temporary files at 50 ms intervals; these are operational
 budgets, not an OS memory/disk sandbox. MCP tools run in a cancellable thread
 boundary: cancellation is polled during lock waits, ZIP reads and subprocess
