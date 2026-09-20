@@ -12,7 +12,10 @@ import sys
 import tarfile
 import tempfile
 import time
+import threading
 from zipfile import ZipFile
+
+import psutil
 
 
 def main():
@@ -22,6 +25,7 @@ def main():
     repo = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo))
     from h5p_mcp.lumi_backend import SOURCE, setup_lumi, run_lumi
+    import h5p_mcp.lumi_backend as backend
     from h5p_mcp.server import create_h5p_activity, export_h5p_batch
     from h5p_mcp.models.activity import Activity
     from h5p_mcp.exporters.h5p_exporter import H5PExporter
@@ -43,15 +47,52 @@ def main():
               'legacy_exports': {p: digest(repo / p) for p in tracked if p.startswith('h5p_mcp/exports/')},
               'lumi_archive': {'license': package.get('license'), 'version': package['version'], 'license_files': licenses,
                                'source_files': sum(n.startswith('package/src/') for n in names)},
-              'measurements': {}, 'not_measured': ['OS page-cache cold start', 'process-tree peak RSS', 'handles', 'contended lock wait', 'persistent Node/Bun (not implemented)', 'batch 100 with override']}
+              'harness_sha256': digest(Path(__file__)), 'psutil': psutil.__version__,
+              'sampling_interval_ms': 10,
+              'measurements': {}, 'not_measured': ['OS page-cache cold start', 'persistent Node/Bun (not implemented)']}
+    # Test-process instrumentation only; do not change production lock behavior.
+    original_lock = backend.FileLock
+    waits = []
+    class MeasuredLock(original_lock):
+        def acquire(self, *args, **kwargs):
+            start = time.perf_counter()
+            result = super().acquire(*args, **kwargs)
+            waits.append((time.perf_counter() - start) * 1000)
+            return result
+    backend.FileLock = MeasuredLock
     def measure(name, count, function):
         samples = []
+        resources = []
         for i in range(count):
-            start = time.perf_counter()
-            function(i)
-            samples.append((time.perf_counter() - start) * 1000)
+            stop = threading.Event()
+            peak = {'rss_bytes': 0, 'handles_or_fds': 0}
+            process = psutil.Process()
+            def sample():
+                while not stop.is_set():
+                    rss = handles = 0
+                    for member in [process, *process.children(recursive=True)]:
+                        try:
+                            rss += member.memory_info().rss
+                            handles += member.num_handles() if os.name == 'nt' else member.num_fds()
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            continue
+                    peak['rss_bytes'] = max(peak['rss_bytes'], rss)
+                    peak['handles_or_fds'] = max(peak['handles_or_fds'], handles)
+                    stop.wait(.01)
+            thread = threading.Thread(target=sample, daemon=True)
+            wait_offset = len(waits)
+            thread.start()
+            try:
+                start = time.perf_counter()
+                function(i)
+                samples.append((time.perf_counter() - start) * 1000)
+            finally:
+                stop.set()
+                thread.join()
+            peak['lock_acquire_ms'] = sum(waits[wait_offset:])
+            resources.append(peak)
         report['measurements'][name] = {'samples_ms': samples, 'median_ms': statistics.median(samples),
-            'p95_ms': sorted(samples)[math.ceil(count * .95) - 1]}
+            'p95_ms': sorted(samples)[math.ceil(count * .95) - 1], 'resources': resources}
         print(name, round(statistics.median(samples), 2), flush=True)
     with tempfile.TemporaryDirectory(prefix='h5p-baseline-') as temporary:
         root = Path(temporary)
@@ -91,6 +132,32 @@ def main():
             report['batch_100_default'] = 'rejected'
         else:
             raise AssertionError('Batch limit not enforced')
+        os.environ['H5P_MCP_MAX_BATCH'] = '100'
+        def large_batch(_):
+            value = export_h5p_batch([activity] * 100, name_prefix='baseline-large')
+            assert value['succeeded'] == 100, value
+        measure('batch_100_override', 1, large_batch)
+        report['batch_100_override'] = {'H5P_MCP_MAX_BATCH': 100, 'succeeded': 100}
+        # Synchronize with an independent lock owner; timeout rather than hang.
+        lock_path = root / 'data/backend.lock'
+        signal = root / 'lock-ready'
+        code = ('import sys,time; from pathlib import Path; from filelock import FileLock; '
+                'lock=FileLock(sys.argv[1]); lock.acquire(); Path(sys.argv[2]).touch(); '
+                'time.sleep(1); lock.release()')
+        owner = subprocess.Popen([sys.executable, '-c', code, str(lock_path), str(signal)])
+        try:
+            deadline = time.monotonic() + 15
+            while not signal.exists():
+                if owner.poll() is not None or time.monotonic() > deadline:
+                    raise RuntimeError('Lock owner failed to become ready')
+                time.sleep(.01)
+            measure('catalog_contended_lock', 1, lambda _: run_lumi('catalog'))
+            owner.wait(timeout=15)
+            assert owner.returncode == 0
+        finally:
+            if owner.poll() is None:
+                owner.kill()
+                owner.wait()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
 
