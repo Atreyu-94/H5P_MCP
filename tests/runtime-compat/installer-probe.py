@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+import platform
 from pathlib import Path
 import shutil
 import subprocess
@@ -75,13 +76,40 @@ try:
                     dependencies[name] = 'UNRESOLVED'
             edges.append({'package':identity,'dependencies':dependencies})
         return sorted(edges,key=lambda value:json.dumps(value,sort_keys=True))
-    report['checks']['resolved_dependency_graph'] = 'passed' if graph(reference,npm)==graph(replay,bun) else 'failed'
+    # Bun may retain the musl optional binary on glibc. Keep the inventory diff,
+    # allow only this declared inactive package, and verify actual native loading
+    # below. No arbitrary extra packages or version drift are accepted.
+    extra = '@node-rs/crc32-linux-x64-musl'
+    inactive = set()
+    if platform.system() == 'Linux' and platform.libc_ver()[0] == 'glibc' and extra in bun and extra not in npm:
+        wrapper = json.loads((replay/'node_modules/@node-rs/crc32/package.json').read_text())
+        assert wrapper['optionalDependencies'][extra] == bun[extra]['version']
+        inactive.add(extra)
+    report['reviewed_inactive_optional_packages'] = sorted(inactive)
+    compared_bun = {key:value for key,value in bun.items() if key not in inactive}
+    report['checks']['resolved_dependency_graph'] = 'passed' if graph(reference,npm)==graph(replay,compared_bun) else 'failed'
     report['layout_differences'] = len(report['package_differences'])
     report['checks']['frozen_install'] = 'passed'
     report['native_files'] = {label:{p.relative_to(directory/'node_modules').as_posix():hashlib.sha256(p.read_bytes()).hexdigest()
                                    for p in (directory/'node_modules').rglob('*.node')}
                               for label,directory in [('npm',reference),('bun',replay)]}
-    report['checks']['native_files'] = 'passed' if report['native_files']['npm']==report['native_files']['bun'] else 'failed'
+    compared_native = {key:value for key,value in report['native_files']['bun'].items()
+                       if not any(key.startswith(name+'/') for name in inactive)}
+    report['checks']['native_files'] = 'passed' if report['native_files']['npm']==compared_native else 'failed'
+    script = """
+const assert=require('node:assert/strict'), {createRequire}=require('node:module');
+const load=createRequire(process.argv[1]+'/package.json');
+assert.equal(load('@node-rs/crc32').crc32('123456789'),0xcbf43926);
+console.log(JSON.stringify(Object.keys(require.cache).filter(p=>p.endsWith('.node'))));
+"""
+    loaded = {}
+    for label, executable in [('node',shutil.which('node')),('bun',args.bun)]:
+        paths = json.loads(subprocess.check_output([executable,'-e',script,str(replay)],text=True,timeout=30))
+        assert paths, 'No loaded native addon observed'
+        loaded[label] = {Path(path).relative_to(replay/'node_modules').as_posix():hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in paths}
+        assert loaded[label] == report['native_files']['npm'], 'Loaded native binary differs from npm reference'
+    report['loaded_native_files'] = loaded
+    report['checks']['loaded_native_crc'] = 'passed'
     # Persist the generated lock for review; it is not the product's lockfile.
     shutil.copyfile(lock,args.output.with_suffix('.bun.lock'))
 finally:
