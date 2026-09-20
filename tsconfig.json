@@ -7,7 +7,7 @@
     "noImplicitOverride": true,
     "skipLibCheck": true,
     "types": [
-      "node"
+      "bun"
     ],
     "rootDir": "src",
     "outDir": "dist/core",
