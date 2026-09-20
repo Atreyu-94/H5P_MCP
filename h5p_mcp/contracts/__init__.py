@@ -49,13 +49,26 @@ def input_diagnostics(arguments: dict) -> list[dict]:
     errors = Draft202012Validator(schema('prepare_local_input')).iter_errors(arguments)
     # Read one extra error to report truncation; never materialize an unbounded list.
     items = []
+    missing_groups = set()
     for error in islice(errors, 101):
         location = list(error.absolute_path)
         if error.validator == 'required':
-            location.append(next(key for key in error.validator_value if key not in error.instance))
+            group = pointer(location)
+            if group in missing_groups:
+                continue
+            missing_groups.add(group)
+            for key in error.validator_value:
+                if key not in error.instance:
+                    items.append(diagnostic('SCHEMA_VALIDATION_FAILED', pointer([*location, key]),
+                                            expected='Required field', actual='Absent'))
+                    if len(items) >= 101:
+                        return items
+            continue
         expected = f'{error.validator}: {json.dumps(error.validator_value, ensure_ascii=True)}'[:256]
         items.append(diagnostic('SCHEMA_VALIDATION_FAILED', pointer(location), expected=expected,
                                 actual=f'Value type: {type(error.instance).__name__}'))
+        if len(items) >= 101:
+            break
     return items
 
 

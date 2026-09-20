@@ -29,8 +29,11 @@ códigos a partir de palabras en mensajes internos. Los códigos de archivo, Hub
 exportación se aplicarán a sus nuevas interfaces en los siguientes incrementos.
 No se afirma aún paridad contractual vNext para validación de paquetes o batch.
 
-Verificación C10: 113 pruebas de la suite completa pasaron en Windows con Lumi
-aislado. Incluyen cliente MCP, preparación real, errores operativos simulados,
+Verificación C10: 113 pruebas iniciales con dependencias bloqueadas; después,
+114 pruebas de la suite completa pasaron desde el wheel instalado fuera del
+checkout en Windows con Lumi aislado. La instalación del wheel resolvió
+FastMCP 4.0.5 dentro del rango permitido (el lock fija 4.0.3). Incluyen cliente
+MCP, preparación real, exportación por stdio, errores operativos simulados,
 ausencia de datos sensibles, límite de diagnósticos, Unicode/escapes y paridad
 de JSON Pointer entre Python y JavaScript. No es una nueva prueba en Moodle.
 

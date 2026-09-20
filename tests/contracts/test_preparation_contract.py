@@ -108,6 +108,11 @@ def test_code_map_is_closed_and_versioned():
         Draft202012Validator(schema('diagnostic')).validate(diagnostic(code))
 
 
+def test_each_missing_field_has_its_own_pointer():
+    data = payload(call({}))
+    assert {d['pointer'] for d in data['diagnostics']} == {'/title', '/library', '/params'}
+
+
 def test_javascript_and_python_pointer_agree():
     module = str(files('h5p_mcp').joinpath('lumi/diagnostics.cjs'))
     parts = ['params', 'a.b[0]/~', 1, '', '~1']

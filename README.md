@@ -200,3 +200,24 @@ retain their authors' licenses.
 
 See [HARDENING.md](HARDENING.md) for preparation manifests, stable diagnostics,
 resource limits, verification stages and isolated integration tests.
+
+## Versioned preparation contract (F2/C10)
+
+`prepare_h5p_activity` is the new local preparation interface. It accepts the
+same title, exact library, native params, language, license and local assets as
+`create_h5p_activity`. On success, pass its `activity` object to `export_h5p`.
+The existing tools remain available during migration.
+
+Reports use `contract_version: "1"`. Invalid input returns `ok: false` with
+`kind: "validation"`; backend failures return `kind: "operational_error"` and
+MCP `isError: true`. Diagnostics include an escaped JSON Pointer, stable code,
+retryability and a suggested correction. At most 100 diagnostics are returned,
+with `diagnostics_truncated` indicating omitted entries. Failed preparations
+do not return the activity or raw backend messages. Unexecuted verification
+stages remain `not_run`; preparation does not certify Moodle playback/grading.
+
+Read `h5p-contract://v1/schema` and `h5p-contract://v1/codes` through MCP resources
+for the packaged JSON authority. This increment has no persistent preparation
+IDs or remote profile; those require the later storage phase. See
+[F2 implementation status](docs/architecture/005-f2-contracts.md) for the scope
+and remaining increments.

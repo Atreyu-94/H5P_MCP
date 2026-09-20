@@ -39,6 +39,11 @@ def test_installed_mcp_stdio(tmp_path):
                     {"library": "H5P.Accordion 1.0", "title": "Accordion", "params": {"panels": [{"title": "Panel", "content": {"library": "H5P.AdvancedText 1.1", "params": {"text": "<p>Content</p>"}}}]}},
                 ]
                 for index, quiz in enumerate(examples):
+                    prepared = await session.call_tool('prepare_h5p_activity', quiz)
+                    assert not prepared.is_error, prepared
+                    preparation = prepared.structured_content or json.loads(prepared.content[0].text)
+                    assert preparation['ok'] and preparation['contract_version'] == '1'
+                    quiz = preparation['activity']
                     result = await session.call_tool("export_h5p", {"activity": quiz, "output_name": f"activity_{index}"})
                     assert not result.is_error, result
                     data = result.structured_content or json.loads(result.content[0].text)
