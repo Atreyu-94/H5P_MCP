@@ -99,6 +99,15 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
             for label in ('node','bun'):
                 select(label)
                 values.append(backend.run_lumi(action, **payload))
+            # Evidence timestamps describe each observation, not runtime behavior.
+            # Validate them, then normalize only this explicitly volatile field.
+            if action == 'discover':
+                from datetime import datetime
+                for value in values:
+                    for item in value['activities']:
+                        for evidence in item.get('evidence', []):
+                            datetime.fromisoformat(evidence['checked_at'].replace('Z', '+00:00'))
+                            evidence['checked_at'] = '<observation-time>'
             if values[0] != values[1]:
                 (root / f'{action}-difference.json').write_text(json.dumps(
                     {'node':values[0], 'bun':values[1]},indent=2)+'\n',encoding='utf-8')
