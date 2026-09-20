@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 10: F3 implementada y verificada localmente; CI multiplataforma pendiente. Siguiente: F4. Python y el MCP activo se conservan.
+- Fecha: 2026-09-20. Revisión 11: F3 con CI aprobado; F4 implementada y verificada en Windows, pendiente de CI multiplataforma. Python y el MCP activo se conservan.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -289,19 +289,21 @@ Verificación del cierre F2: 139 pruebas aprobadas desde el wheel instalado fuer
 - [x] F3.7 Paridad A/B/C: 9 fixtures y 9 proyecciones; JSON, dependencias, medios, UUID y diagnósticos.
 - [x] F3.8 Instalación vacía/cacheada, primeras llamadas, 20 muestras cortas y lotes 10/100 medidos. Regresiones documentadas; caché física del SO no vaciada.
 
-Commit: `f47fb7b`. Validación: 139 pruebas del wheel, 6 del núcleo/IPC y navegador aprobados. Evidencia y límites: docs/architecture/006-typescript-core.md y f3-local-summary.json. CI pendiente; comparador de fechas de F2 corregido en `eeb44aa`.
+Commit: `f47fb7b`. Validación: 139 pruebas del wheel, 6 del núcleo/IPC y navegador aprobados. Evidencia y límites: docs/architecture/006-typescript-core.md y f3-local-summary.json. CI aprobado: 35492264955, 35492264817 y 35492264781. Comparador de fechas de F2 corregido en `eeb44aa`.
 
 **Aceptación:** corpus positivo/negativo equivalente o diferencias aprobadas/documentadas; importación fresca y navegador conservan comportamiento; rollback al runtime Python disponible.
 
 ## 8. F4 — MCP Bun stdio, CLI y Skills
 
-- [ ] F4.1 SDK oficial v2 sobre los casos de uso en proceso Bun persistente; stdout solo protocolo, logs stderr, negociación y cierre limpio.
-- [ ] F4.2 CLI stdio, validate, export y administración local; HTTP se habilita en F6.
-- [ ] F4.3 Migrar Skills con digest/tamaño/URI allowlist. Verificar estructura real de SEP-2640: no asumir que cada archivo de referencia debe publicarse como una skill separada en skills/list.
-- [ ] F4.4 SKILL.md breve y referencias workflow, selecting-content-types, native-semantics, media, mathematics, moodle-handoff, validation-errors y security. Ejemplos TF/MC/Accordion/QuestionSet validados. Cada recurso adicional registrado y autorizado, nunca ruta arbitraria.
-- [ ] F4.5 Conformidad oficial fijada por commit/versión; escenarios stdio, cliente con Skills y cliente sin extensión, fallback explícito.
+- [x] F4.1 SDK oficial v2 sobre los casos de uso en proceso Bun persistente; stdout solo protocolo, logs stderr, negociación y cierre limpio.
+- [x] F4.2 CLI stdio, validate, export y administración local; HTTP se habilita en F6.
+- [x] F4.3 Migrar Skills con digest/tamaño/URI allowlist. Verificar estructura real de SEP-2640: no asumir que cada archivo de referencia debe publicarse como una skill separada en skills/list.
+- [x] F4.4 SKILL.md breve y referencias workflow, selecting-content-types, native-semantics, media, mathematics, moodle-handoff, validation-errors y security. Ejemplos TF/MC/Accordion/QuestionSet validados. Cada recurso adicional registrado y autorizado, nunca ruta arbitraria.
+- [x] F4.5 Interoperabilidad stdio con SDK oficial v2, Skills y fallback legacy aprobados. La CLI oficial fijada en 7169291 solo admite HTTP (--url); su ejecución queda en F6, sin atribuir conformidad HTTP a estas pruebas.
 - [ ] F4.6 Empaquetar con bun pm pack --ignore-scripts después del build e instalar tarball externo sin checkout/caché, con dist, Skills, notices y dependencias Lumi/N-API completas. Probar bunx --bun <paquete>@<version> stdio y shebang #!/usr/bin/env bun en tres SO; comprobar proceso efectivo con Node/Python ausentes del entorno de ejecución. El paquete/versión concretos se deciden en F0, no copiar h5p-mcp@0.2.0 como identidad disponible.
-- [ ] F4.7 Documentar uvx→bunx y transición hacia la última release Python congelada; F4-R decide la retirada tras paridad. No modificar ni desinstalar el MCP activo automáticamente.
+- [x] F4.7 Documentar uvx→bunx y transición hacia la última release Python congelada; F4-R decide la retirada tras paridad. No modificar ni desinstalar el MCP activo automáticamente.
+
+Evidencia F4: docs/architecture/007-bun-mcp.md. Build/lint, 9 pruebas Bun (72 assertions), Skills Python y tarball externo con cuatro ejemplos aprobados. F4.6 está implementada y aprobada localmente; falta el resultado CI de tres SO. F4-R conserva su gate de paridad de seguridad antes de retirar Python.
 
 **Aceptación:** paridad funcional y de protocolo, recursos/Skills correctos, tarball instalable y sin procesos huérfanos. Retirar Python solo tras gate y transición acordada.
 
@@ -463,3 +465,4 @@ Referencias de trabajo de la auditoría que deben verificarse y fijarse en sus s
 - [Tasks](https://tasks.extensions.modelcontextprotocol.io/specification/draft/tasks).
 - [H5P semantics](https://h5p.org/semantics).
 - [OWASP File Upload](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html). La referencia [1] de la auditoría enlaza Input Validation aunque describe File Upload; distinguir ambas al construir pruebas.
+
