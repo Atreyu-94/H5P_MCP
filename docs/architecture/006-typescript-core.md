@@ -1,5 +1,7 @@
 # F3 — Núcleo TypeScript
 
+> Registro histórico de la transición. Los comandos Python se conservan en `python-final-f4`; main usa Bun y tests/tooling/retirement-parity.mjs como comparación Node/Bun.
+
 El núcleo es opt-in y conserva Python como runtime público. Se compila con
 TypeScript 7.0.2 strict, usa Bun 1.4.2 y conserva el tarball Lumi/Core 1.28 fijado.
 Las reglas, medios, MathDisplay, grafo y manifiestos están portados; la frontera

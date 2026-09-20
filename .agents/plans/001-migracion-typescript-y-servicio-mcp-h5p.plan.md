@@ -323,6 +323,8 @@ Evidencia F4: docs/architecture/007-bun-mcp.md. CI aprobado: 35526615814, 355266
 
 F4-R: `592e166` (controles) y `3d3ac45` (retirada). Tabla de paridad: docs/architecture/008-python-retirement.md. Build/lint, 13 pruebas Bun (88 assertions), 14 comparaciones Node/Bun, CLI y paquete externo aprobados. CI Windows/Linux/macOS: 35527831750. Rollback: `python-final-f4` (`93060c5`), con CI automático conservado.
 
+Limpieza posterior de R.5: retirados de main los 25 archivos Python históricos y sus dos lanzadores dependientes. El CI congelado sigue usando `93060c5`; corpus Bun/Node y evidencia histórica conservados. Inventario de licencias actual pendiente de F7.
+
 ## 9. F5 — Stores, snapshots e idempotencia
 
 - [x] F5.1 asset_id, package_id, preparation_id y artifact_id opacos con owner/tenant/TTL. Los IDs no son credenciales: autorización por objeto en cada acceso.

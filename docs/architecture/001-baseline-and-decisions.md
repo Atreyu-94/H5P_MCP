@@ -1,5 +1,7 @@
 # F0 — Línea base y decisiones de transición
 
+> Registro histórico. Los comandos Python y sus herramientas corresponden al checkout `python-final-f4`, no a main. El producto y sus pruebas actuales usan Bun; véase 008-python-retirement.md.
+
 Estado: F0 cerrado para el baseline local disponible, 2026-09-19. Base del producto: `ac10c502eec1d1c19a8c75caf86bdc5f911407c6`. La revisión 3 del plan ubica la comparación de los núcleos futuros en F3.8; no se considera ejecutada.
 No se promueve Bun ni se modifica el MCP activo. Las limitaciones de medición y verificaciones pendientes se detallan al final; no constituyen certificación B0.
 
