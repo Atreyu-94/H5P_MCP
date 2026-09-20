@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 5: B0/F1 cerrados para los destinos definidos, con CI verde de 7bb52c5 en el fork Atreyu-94/H5P_MCP. F2 iniciada por C10: preparación local con contratos JSON y diagnósticos versionados; 113 pruebas pasan. Evidencia en docs/architecture/005-f2-contracts.md. F2 no está cerrada: faltan administración, descubrimiento y contratos de las demás operaciones. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
+- Fecha: 2026-09-19. Revisión 6: B0/F1 cerrados para los destinos definidos. C10 tiene CI verde de 9ad543b en Atreyu-94/H5P_MCP. C11 implementa administración local con scopes, modo inmutable y consultas sin mutación del estado de autoría. Evidencia y pruebas en docs/architecture/005-f2-contracts.md. F2 no está cerrada: faltan C12 y contratos de las demás operaciones. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -226,7 +226,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 - [ ] F2.2 Diagnósticos: code, JSON Pointer, message, expected/actual acotados, retryable y suggested_fix. No devolver secretos ni material completo. Distinguir reintento transitorio de reparación del input.
 - [ ] F2.3 Mapping versionado de códigos actuales a LIBRARY_NOT_INSTALLED, LIBRARY_VERSION_MISMATCH, SCHEMA_VALIDATION_FAILED, UNSUPPORTED_SEMANTIC_TYPE, STALE_PREPARATION, ASSET_NOT_FOUND, ASSET_TOO_LARGE, MIME_MISMATCH, UNSAFE_ARCHIVE, OUTPUT_ALREADY_EXISTS, HUB_UNAVAILABLE y TARGET_INCOMPATIBLE.
 - [ ] F2.4 Validación negativa retorna informe; fallo operativo usa isError y conserva detalles. Mapear excepciones Python, Node, batch y transporte consistentemente.
-- [ ] F2.5 Consultas puras; separar refresh_h5p_catalog, install_h5p_library e install_h5p_library_package. Scopes al listar e invocar; imagen inmutable deshabilita administración. Anotaciones completas coherentes con efectos, nunca usadas como autorización.
+- [x] F2.5 Consultas puras; separar refresh_h5p_catalog, install_h5p_library e install_h5p_library_package. Scopes al listar e invocar; imagen inmutable deshabilita administración. Anotaciones completas coherentes con efectos, nunca usadas como autorización. C11 implementa el perfil local y el bloqueo por H5P_MCP_IMMUTABLE; la imagen OCI y OAuth corresponden a F6/F7. Ver docs/architecture/005-f2-contracts.md.
 - [ ] F2.6 Contrato compacto con requeridos/defaults/tipos/restricciones/subbibliotecas y ejemplos probados. Recurso bruto por URI/digest; x-h5p documenta widgets y límites. Diferencial contra semántica fuente.
 - [ ] F2.7 Catálogo con structurally_authorable y checks/versión/digest/fecha/evidencia; compatibilidad temporal del booleano anterior sin atribuirle pruebas inexistentes.
 - [ ] F2.8 Export retorna resource link, MIME, tamaño, SHA-256 y manifest, nunca paquete base64 en respuesta. Recuperación de recursos acotada.

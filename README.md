@@ -5,15 +5,15 @@ type's native schema instead of four fixed quiz templates.
 
 ## Workflow
 
-1. `list_h5p_activities(query, installed_only, refresh, offset, limit)` discovers
+1. `search_h5p_types(query, installed_only, offset, limit)` discovers
    cached Hub entries and installed runnable libraries. Default page size 20,
-   maximum 100. `refresh=true` explicitly contacts the Hub; a fresh cache may be
+   maximum 100. `refresh_h5p_catalog` explicitly contacts the Hub; a fresh cache may be
    empty. `last_updated` is Unix time in milliseconds, or null.
 2. `get_h5p_activity_schema(machine_name, major_version, minor_version,
    install_if_missing)` returns native semantics and metadata. Supply both
    version numbers for an exact version, or neither for newest installed.
-   `install_if_missing=true` explicitly downloads the current Hub version and
-   dependencies if absent. Unavailable historical versions are not substituted.
+   `install_h5p_library` downloads the current Hub version and dependencies if
+   absent and administration is enabled. Historical versions are not substituted.
 3. `create_h5p_activity(title, library, params, language="en", license="U",
    assets={})` returns `{ok, errors, warnings, activity}`. It checks exact-version
    native fields and fills declared defaults and nested subcontent IDs.
@@ -172,7 +172,7 @@ Desktop or Moodle Core.
 
 Integration tests require installed TrueFalse 1.8, MultiChoice 1.16, Blanks 1.14,
 QuestionSet 1.21, Accordion 1.0 and dependencies including AdvancedText 1.1 and
-Image 1.1. Install explicitly through schema tools or trusted packages. Tests
+Image 1.1. Install explicitly through administrative tools or trusted packages. Tests
 never silently fetch missing activity libraries.
 
 ```powershell
@@ -221,3 +221,33 @@ for the packaged JSON authority. This increment has no persistent preparation
 IDs or remote profile; those require the later storage phase. See
 [F2 implementation status](docs/architecture/005-f2-contracts.md) for the scope
 and remaining increments.
+
+## Local library administration (F2/C11)
+
+Administration is disabled by default. To enable selected administrative tools
+for a local stdio process, set host environment variables before starting it:
+
+```powershell
+$env:H5P_MCP_ADMIN_SCOPES = 'catalog:refresh libraries:install'
+h5p-mcp
+```
+
+`catalog:refresh` exposes `refresh_h5p_catalog`. `libraries:install` exposes
+`install_h5p_library` and `install_h5p_library_package(path)`. Local package
+installation enforces ZIP checks and `H5P_MCP_PACKAGE_ROOTS`, may update existing
+libraries, and never initializes npm or downloads Hub content implicitly.
+Grant either scope independently; unknown scope names fail startup.
+
+`H5P_MCP_IMMUTABLE=1` hides and rejects every administrative tool regardless of
+scopes, and disables `--setup-lumi`. Configuration is frozen at process startup.
+Tool annotations do not grant permissions. Calling a hidden tool directly is
+also rejected, including through stdio. These are local host permissions, not
+OAuth or a remote multi-tenant security boundary.
+
+Legacy `list_h5p_activities(refresh=true)` and
+`get_h5p_activity_schema(install_if_missing=true)` require the corresponding
+scope. Their default read operations remain compatible. Ordinary catalog/schema
+queries preserve library/cache/configuration contents and use cleaned temporary
+storage. The existing backend coordination lock is still used to serialize reads
+against installations. CLI setup remains an explicit operator action in mutable
+mode and does not require MCP tool scopes.

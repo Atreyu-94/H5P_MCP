@@ -7,6 +7,7 @@ from typing import Any
 from fastmcp import FastMCP
 from h5p_mcp.skills_extension import register_authoring_skill
 from h5p_mcp.contracts.tool import register_preparation
+from h5p_mcp import administration
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.activity import Activity
@@ -36,6 +37,7 @@ def _configure_logging() -> None:
 
 
 mcp = FastMCP("h5p-authoring")
+mcp.add_middleware(administration.AdministrationMiddleware())
 register_authoring_skill(mcp)
 register_preparation(mcp)
 
@@ -48,22 +50,25 @@ def local_tool(**options):
     return register
 
 
-@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True})
 def list_h5p_activities(query: str = "", installed_only: bool = False,
                         refresh: bool = False, offset: int = 0, limit: int = 20) -> dict[str, Any]:
     """Discover Hub activities and installed versions. Cached/offline by default.
 
-    refresh=True explicitly contacts the H5P Hub and updates the local catalog.
+    Legacy refresh=True requires catalog:refresh. Prefer search_h5p_types and
+    the separate administrative refresh_h5p_catalog tool.
     Paginated results distinguish availability from supported MCP authoring.
     core_compatible refers to the Hub version, not every installed version.
     """
     if offset < 0 or not 1 <= limit <= 100:
         raise ValueError("offset must be non-negative and limit must be between 1 and 100")
+    if refresh:
+        administration.require('catalog:refresh')
     return run_lumi("discover", query=query, installed_only=installed_only,
                     refresh=refresh, offset=offset, limit=limit)
 
 
-@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True})
 def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
                             minor_version: int | None = None,
                             install_if_missing: bool = False) -> dict[str, Any]:
@@ -71,7 +76,7 @@ def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
 
     With no version, select the newest installed major/minor. Provide both
     version numbers to read an exact installed version. By default no download
-    occurs. install_if_missing=True explicitly downloads the current Hub version
+    occurs. Legacy install_if_missing=True requires libraries:install and downloads the current Hub version
     and dependencies when the requested library is absent. It never upgrades an
     already installed version. Use the returned exact library in create_h5p_activity.
     """
@@ -82,11 +87,55 @@ def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
         raise ValueError("Provide both major_version and minor_version, or neither")
     if major_version is not None and (major_version < 0 or minor_version < 0):
         raise ValueError("Library version numbers must be non-negative")
+    if install_if_missing:
+        administration.require('libraries:install')
     return run_lumi("schema", machine_name=machine_name, major_version=major_version,
                     minor_version=minor_version, install_if_missing=install_if_missing)
 
 
-@local_tool()
+@local_tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False})
+def search_h5p_types(query: str = '', installed_only: bool = False,
+                     offset: int = 0, limit: int = 20) -> dict[str, Any]:
+    """Search installed/cached H5P types without refreshing or installing libraries."""
+    return list_h5p_activities(query, installed_only, False, offset, limit)
+
+
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True})
+def refresh_h5p_catalog() -> dict[str, Any]:
+    """Administrative Hub catalog refresh; requires catalog:refresh."""
+    administration.require('catalog:refresh')
+    return run_lumi('discover', query='', installed_only=False, refresh=True, offset=0, limit=20)
+
+
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True})
+def install_h5p_library(machine_name: str, major_version: int | None = None,
+                        minor_version: int | None = None) -> dict[str, Any]:
+    """Install the current Hub library if absent; requires libraries:install.
+
+    An installed requested major/minor is reused. An absent exact version must
+    match the current Hub version; this tool never substitutes another version.
+    """
+    administration.require('libraries:install')
+    return get_h5p_activity_schema(machine_name, major_version, minor_version, True)
+
+
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": True, "idempotentHint": False, "openWorldHint": False})
+def install_h5p_library_package(path: str) -> dict[str, Any]:
+    """Install libraries from an authorized local .h5p; requires libraries:install.
+
+    May update installed libraries. ZIP safety and H5P_MCP_PACKAGE_ROOTS apply.
+    Does not initialize npm or fetch Hub libraries implicitly.
+    """
+    from pathlib import Path
+    from h5p_mcp.validators.package_validator import prevalidate_archive
+    from h5p_mcp.utils.file_utils import authorized_path
+    administration.require('libraries:install')
+    package = authorized_path(Path(path), 'H5P_MCP_PACKAGE_ROOTS')
+    prevalidate_archive(package)
+    return run_lumi('setup', packages=[str(package)])
+
+
+@local_tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False})
 def create_h5p_activity(title: str, library: str, params: dict[str, Any],
                         language: str = "en", license: str = "U",
                         assets: dict[str, str] | None = None) -> PreparationReport:
@@ -109,7 +158,7 @@ def create_h5p_activity(title: str, library: str, params: dict[str, Any],
     return report
 
 
-@local_tool()
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False})
 def export_h5p(activity: Activity, output_name: str) -> ExportReport:
     """Recheck a native activity and export it with libraries and local assets.
 
@@ -121,14 +170,14 @@ def export_h5p(activity: Activity, output_name: str) -> ExportReport:
             "content_json": result.content_json, "verification": verification(structure="passed", semantics="passed")}
 
 
-@local_tool()
+@local_tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False})
 def validate_h5p(path: str) -> ValidationReport:
     """Check JSON roots and import a package into empty Lumi storage, not playback."""
     res = validate_h5p_package(path)
     return {"ok": res.ok, "errors": res.errors, "warnings": res.warnings, "verification": res.verification}
 
 
-@local_tool()
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": False})
 def export_h5p_batch(activities: list[Activity], name_prefix: str = "activity") -> BatchReport:
     """Export native activities independently, returning per-item errors and paths.
 
@@ -160,6 +209,8 @@ def main() -> None:
     if args.lumi_package and not args.setup_lumi:
         parser.error("--lumi-package requires --setup-lumi")
     if args.setup_lumi:
+        if administration.policy.immutable:
+            parser.error('--setup-lumi is disabled by H5P_MCP_IMMUTABLE=1')
         import json
         from h5p_mcp.lumi_backend import setup_lumi
         print(json.dumps(setup_lumi(args.lumi_package), ensure_ascii=False))
