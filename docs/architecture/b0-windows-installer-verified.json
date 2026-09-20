@@ -1,0 +1,150 @@
+{
+  "bun": "1.4.2",
+  "scripts": "disabled",
+  "linker": "hoisted",
+  "artifacts": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-b0-installer-0seb1r5e",
+  "decision": "not_certified",
+  "checks": {
+    "resolved_dependency_graph": "passed",
+    "frozen_install": "passed",
+    "native_files": "passed",
+    "loaded_native_crc": "passed"
+  },
+  "migration_log": "bun install v1.4.2 (744846f84)\n\n+ @lumieducation/h5p-server@lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz\n\n106 packages installed [10.13s]\n[129.78ms] migrated lockfile from package-lock.json\nSaved lockfile\n",
+  "bun_lock_sha256": "5f969af130772f5e82eae0dba2130fd51c845930ee8fe69115835c9eb55ca2fa",
+  "frozen_log": "bun install v1.4.2 (744846f84)\n\n+ @lumieducation/h5p-server@lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz\n\n106 packages installed [9.21s]\n",
+  "package_differences": {
+    "@lumieducation/h5p-server/node_modules/agent-base": {
+      "npm": {
+        "name": "agent-base",
+        "version": "9.0.0"
+      },
+      "bun": null
+    },
+    "@lumieducation/h5p-server/node_modules/https-proxy-agent": {
+      "npm": {
+        "name": "https-proxy-agent",
+        "version": "9.1.0"
+      },
+      "bun": null
+    },
+    "@lumieducation/h5p-server/node_modules/mime-db": {
+      "npm": {
+        "name": "mime-db",
+        "version": "1.54.0"
+      },
+      "bun": null
+    },
+    "@lumieducation/h5p-server/node_modules/mime-types": {
+      "npm": {
+        "name": "mime-types",
+        "version": "3.0.2"
+      },
+      "bun": null
+    },
+    "agent-base": {
+      "npm": {
+        "name": "agent-base",
+        "version": "6.0.2"
+      },
+      "bun": {
+        "name": "agent-base",
+        "version": "9.0.0"
+      }
+    },
+    "axios/node_modules/https-proxy-agent": {
+      "npm": null,
+      "bun": {
+        "name": "https-proxy-agent",
+        "version": "5.0.1"
+      }
+    },
+    "axios/node_modules/https-proxy-agent/node_modules/agent-base": {
+      "npm": null,
+      "bun": {
+        "name": "agent-base",
+        "version": "6.0.2"
+      }
+    },
+    "form-data/node_modules/mime-types": {
+      "npm": null,
+      "bun": {
+        "name": "mime-types",
+        "version": "2.1.35"
+      }
+    },
+    "form-data/node_modules/mime-types/node_modules/mime-db": {
+      "npm": null,
+      "bun": {
+        "name": "mime-db",
+        "version": "1.52.0"
+      }
+    },
+    "https-proxy-agent": {
+      "npm": {
+        "name": "https-proxy-agent",
+        "version": "5.0.1"
+      },
+      "bun": {
+        "name": "https-proxy-agent",
+        "version": "9.1.0"
+      }
+    },
+    "mime-db": {
+      "npm": {
+        "name": "mime-db",
+        "version": "1.52.0"
+      },
+      "bun": {
+        "name": "mime-db",
+        "version": "1.54.0"
+      }
+    },
+    "mime-types": {
+      "npm": {
+        "name": "mime-types",
+        "version": "2.1.35"
+      },
+      "bun": {
+        "name": "mime-types",
+        "version": "3.0.2"
+      }
+    },
+    "stream-parser/node_modules/debug/node_modules/ms": {
+      "npm": null,
+      "bun": {
+        "name": "ms",
+        "version": "2.0.0"
+      }
+    },
+    "stream-parser/node_modules/ms": {
+      "npm": {
+        "name": "ms",
+        "version": "2.0.0"
+      },
+      "bun": null
+    }
+  },
+  "packages": {
+    "npm": 106,
+    "bun": 106
+  },
+  "reviewed_inactive_optional_packages": [],
+  "layout_differences": 14,
+  "native_files": {
+    "npm": {
+      "@node-rs/crc32-win32-x64-msvc/crc32.win32-x64-msvc.node": "6302c408951c391b56ad5467189765ecb81227cf024594262acf4f72231ac06e"
+    },
+    "bun": {
+      "@node-rs/crc32-win32-x64-msvc/crc32.win32-x64-msvc.node": "6302c408951c391b56ad5467189765ecb81227cf024594262acf4f72231ac06e"
+    }
+  },
+  "loaded_native_files": {
+    "node": {
+      "@node-rs/crc32-win32-x64-msvc/crc32.win32-x64-msvc.node": "6302c408951c391b56ad5467189765ecb81227cf024594262acf4f72231ac06e"
+    },
+    "bun": {
+      "@node-rs/crc32-win32-x64-msvc/crc32.win32-x64-msvc.node": "6302c408951c391b56ad5467189765ecb81227cf024594262acf4f72231ac06e"
+    }
+  }
+}
