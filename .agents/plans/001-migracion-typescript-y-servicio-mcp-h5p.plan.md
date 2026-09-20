@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 7: B0/F1 cerrados para los destinos definidos. F2.1–F2.4 están implementadas parcialmente para preparación local, con CI verde de 9ad543b. F2.5 está implementada en bbf8c7e: administración local con scopes, modo inmutable y consultas sin mutación del estado de autoría. F2 sigue abierta; el siguiente trabajo corresponde a F2.6 y F2.7. Evidencia y pruebas en docs/architecture/005-f2-contracts.md y en la tabla de trazabilidad de F2. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
+- Fecha: 2026-09-19. Revisión 8: B0/F1 cerrados para los destinos definidos. F2.1–F2.4 permanecen parciales. F2.5 tiene CI completamente verde en bbf8c7e. F2.6 incorpora contratos nativos compactos, recursos canónicos con digest y ejemplos sujetos a semántica/patch probados. F2 sigue abierta; la siguiente tarea es F2.7. Evidencia y pruebas en docs/architecture/005-f2-contracts.md y en la tabla de trazabilidad de F2. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -242,7 +242,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 - [ ] F2.3 Mapping versionado de códigos actuales a LIBRARY_NOT_INSTALLED, LIBRARY_VERSION_MISMATCH, SCHEMA_VALIDATION_FAILED, UNSUPPORTED_SEMANTIC_TYPE, STALE_PREPARATION, ASSET_NOT_FOUND, ASSET_TOO_LARGE, MIME_MISMATCH, UNSAFE_ARCHIVE, OUTPUT_ALREADY_EXISTS, HUB_UNAVAILABLE y TARGET_INCOMPATIBLE.
 - [ ] F2.4 Validación negativa retorna informe; fallo operativo usa isError y conserva detalles. Mapear excepciones Python, Node, batch y transporte consistentemente.
 - [x] F2.5 Consultas puras; separar refresh_h5p_catalog, install_h5p_library e install_h5p_library_package. Scopes al listar e invocar; imagen inmutable deshabilita administración. Anotaciones completas coherentes con efectos, nunca usadas como autorización. Implementada en bbf8c7e para el perfil local y el bloqueo por H5P_MCP_IMMUTABLE; la imagen OCI y OAuth corresponden a F6/F7. Ver docs/architecture/005-f2-contracts.md.
-- [ ] F2.6 Contrato compacto con requeridos/defaults/tipos/restricciones/subbibliotecas y ejemplos probados. Recurso bruto por URI/digest; x-h5p documenta widgets y límites. Diferencial contra semántica fuente.
+- [x] F2.6 Contrato compacto con requeridos/defaults/tipos/restricciones/subbibliotecas y ejemplos probados. Recurso bruto por URI/digest; x-h5p documenta widgets y límites. Diferencial contra semántica fuente. get_h5p_type_contract conserva reglas nativas y grupos de un campo; ejemplos de TrueFalse sujetos a patch y SHA-256, sin evidencia de Moodle. Recursos acotados al proceso, no stores persistentes de F5.
 - [ ] F2.7 Catálogo con structurally_authorable y checks/versión/digest/fecha/evidencia; compatibilidad temporal del booleano anterior sin atribuirle pruebas inexistentes.
 - [ ] F2.8 Export retorna resource link, MIME, tamaño, SHA-256 y manifest, nunca paquete base64 en respuesta. Recuperación de recursos acotada.
 - [ ] F2.9 Esquemas local/remoto separados: remoto no tiene path para medios, validación, recursos ni administración.
@@ -256,7 +256,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 | F2.3 | Parcial: mapping versionado y códigos concretos en preparación y medios; códigos de Hub y versión en administración. | `0e2093c`, `bbf8c7e` | Mapping validado contra el contrato. Falta integrar todos los códigos en las interfaces vNext de paquetes/exportación. |
 | F2.4 | Parcial: preparación distingue validación negativa de fallo operativo mediante `kind` e `isError`. | `0e2093c`, `9ad543b` | Cliente MCP real y errores simulados. Falta homogeneizar validación de paquetes, exportación y batch. |
 | F2.5 | Completada para el perfil local: herramientas administrativas separadas, scopes al listar/invocar, modo inmutable y consultas sin mutación de bibliotecas/caché. | `bbf8c7e` | 128 pruebas completas y 30 desde wheel externo; build, Oxlint y validación de skill aprobados. OAuth e imagen OCI se verifican en F6/F7. |
-| F2.6 | Pendiente: proyección compacta de semánticas, ejemplos y recurso bruto con digest. | — | Siguiente tarea de implementación. |
+| F2.6 | Implementada: proyección nativa, campos/defaults/restricciones/subbibliotecas, notas x-h5p y recurso canónico acotado con URI/SHA-256. Dos ejemplos TrueFalse probados; otros tipos devuelven ejemplos vacíos. | Entrega F2.6; SHA en el seguimiento de este incremento. | Diferencial sobre los 9 archivos de semánticas del corpus, preparación real de ejemplos y restricciones, integridad/evicción/límites de recursos, lectura MCP y ausencia de mutación. Ver informe de pruebas. |
 | F2.7 | Pendiente: evidencia por versión y `structurally_authorable` en el catálogo. | — | Sigue a F2.6; no confundir elegibilidad actual con reproducción verificada. |
 | F2.8 | Pendiente: recurso de exportación con MIME, tamaño, SHA-256 y manifest; lectura acotada. | — | La exportación actual conserva la respuesta local legada. |
 | F2.9 | Pendiente: contratos local/remoto separados sin rutas en el perfil remoto. | — | El runtime sigue siendo local; persistencia/ownership corresponden a F5. |
@@ -267,7 +267,7 @@ CI aprobado de `9ad543b` para la entrega parcial F2.1–F2.4:
 
 CI de `bbf8c7e` para F2.5, al actualizar esta revisión:
 [paquete y navegador aprobado](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764390);
-[matriz Bun/Node en ejecución](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764477).
+[matriz Bun/Node aprobada](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764477).
 
 **Aceptación:** consultas ordinarias sin mutación/red oculta; administración directa sin scope falla; clientes legados funcionan en modo local; errores permiten reparar campos concretos.
 

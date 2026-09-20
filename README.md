@@ -9,8 +9,8 @@ type's native schema instead of four fixed quiz templates.
    cached Hub entries and installed runnable libraries. Default page size 20,
    maximum 100. `refresh_h5p_catalog` explicitly contacts the Hub; a fresh cache may be
    empty. `last_updated` is Unix time in milliseconds, or null.
-2. `get_h5p_activity_schema(machine_name, major_version, minor_version,
-   install_if_missing)` returns native semantics and metadata. Supply both
+2. `get_h5p_type_contract(machine_name, major_version, minor_version)` returns
+   compact native fields, constraints, sublibraries and a raw-schema resource. Supply both
    version numbers for an exact version, or neither for newest installed.
    `install_h5p_library` downloads the current Hub version and dependencies if
    absent and administration is enabled. Historical versions are not substituted.
@@ -251,3 +251,26 @@ queries preserve library/cache/configuration contents and use cleaned temporary
 storage. The existing backend coordination lock is still used to serialize reads
 against installations. CLI setup remains an explicit operator action in mutable
 mode and does not require MCP tool scopes.
+
+## Compact native contracts (F2.6)
+
+`get_h5p_type_contract` describes installed semantics without installation or
+network access. Its `fields` retain order, names, types, native required flags,
+defaults and constraints. `x-h5p` retains widget/extension metadata and explains
+limits. Groups with `value_shape: "single_field"` use the child's value directly.
+This format is not JSON Schema and does not certify editor business logic.
+Labels, descriptions and UI grouping flags are available in the raw resource.
+
+`raw_schema` returns a URI, SHA-256, MIME and byte length of a canonical UTF-8
+JSON snapshot containing complete native semantics and library metadata. The
+digest refers to those exact resource bytes, not the original file formatting.
+Resources are bounded process-local snapshots: defaults are 2 MiB per resource,
+16 snapshots and 16 MiB total. Configure `H5P_MCP_MAX_SCHEMA_BYTES`,
+`H5P_MCP_MAX_SCHEMA_SNAPSHOTS` and `H5P_MCP_MAX_SCHEMA_CACHE_BYTES` if needed.
+After eviction or restart, call the tool again; resource reads never resolve
+user-supplied filesystem paths or download anything.
+
+Examples are currently included for TrueFalse 1.8 patch 21 only when its native
+semantics SHA-256 matches the tested fixture. Other contracts return an empty
+examples array. Tests exercise both published examples through real preparation;
+they do not claim playback or grading evidence in Moodle.

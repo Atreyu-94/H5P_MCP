@@ -1,0 +1,14 @@
+[
+  {
+    "library": "H5P.TrueFalse 1.8", "patch_version": 21,
+    "semantics_sha256": "0f4da26f5cd452e84b1c042608f999e588e4e9e0033030d18fc50500b873a22f",
+    "title": "True statement", "params": {"question": "<p>One metre equals 100 centimetres.</p>", "correct": "true"},
+    "evidence": {"test": "tests/contracts/test_discovery_contract.py::test_published_examples_prepare", "checks": ["preparation"], "playback": "not_run", "grading": "not_run"}
+  },
+  {
+    "library": "H5P.TrueFalse 1.8", "patch_version": 21,
+    "semantics_sha256": "0f4da26f5cd452e84b1c042608f999e588e4e9e0033030d18fc50500b873a22f",
+    "title": "False statement", "params": {"question": "<p>One metre equals 10 centimetres.</p>", "correct": "false"},
+    "evidence": {"test": "tests/contracts/test_discovery_contract.py::test_published_examples_prepare", "checks": ["preparation"], "playback": "not_run", "grading": "not_run"}
+  }
+]

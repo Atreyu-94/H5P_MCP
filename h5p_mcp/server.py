@@ -8,6 +8,7 @@ from fastmcp import FastMCP
 from h5p_mcp.skills_extension import register_authoring_skill
 from h5p_mcp.contracts.tool import register_preparation
 from h5p_mcp import administration
+from h5p_mcp.contracts.discovery import compact_contract, read_snapshot
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.activity import Activity
@@ -40,6 +41,12 @@ mcp = FastMCP("h5p-authoring")
 mcp.add_middleware(administration.AdministrationMiddleware())
 register_authoring_skill(mcp)
 register_preparation(mcp)
+
+
+@mcp.resource('h5p-schema://snapshot/{digest}', mime_type='application/json')
+def native_schema_snapshot(digest: str) -> str:
+    """Read an exact bounded schema snapshot returned by get_h5p_type_contract."""
+    return read_snapshot(digest)
 
 
 def local_tool(**options):
@@ -98,6 +105,18 @@ def search_h5p_types(query: str = '', installed_only: bool = False,
                      offset: int = 0, limit: int = 20) -> dict[str, Any]:
     """Search installed/cached H5P types without refreshing or installing libraries."""
     return list_h5p_activities(query, installed_only, False, offset, limit)
+
+
+@local_tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False})
+def get_h5p_type_contract(machine_name: str, major_version: int | None = None,
+                          minor_version: int | None = None) -> dict[str, Any]:
+    """Read compact native H5P fields, constraints, nested libraries and tested examples.
+
+    No installation or Hub refresh. This is not JSON Schema. Read x-h5p notes,
+    especially single-field groups. raw_schema links to an exact bounded snapshot;
+    query again after process restart or cache eviction. Examples may be empty.
+    """
+    return compact_contract(get_h5p_activity_schema(machine_name, major_version, minor_version))
 
 
 @local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "idempotentHint": False, "openWorldHint": True})
