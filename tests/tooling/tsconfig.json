@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.adapters.json",
+  "files": ["adapter-probe.ts", "lint-negative.fixture.ts"]
+}
