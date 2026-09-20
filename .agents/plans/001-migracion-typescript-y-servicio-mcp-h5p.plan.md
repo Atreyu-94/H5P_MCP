@@ -194,7 +194,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 **Archivos:** lumi_backend.py, limits.py, lumi/{limits,media,semantics,manifest}.cjs, validators/package_validator.py, exporters/h5p_exporter.py, tests y workflows.
 
 - [ ] F1.1 Limitar tamaño comprimido antes de abrir ZIP; ratio, bytes reales descomprimidos por entrada/total, profundidad de rutas y dependencias. Fijar umbrales con fixtures; ratio nunca sustituye límite absoluto.
-- [ ] F1.2 Rechazar symlinks por atributos ZIP, rutas UNC/unidades/ADS, traversal, separadores ambiguos y colisiones normalizadas/case-folding. Probar nombres reservados Windows. Permitir carpetas H5P legítimas; no extraer ZIP internos recursivamente.
+- [x] F1.2 Rechazar symlinks por atributos ZIP, rutas UNC/unidades/ADS, traversal, separadores ambiguos y colisiones normalizadas/case-folding. Probar nombres reservados Windows. Permitir carpetas H5P legítimas; no extraer ZIP internos recursivamente. Implementado en prevalidación; aplicación a administración/extracción permanece en F1.3. Evidencia en docs/architecture/003-local-hardening.md.
 - [ ] F1.3 Aplicar prevalidación también a instalación administrativa. Comprobar límites durante extracción en worker aislado, no solo en directorio central.
 - [ ] F1.4 Detectar MIME real frente al declarado, allowlist de formatos y política SVG/contenido activo. Conservar validaciones de Lumi, sin asumir que cubren todo.
 - [ ] F1.5 Configurar raíces autorizadas para medios, lectura de paquetes y destinos locales. Migración explícita de usuarios de rutas absolutas; resolver symlinks y revisar acceso al abrir, documentando TOCTOU.

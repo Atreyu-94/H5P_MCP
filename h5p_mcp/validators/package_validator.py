@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import stat
+import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -35,6 +37,8 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
         warnings.append("File does not have .h5p extension (still may be a valid zip).")
 
     try:
+        if p.stat().st_size > limit("ZIP_ARCHIVE_BYTES", 134217728):
+            raise ValueError("ZIP compressed byte budget exceeded")
         with ZipFile(p, "r") as z:
             members = z.infolist()
             if len(members) > limit("ZIP_MEMBERS", 20000):
@@ -44,12 +48,25 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
                 raise ValueError("Duplicate ZIP member names")
             if sum(m.file_size for m in members) > limit("ZIP_BYTES", 536870912):
                 raise ValueError("ZIP expanded byte budget exceeded")
+            paths = {}
+            expanded = 0
             for member in members:
-                parts = member.filename.replace("\\", "/").split("/")
-                if member.filename.startswith(("/", "\\")) or ".." in parts or ":" in parts[0]:
-                    raise ValueError("Unsafe ZIP member path")
+                _check_member_path(member, paths)
                 if member.file_size > limit("ZIP_MEMBER_BYTES", 134217728):
                     raise ValueError("ZIP member byte budget exceeded")
+                if member.file_size > max(1, member.compress_size) * limit("ZIP_RATIO", 1000):
+                    raise ValueError("ZIP compression ratio budget exceeded")
+                # Drain every member in bounded chunks, checking CRC and actual
+                # bytes exposed by the ZIP reader before handing off to Lumi.
+                read = 0
+                with z.open(member) as stream:
+                    while chunk := stream.read(65536):
+                        read += len(chunk)
+                        expanded += len(chunk)
+                        if read > limit("ZIP_MEMBER_BYTES", 134217728) or expanded > limit("ZIP_BYTES", 536870912):
+                            raise ValueError("ZIP streamed byte budget exceeded")
+                if read != member.file_size:
+                    raise ValueError("ZIP member size mismatch")
             if "h5p.json" not in names:
                 errors.append("Missing 'h5p.json' at zip root.")
             if "content/content.json" not in names:
@@ -86,6 +103,32 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
             errors.append(str(error))
         stages["importation"] = "failed" if errors else "passed"
     return H5PValidationResult(ok=len(errors) == 0, errors=errors, warnings=warnings, verification=stages)
+
+
+def _check_member_path(member, paths):
+    # ZipInfo normalizes backslashes on Windows and truncates at NUL. Validate
+    # the original header name so those transformations cannot hide ambiguity.
+    name = member.orig_filename
+    directory = member.is_dir()
+    parts = (name[:-1] if directory else name).split('/')
+    reserved = {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$'}
+    reserved.update(f'{prefix}{n}' for prefix in ('COM', 'LPT') for n in '123456789¹²³')
+    if ('\\' in name or len(parts) > limit('ZIP_PATH_DEPTH', 32) or
+            any(not part or part in ('.', '..') or any(c in part for c in '<>:"|?*') or
+                part.endswith((' ', '.')) or any(ord(c) < 32 for c in part) or
+                part.split('.')[0].upper() in reserved for part in parts)):
+        raise ValueError('Unsafe ZIP member path')
+    mode = stat.S_IFMT(member.external_attr >> 16)
+    if mode not in (0, stat.S_IFREG, stat.S_IFDIR) or (mode == stat.S_IFDIR and not directory):
+        raise ValueError('Unsafe ZIP member type (symlink or special file)')
+    for index in range(1, len(parts) + 1):
+        original = '/'.join(parts[:index])
+        key = unicodedata.normalize('NFC', original).casefold()
+        kind = directory or index < len(parts)
+        previous = paths.get(key)
+        if previous is not None and previous != (original, kind):
+            raise ValueError('Unsafe ZIP path collision or file/directory conflict')
+        paths[key] = (original, kind)
 
 
 def _read_json_from_zip(z: ZipFile, name: str, errors: list[str]) -> dict[str, Any] | None:
