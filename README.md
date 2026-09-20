@@ -5,6 +5,15 @@ type's native schema instead of four fixed quiz templates.
 
 ## Workflow
 
+For immutable preparations and artifacts that survive server restarts, use the
+[persistent workflow](h5p_mcp/skills/h5p-authoring/references/workflow.md): upload
+assets → `prepare_stored_h5p_activity` → `export_prepared_h5p_activity` → read the
+artifact resource. It provides ownership checks, TTL, idempotent retries and
+library snapshots. Optional destination inventories check dependencies such as
+MathDisplay; an unknown inventory is never reported as compatible. See
+[F5 storage operations](docs/architecture/009-persistent-storage.md) for limits
+and rollback. The existing local workflow below remains supported.
+
 1. `search_h5p_types(query, installed_only, offset, limit)` discovers
    cached Hub entries and installed runnable libraries. Default page size 20,
    maximum 100. `refresh_h5p_catalog` explicitly contacts the Hub; a fresh cache may be

@@ -1,13 +1,16 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
+import {createReadStream} from 'node:fs';
+import {Objects,type Principal,type Stored} from '../storage/objects.js';
+import {Vault} from '../storage/vault.js';
 import {Engine} from '../application/engine.js';
 import type {CoreRequest,Native} from '../domain/types.js';
 import {checkTree,limit} from '../domain/limits.js';
 import {projectSemantics} from '../domain/contracts.js';
 import {Resources,hash,canonical} from './resources.js';
-import {base,operations,codes,examples,schema,valid,invalidInput,report,failure,diagnostic,verification} from './contracts.js';
-const scopes:Record<string,string>={refresh_h5p_catalog:'catalog:refresh',install_h5p_library:'libraries:install',install_h5p_library_package:'libraries:install'};
+import {base,operations,codes,examples,storage,schema,valid,invalidInput,report,failure,diagnostic,verification} from './contracts.js';
+const scopes:Record<string,string>={refresh_h5p_catalog:'catalog:refresh',install_h5p_library:'libraries:install',install_h5p_library_package:'libraries:install',capture_h5p_library_snapshot:'libraries:install',activate_h5p_library_snapshot:'libraries:install'};
 export const aliases:Record<string,string>={list_h5p_activities:'search_h5p_types',get_h5p_activity_schema:'get_h5p_type_contract',create_h5p_activity:'prepare_h5p_activity',export_h5p:'export_h5p_activity',validate_h5p:'validate_h5p_package'};
 async function resolved(filename:string):Promise<string> {
  const absolute=path.resolve(filename);
@@ -18,6 +21,8 @@ async function resolved(filename:string):Promise<string> {
  }
 }
 export class Service {
+ private vaultPromise?:Promise<Vault>;
+ constructor(private readonly principal:Principal={tenant:'local',owner:'local'}){this.principal=Object.freeze({...principal});}
  engine=new Engine();
  resources=new Resources();
  readonly data=path.resolve(process.env.H5P_MCP_DATA_DIR||path.join(os.homedir(),'.h5p-mcp'));
@@ -25,11 +30,30 @@ export class Service {
  readonly immutable=process.env.H5P_MCP_IMMUTABLE==='1';
  readonly scopes=new Set((process.env.H5P_MCP_ADMIN_SCOPES||'').split(/\s+/).filter(Boolean));
  readonly roots:Record<string,string[]|undefined>={};
- readonly definitions:Record<string,string[]>={...operations.local,prepare_h5p_activity:['prepare_local_input','preparation_report']};
+ readonly definitions:Record<string,string[]>={...operations.local,...storage.local,prepare_h5p_activity:['prepare_local_input','preparation_report']};
+ private vault() {
+  return this.vaultPromise??=(async()=>{
+   const objects=new Objects(path.resolve(process.env.H5P_MCP_STORE_DIR||path.join(this.data,'objects')),this.principal);
+   await objects.initialize();return new Vault(objects,this.data);
+  })();
+ }
+ private stored(value:Stored):Native {
+  const result:Native={object_id:value.id,kind:value.kind,expires:value.expires};
+  if(value.metadata.library_snapshot_id)result.library_snapshot_id=value.metadata.library_snapshot_id;
+  if(value.files.payload)Object.assign(result,{mime_type:value.metadata.mime,size:value.files.payload.size,sha256:value.files.payload.sha256});
+  if(value.kind==='artifact')Object.assign(result,{uri:'h5p-artifact://stored/'+value.id,target:value.metadata.target,verification:verification({structure:'passed',semantics:'passed'})});
+  return result;
+ }
+ async readResource(uri:string):Promise<Native> {
+  if(!uri.startsWith('h5p-artifact://stored/'))return this.resources.read(uri);
+  const vault=await this.vault(),id=uri.slice('h5p-artifact://stored/'.length),value=await vault.objects.get(id,'artifact');
+  if(value.files.payload.size>limit('OUTPUT_BYTES',16777216))throw failure('LIMIT_EXCEEDED');
+  return {contents:[{uri,mimeType:'application/zip',blob:(await vault.objects.read(id,'artifact')).toString('base64')}]};
+ }
  async initialize() {
   if(!['0','1',undefined].includes(process.env.H5P_MCP_IMMUTABLE)) throw new Error('Invalid immutable policy');
   if([...this.scopes].some(s=>!['catalog:refresh','libraries:install'].includes(s))) throw new Error('Invalid administration scope');
-  for(const kind of ['PACKAGE','EXPORT']) {
+  for(const kind of ['PACKAGE','EXPORT','ASSET']) {
    const setting=process.env['H5P_MCP_'+kind+'_ROOTS'];
    if(setting===undefined) continue;
    const roots=JSON.parse(setting);
@@ -37,7 +61,7 @@ export class Service {
    this.roots[kind]=await Promise.all(roots.map(r=>resolved(r)));
   }
   await this.resources.initialize();
-  for(const [name,value] of Object.entries({schema:base,codes,profiles:operations})) {
+  for(const [name,value] of Object.entries({schema:base,codes,profiles:operations,storage})) {
    const uri='h5p-contract://v1/'+name;
    this.resources.texts.set(uri,{uri,name,mimeType:'application/json',text:JSON.stringify(value)});
   }
@@ -47,7 +71,7 @@ export class Service {
   const tools:Native[]=Object.entries(this.definitions).filter(([name])=>this.allowed(name)).map(([name,[input,output]])=>({
    name,description:name.replaceAll('_',' '),inputSchema:schema(input),
    outputSchema:output==='preparation_report'||output==='operation_report'?schema(output):{type:'object',anyOf:[schema(output),schema('error_report')]},
-   annotations:{readOnlyHint:['search_h5p_types','get_h5p_type_contract','validate_h5p_package'].includes(name),destructiveHint:false,openWorldHint:!!scopes[name]}
+   annotations:{readOnlyHint:['search_h5p_types','get_h5p_type_contract','validate_h5p_package','validate_stored_h5p_package','list_stored_h5p_objects'].includes(name),destructiveHint:name==='revoke_stored_h5p_object',openWorldHint:!!scopes[name]}
   }));
   for(const [name,target] of Object.entries(aliases)) {
    const inputSchema=schema(this.definitions[target][0]);
@@ -64,10 +88,27 @@ export class Service {
   return real;
  }
  async run(action:CoreRequest['action'],args:Native,signal:AbortSignal):Promise<Native> {
-  return this.engine.run({action,data_dir:this.data,...args},signal);
+  const result=await this.engine.run({action,data_dir:this.data,...args},signal);
+  if(action==='setup'||args.install_if_missing)await (await this.vault()).snapshot(true,signal);
+  return result;
  }
  async dispatch(name:string,args:Native,signal:AbortSignal):Promise<Native> {
   if(!this.allowed(name)) throw failure('PERMISSION_DENIED');
+  if(Object.hasOwn(storage.local,name)) {
+   const vault=await this.vault(),ttl=(args.ttl_seconds||86400)*1000;
+   if(name==='upload_h5p_asset'||name==='upload_h5p_package') {
+    const asset=name==='upload_h5p_asset',filename=await this.authorize(args.path,asset?'ASSET':'PACKAGE');
+    return this.stored(await vault.upload(asset?'asset':'package',args.mime,createReadStream(filename),ttl,signal));
+   }
+   if(name==='prepare_stored_h5p_activity')return this.stored(await vault.prepare(args.activity,ttl,args.library_snapshot_id,signal));
+   if(name==='export_prepared_h5p_activity')return this.stored(await vault.export(args.preparation_id,args.idempotency_key,args.target_profile_id,ttl,signal));
+   if(name==='register_h5p_target_profile')return this.stored(await vault.target(args.profile,ttl));
+   if(name==='list_stored_h5p_objects')return {objects:vault.objects.list(args.kind)};
+   if(name==='revoke_stored_h5p_object'){await vault.objects.revoke(args.object_id);return {revoked:true};}
+   if(name==='capture_h5p_library_snapshot')return this.stored(await vault.snapshot(true,signal));
+   if(name==='activate_h5p_library_snapshot'){await vault.objects.activate('libraries',args.object_id);return this.stored(await vault.objects.get(args.object_id,'libraries'));}
+   if(name==='validate_stored_h5p_package'){await vault.validate(args.object_id,signal);return report('validation',true,[],{structure:'passed',importation:'passed'});}
+  }
   if(name==='search_h5p_types'||name==='refresh_h5p_catalog') return this.run('discover',{query:'',installed_only:false,offset:0,limit:20,...args,refresh:name==='refresh_h5p_catalog'},signal);
   if(name==='get_h5p_type_contract'||name==='install_h5p_library') {
    const raw=await this.run('schema',{...args,install_if_missing:name==='install_h5p_library'},signal);
@@ -132,6 +173,7 @@ export class Service {
   }
   const content:Native[]=[{type:'text',text:JSON.stringify(result)}];
   if(result.artifact) content.push({type:'resource_link',uri:result.artifact.uri,name:'H5P package',mimeType:'application/zip',size:result.artifact.size});
+  if(result.kind==='artifact'&&result.uri)content.push({type:'resource_link',uri:result.uri,name:'Stored H5P package',mimeType:'application/zip',size:result.size});
   return {content,structuredContent:result,isError:result.kind==='operational_error'};
  }
  async legacy(name:string,args:Native,signal:AbortSignal):Promise<Native> {
@@ -164,5 +206,5 @@ export class Service {
   if(name==='validate_h5p') legacy={ok:true,errors:[],warnings:[],verification:result.verification};
   return {content:[{type:'text',text:JSON.stringify(legacy)}],structuredContent:legacy,isError:false};
  }
- close(){return this.engine.close();}
+ async close(){await this.engine.close();if(this.vaultPromise)await (await this.vaultPromise).close();}
 }

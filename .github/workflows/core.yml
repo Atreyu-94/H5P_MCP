@@ -38,7 +38,7 @@ jobs:
         with:
           name: retirement-${{ matrix.os }}
           path: retirement-parity.json
-      - name: Verify F4 installed Bun package and SDK clients
+      - name: Verify F4/F5 installed Bun package and SDK clients
         run: |
           npm ci --prefix tests/tooling --ignore-scripts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

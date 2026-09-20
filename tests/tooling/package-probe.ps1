@@ -23,6 +23,5 @@ try {
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
     & node (Join-Path $PSScriptRoot 'bun-stdio-probe.mjs') $Bun $tarball
     if ($LASTEXITCODE) { exit $LASTEXITCODE }
-    Write-Output "F4 package checks passed: $probeRoot"
+    Write-Output "F4/F5 package checks passed: $probeRoot"
 } finally { $env:BUN_INSTALL_CACHE_DIR=$previousCache }
-
