@@ -1,0 +1,15 @@
+import {createRequire} from 'node:module';
+import {fileURLToPath} from 'node:url';
+import {existsSync} from 'node:fs';
+import path from 'node:path';
+import {configureLimits} from '../domain/limits.js';
+configureLimits(process.env);
+let root=path.dirname(fileURLToPath(import.meta.url));
+while(!existsSync(path.join(root,'h5p_mcp/lumi/provenance.json'))) {
+ const parent=path.dirname(root);
+ if(parent===root) throw new Error('Core checkout resources unavailable');
+ root=parent;
+}
+export const repositoryRoot=root;
+export const legacyRoot=path.join(root,'h5p_mcp/lumi');
+export const load=createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || root,'package.json'));

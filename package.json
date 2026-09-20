@@ -1,0 +1,21 @@
+{
+  "name": "h5p-mcp-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc",
+    "test": "bun test tests/core",
+    "lint": "oxlint --deny-warnings src tests/core"
+  },
+  "dependencies": {
+    "@lumieducation/h5p-server": "file:h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.2",
+    "typescript": "7.0.2",
+    "oxlint": "1.83.0"
+  }
+}
