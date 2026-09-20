@@ -3,6 +3,7 @@ const path = require('node:path');
 const {createRequire} = require('node:module');
 const {limit} = require('./limits.cjs');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+const failure = (message, code) => Object.assign(new Error(message), {code});
 async function readBounded(filename, maximum) {
   const file = await fs.open(filename, 'r');
   try {
@@ -13,7 +14,7 @@ async function readBounded(filename, maximum) {
       const {bytesRead} = await file.read(buffer);
       if (!bytesRead) break;
       total += bytesRead;
-      if (total > maximum) throw new Error('media byte budget exceeded');
+      if (total > maximum) throw failure('media byte budget exceeded', 'ASSET_TOO_LARGE');
       chunks.push(buffer.subarray(0, bytesRead));
     }
     return Buffer.concat(chunks);
@@ -33,7 +34,7 @@ function createMediaResolver({editor, user, upload, assets, usedAssets, warnings
     }
     const id = value.path.slice(6);
     const filename = assets[id];
-    if (typeof filename !== 'string' || !path.isAbsolute(filename)) { fail(at, `missing absolute asset path for ${id}`); return value; }
+    if (typeof filename !== 'string' || !path.isAbsolute(filename)) { fail(at, `missing absolute asset path for ${id}`, 'ASSET_NOT_FOUND'); return value; }
     try {
       const real = await fs.realpath(filename);
       const roots = process.env.H5P_MCP_ASSET_ROOTS ? JSON.parse(process.env.H5P_MCP_ASSET_ROOTS) : [];
@@ -48,13 +49,13 @@ function createMediaResolver({editor, user, upload, assets, usedAssets, warnings
       }
       const stat = await fs.stat(real);
       if (!stat.isFile()) throw new Error('not a file');
-      if (stat.size > limit('ASSET_BYTES', 67108864) || mediaBytes > limit('MEDIA_BYTES', 268435456)) throw new Error('media byte budget exceeded');
+      if (stat.size > limit('ASSET_BYTES', 67108864) || mediaBytes > limit('MEDIA_BYTES', 268435456)) throw failure('media byte budget exceeded', 'ASSET_TOO_LARGE');
       usedAssets.add(id);
-      if (typeof value.mime !== 'string' || !value.mime) throw new Error('media mime is required');
+      if (typeof value.mime !== 'string' || !value.mime) throw failure('media mime is required', 'MIME_MISMATCH');
       const allowed = new Set(['image/png','image/jpeg','image/gif','image/webp','image/bmp','image/tiff','image/avif',
         'audio/mpeg','audio/mp3','audio/wav','audio/x-wav','audio/ogg','audio/mp4','audio/webm',
         'video/mp4','video/webm','video/ogg','application/pdf','text/vtt']);
-      if (!allowed.has(value.mime)) throw new Error('unsupported media MIME; active HTML/SVG assets are not accepted');
+      if (!allowed.has(value.mime)) throw failure('unsupported media MIME; active HTML/SVG assets are not accepted', 'MIME_MISMATCH');
       const data = await readBounded(real, Math.min(limit('ASSET_BYTES',67108864),limit('MEDIA_BYTES',268435456)-mediaBytes));
       mediaBytes += data.length;
       const load = createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || __dirname,'package.json'));
@@ -67,14 +68,17 @@ function createMediaResolver({editor, user, upload, assets, usedAssets, warnings
       const containers = {'audio/mp4':'video/mp4','audio/webm':'video/webm','video/ogg':'audio/ogg'};
       const comparable = mime=>containers[canonical(mime)] || canonical(mime);
       if (!vtt && !detected.some(mime=>comparable(mime) === comparable(value.mime)))
-        throw new Error(`declared MIME ${value.mime} does not match detected bytes`);
+        throw failure(`declared MIME ${value.mime} does not match detected bytes`, 'MIME_MISMATCH');
       if (upload) {
         // Read a copy: upstream sanitizers/scanners must never mutate the source.
         const saved = await editor.saveContentFile(undefined, entry,
           { name: path.basename(filename), mimetype: value.mime, data }, user);
         return { ...value, ...saved };
       }
-    } catch (error) { fail(at, `asset ${id}: ${error.message}`); }
+    } catch (error) {
+      const code = error.code === 'ENOENT' ? 'ASSET_NOT_FOUND' : ['ASSET_TOO_LARGE','MIME_MISMATCH'].includes(error.code) ? error.code : 'INVALID_PARAMETER';
+      fail(at, `asset ${id}: ${error.message}`, code);
+    }
     return value;
   }
   return media;
