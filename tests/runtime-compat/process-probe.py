@@ -23,7 +23,13 @@ stress=r'''
 const assert=require('node:assert/strict');
 const {Readable,Writable}=require('node:stream');
 const {pipeline}=require('node:stream/promises');
+const {checkTree}=require(process.argv[1]+'/limits.cjs');
 (async()=>{
+ let deep={}; for(let i=0;i<100;i++) deep={child:deep};
+ assert.throws(()=>checkTree(deep),{code:'INPUT_TOO_DEEP'});
+ process.env.H5P_MCP_MAX_NODES='2';
+ assert.throws(()=>checkTree({a:1,b:2,c:3}),{code:'INPUT_TOO_LARGE'});
+ delete process.env.H5P_MCP_MAX_NODES;
  const samples=[];
  for(let run=0;run<30;run++){
    let bytes=0;
@@ -34,7 +40,7 @@ const {pipeline}=require('node:stream/promises');
    samples.push(process.memoryUsage());
  }
  await assert.rejects(pipeline(Readable.from(['x']),new Writable({write(c,e,done){done(new Error('controlled stream failure'));}})),/controlled stream failure/);
- console.log(JSON.stringify({backpressure:'passed',stream_error:'passed',iterations:30,memory:samples}));
+ console.log(JSON.stringify({input_budgets:'passed',backpressure:'passed',stream_error:'passed',iterations:30,memory:samples}));
 })().catch(e=>{console.error(e);process.exitCode=1});
 '''
 for label,exe in [('node',shutil.which('node')),('bun',args.bun)]:
@@ -66,7 +72,7 @@ for label,exe in [('node',shutil.which('node')),('bun',args.bun)]:
         assert not list(root.glob('h5p-lumi-*')), 'Job temporary directory leaked'
         timings.append(time.monotonic()-start)
     checks['repeated_stdio_and_cleanup']={'status':'passed','seconds':timings,'iterations':10}
-    result=subprocess.run([exe,'-e',stress],capture_output=True,text=True,env=env,timeout=30)
+    result=subprocess.run([exe,'-e',stress,str(repo/'h5p_mcp/lumi')],capture_output=True,text=True,env=env,timeout=30)
     assert result.returncode==0,result.stderr
     checks['stream_stress']=json.loads(result.stdout)
     report['checks'][label]=checks

@@ -122,3 +122,51 @@ def test_metadata_rejected_before_export(metadata):
     report = create_h5p_activity('Metadata', 'H5P.TrueFalse 1.8', {'question':'Q'}, **metadata)
     assert not report['ok']
     assert any(d['code']=='INVALID_METADATA' for d in report['diagnostics'])
+
+
+@pytest.mark.parametrize('operation', ['validate', 'export'])
+def test_cancel_during_real_lumi_io(tmp_path, monkeypatch, operation):
+    import anyio
+    from pathlib import Path
+    from threading import Event
+    from h5p_mcp import lumi_backend as backend
+    from h5p_mcp.jobs import cancellable
+    from h5p_mcp.validators.package_validator import validate_h5p_package
+    activity=Activity(title='Cancel real IO',library='H5P.TrueFalse 1.8',params={'question':'Q'})
+    source=H5PExporter(export_dir=str(tmp_path/'source')).export(activity,output_name='input').output_path
+    target=tmp_path/'output'
+    children=[]
+    workspaces=[]
+    completed=Event()
+    real_popen=backend.subprocess.Popen
+    def launch(*args,**kwargs):
+        child=real_popen(*args,**kwargs)
+        children.append(child)
+        workspaces.append(Path(kwargs['env']['TMPDIR']))
+        return child
+    monkeypatch.setattr(backend.subprocess,'Popen',launch)
+    @cancellable
+    def job():
+        try:
+            if operation=='validate': validate_h5p_package(source)
+            else: H5PExporter(export_dir=str(target)).export(activity,output_name='cancelled')
+        finally: completed.set()
+    async def exercise():
+        with anyio.fail_after(30):
+            async with anyio.create_task_group() as group:
+                group.start_soon(job)
+                while True:
+                    if operation=='validate':
+                        observed=any(next(root.rglob('*.js'),None) for root in workspaces if root.exists())
+                    else:
+                        observed=next(target.glob('.lumi-*/activity.h5p'),None)
+                    if observed:
+                        group.cancel_scope.cancel()
+                        break
+                    assert not completed.is_set(), 'Operation completed before the intended cancellation boundary'
+                    await anyio.sleep(0.001)
+    anyio.run(exercise)
+    assert children and all(child.poll() is not None for child in children)
+    assert all(not root.exists() for root in workspaces)
+    assert not (target/'cancelled.h5p').exists()
+    assert not list(target.glob('.lumi-*'))
