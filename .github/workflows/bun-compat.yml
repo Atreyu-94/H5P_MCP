@@ -31,8 +31,19 @@ jobs:
           $bun = (Get-Command bun).Source
           uv run python tests/runtime-compat/runtime-probe.py --bun $bun --output b0-runtime.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Compare frozen Bun install and rerun corpus on its dependency tree
+        run: |
+          $bun = (Get-Command bun).Source
+          uv run python tests/runtime-compat/installer-probe.py --bun $bun --runtime-report b0-runtime.json --output b0-installer.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          uv run python tests/runtime-compat/runtime-probe.py --bun $bun --installer-report b0-installer.json --output b0-bun-tree.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: b0-${{ matrix.os }}-node-${{ matrix.node }}
-          path: b0-runtime.json
+          path: |
+            b0-runtime.json
+            b0-installer.json
+            b0-installer.bun.lock
+            b0-bun-tree.json

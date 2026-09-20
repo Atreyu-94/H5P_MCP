@@ -42,8 +42,20 @@ El probe conserva únicamente su directorio temporal propio para diagnóstico y 
 ## Pendiente antes de adoptar Bun
 
 - Matriz real Windows/Linux/macOS y referencias Node 22.12.0/24.21.0; hashes por plataforma.
-- Imágenes/audio/vídeo, MathDisplay ausente, STALE_PREPARATION, presupuestos y paquetes incompletos dentro del harness diferencial; la suite Python previa no sustituye ejecutar estos casos con Bun.
-- Corpus sobre árbol instalado por Bun y comparación completa de integridades/recursos.
+- Audio/vídeo y presupuestos dentro del harness diferencial; la suite Python previa no sustituye ejecutar estos casos con Bun.
+- Comparación completa de integridades/recursos transitivos; el corpus sobre árbol instalado por Bun ya pasa localmente.
 - EOF, backpressure, streams, cancelación/señales, handles y memoria retenida bajo repetición.
 - Hub/TLS/proxy explícitos, TypeScript 7 y lint/API; nueva interfaz MCP todavía no implementada.
 - El defecto de red implícita de discover ya está corregido en el checkout y cubierto por regresiones. El runtime del producto sigue Python/Node.
+
+## Ampliación del corpus y corrección distribuida
+
+El informe b0-windows-runtime-expanded.json verifica ahora siete fixtures sobre el árbol npm: agrega una imagen PNG válida. Se comprueba igualdad con los bytes originales, MIME, dimensiones y referencia en content.json. Lumi genera un nombre aleatorio de imagen en cada exportación; el comparador conserva ambos nombres en el informe y normaliza únicamente ese nombre de la fixture tras verificar los datos. No normaliza UUID, otros campos ni archivos arbitrarios.
+
+También se prueban en ambos runtimes STALE_PREPARATION sin publicación, importación rechazada del paquete sin bibliotecas y preparación rechazada por ausencia de MathDisplay. El caso de discover ahora exige una página no vacía de actividades instaladas: comparar dos listas vacías no validaría el contrato.
+
+`--installer-report <informe>` permite repetir el corpus sobre una copia del árbol generado mediante la reinstalación frozen de Bun; verifica el hash del tarball Lumi antes de usarlo. CI incluye ambos árboles y conserva los reportes por separado. No se ha ejecutado esta matriz en GitHub.
+
+La ejecución b0-windows-bun-tree.json también terminó con local_subset=passed: los siete paquetes, CRC nativo, importación cruzada y casos negativos pasan sobre el árbol Bun. Este informe y b0-windows-runtime-expanded.json son la evidencia ampliada actual; los informes anteriores conservan el alcance histórico de seis fixtures.
+
+La suite Python completa tras corregir discover obtuvo 60 passed, y wheel/sdist se construyeron correctamente. Se inspeccionó el wheel para confirmar que incorpora la lectura de caché sin red implícita.

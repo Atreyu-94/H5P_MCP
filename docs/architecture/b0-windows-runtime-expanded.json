@@ -1,0 +1,116 @@
+{
+  "bun": "1.4.2",
+  "node": "v26.7.0",
+  "os": "Windows-11-10.0.26200-SP0",
+  "architecture": "AMD64",
+  "cpu": "Intel64 Family 6 Model 154 Stepping 3, GenuineIntel",
+  "libc": [
+    "",
+    ""
+  ],
+  "head": "24737e3ae851f537560879beca8ef231109a2cd7",
+  "harness_sha256": "cc1268b17a75a3bc1975e5b4d36e939495c21e56fb8376a64b0ab72c32010e60",
+  "checks": {
+    "node_crc": {
+      "native": [
+        "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-b0-runtime-pdd2eh_k\\reference\\runtime\\be0c15da0762c96a\\node_modules\\@node-rs\\crc32-win32-x64-msvc\\crc32.win32-x64-msvc.node"
+      ],
+      "crc32": "passed",
+      "crc32c": "passed"
+    },
+    "bun_crc": {
+      "native": [
+        "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-b0-runtime-pdd2eh_k\\reference\\runtime\\be0c15da0762c96a\\node_modules\\@node-rs\\crc32-win32-x64-msvc\\crc32.win32-x64-msvc.node"
+      ],
+      "crc32": "passed",
+      "crc32c": "passed"
+    },
+    "catalog_discover_schema": "passed",
+    "fixture_0": {
+      "library": "H5P.TrueFalse 1.8",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "fixture_1": {
+      "library": "H5P.Accordion 1.0",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "fixture_2": {
+      "library": "H5P.MultiChoice 1.16",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "fixture_3": {
+      "library": "H5P.Blanks 1.14",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "fixture_4": {
+      "library": "H5P.QuestionSet 1.21",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "fixture_5": {
+      "library": "H5P.TrueFalse 1.8",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "image_bytes_and_reference": {
+      "status": "passed",
+      "original_paths": [
+        "images/image-STgTN5le.png",
+        "images/image-IrBKF079.png"
+      ],
+      "normalization": "Only generated filename of the single PNG fixture; bytes match input SHA-256"
+    },
+    "fixture_6": {
+      "library": "H5P.TrueFalse 1.8",
+      "prepare": "passed",
+      "package_files": "passed",
+      "cross_import": "passed",
+      "no_overwrite": "passed"
+    },
+    "invalid_select": "passed",
+    "node_negative_packages": {
+      "stale_preparation": "passed",
+      "incomplete_package": "passed",
+      "missing_math": "passed"
+    },
+    "bun_negative_packages": {
+      "stale_preparation": "passed",
+      "incomplete_package": "passed",
+      "missing_math": "passed"
+    }
+  },
+  "decision": "not_certified",
+  "known_findings": [
+    "Discovery now reads cache storage directly unless refresh is explicitly requested"
+  ],
+  "not_run": [
+    "Linux/macOS",
+    "Node 22/24 reference",
+    "audio/video",
+    "Hub/TLS/proxy",
+    "signals/backpressure/leak stress",
+    "TypeScript/lint",
+    "Bun installer comparison",
+    "browser"
+  ],
+  "artifacts": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-b0-runtime-pdd2eh_k",
+  "dependency_installer": "npm-ci",
+  "npm_runtime": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-b0-runtime-pdd2eh_k\\reference\\runtime\\be0c15da0762c96a",
+  "local_subset": "passed"
+}

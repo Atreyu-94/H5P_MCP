@@ -168,7 +168,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 
 **Entrada:** HEAD de la implementación endurecida, bridge CJS sin cambios funcionales, tarball Lumi efcfeebc y fixtures bloqueadas. La comparación no debe usar únicamente el commit antiguo 1a7aa54.
 
-**Avance 2026-09-19:** subconjunto local de B0.1–B0.7 ejecutado con resultados documentados; matriz, corpus ampliado y gates restantes pendientes. El workflow preparado solo prueba el subconjunto, no certifica B0 completo. Hallazgo: discover con caché ausente puede contactar Hub pese a refresh=false; corregir antes de promoción.
+**Avance 2026-09-19:** subconjunto local de B0.1–B0.7 ejecutado con resultados documentados; corpus ampliado con PNG, STALE_PREPARATION, MathDisplay ausente y paquete incompleto. Matriz y gates restantes pendientes. El workflow preparado solo prueba el subconjunto, no certifica B0 completo. El hallazgo de red implícita de discover fue corregido en 641a60e; las regresiones y suite de 60 pruebas pasan. El MCP activo no se ha actualizado.
 
 **Archivos nuevos previstos:** `.bun-version`, configuración de instalación aislada bajo `tests/runtime-compat/`, `bun.lock` junto a su package.json, harness diferencial, fixtures multimedia autorizadas y workflow de compatibilidad. Mantener intacto el package-lock del producto Python mientras setup_lumi lo consuma.
 

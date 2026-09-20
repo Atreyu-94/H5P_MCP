@@ -1,5 +1,6 @@
 """B0 runtime comparison on one npm tree, with independent library stores."""
 import argparse
+import base64
 import copy
 import hashlib
 import json
@@ -19,6 +20,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bun', required=True)
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--installer-report', type=Path,
+                        help='Also test a copy of the successful frozen Bun installation')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo))
@@ -35,7 +38,7 @@ def main():
                   ['git','-c',f'safe.directory={repo.as_posix()}','rev-parse','HEAD'],cwd=repo,text=True).strip(),
               'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'checks':{}, 'decision':'not_certified',
-              'known_findings':['Lumi get() contacts Hub on missing cache even with refresh=false; cached corpus is seeded explicitly'],
+              'known_findings':['Discovery now reads cache storage directly unless refresh is explicitly requested'],
               'not_run':['Linux/macOS', 'Node 22/24 reference', 'audio/video', 'Hub/TLS/proxy',
                          'signals/backpressure/leak stress', 'TypeScript/lint', 'Bun installer comparison', 'browser']}
     # Keep isolated artifacts for subsequent browser/installer checks and failures.
@@ -50,6 +53,18 @@ def main():
     try:
         backend.setup_lumi()
         runtime = backend.runtime_dir()
+        if args.installer_report:
+            installation = json.loads(args.installer_report.read_text())
+            assert installation['checks']['frozen_install'] == 'passed'
+            candidate = Path(installation['artifacts']) / 'frozen-replay'
+            source_provenance = json.loads((backend.SOURCE/'provenance.json').read_text())
+            assert hashlib.sha256((candidate/source_provenance['archive']).read_bytes()).hexdigest() == source_provenance['sha256']
+            runtime = root / 'bun-installed-runtime'
+            shutil.copytree(candidate,runtime)
+            (runtime/'.ready').touch()
+            report['dependency_installer'] = 'bun-frozen'
+        else:
+            report['dependency_installer'] = 'npm-ci'
         report['npm_runtime'] = str(runtime)
         backend.runtime_dir = lambda: runtime
         stores = {}
@@ -89,13 +104,19 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
                 raise AssertionError(f'{action} runtime difference; see {root / (action + "-difference.json")}')
             return values[0]
         paired('catalog')
-        paired('discover', installed_only=True, query='', refresh=False)
+        discovered = paired('discover', installed_only=True, query='', refresh=False, offset=0, limit=100)
+        assert discovered['activities'], 'Discovery corpus must include installed activities'
         paired('schema', machine_name='H5P.TrueFalse', major_version=1, minor_version=8)
         report['checks']['catalog_discover_schema'] = 'passed'
         examples = copy.deepcopy(runpy.run_path(str(repo / 'tests/test_native_authoring.py'))['EXAMPLES'])
         examples.append({'library':'H5P.TrueFalse 1.8','params':{
             'question':r'<p>\(1+1=2\)</p>','correct':'true','behaviour':{'enableRetry':True,
             'feedbackOnCorrect':r'Correct: \(1+1=2\)', 'feedbackOnWrong':r'Try again: \(1+1=2\)'}}})
+        image = root / 'source.png'
+        image.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a0ioAAAAASUVORK5CYII='))
+        examples.append({'library':'H5P.TrueFalse 1.8','assets':{'diagram':str(image)},'params':{
+            'question':'<p>Image?</p>','correct':'true','media':{'type':{'library':'H5P.Image 1.1',
+            'params':{'file':{'path':'asset:diagram','mime':'image/png'},'alt':'Diagram'}}}}})
         def fixed_ids(value, path='root'):
             if isinstance(value,dict):
                 if 'library' in value and 'params' in value:
@@ -129,7 +150,25 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
                     pass
                 else:
                     raise AssertionError('Existing export overwritten')
-            assert package_contents(paths[0]) == package_contents(paths[1]), f'Package difference: {index}'
+            contents = [package_contents(path) for path in paths]
+            if 'assets' in example:
+                # This fixture has one PNG. Lumi randomizes its destination name;
+                # require original bytes, dimensions, MIME and logical reference
+                # before normalizing only that filename for the comparison.
+                filenames = []
+                expected_image = hashlib.sha256(image.read_bytes()).hexdigest()
+                for package in contents:
+                    field = package['content/content.json']['media']['type']['params']['file']
+                    name = 'content/' + field['path']
+                    filenames.append(field['path'])
+                    assert package.pop(name) == expected_image
+                    assert field['mime'] == 'image/png' and field['width'] == field['height'] == 1
+                    field['path'] = 'images/b0-fixture.png'
+                    assert 'content/images/b0-fixture.png' not in package
+                    package['content/images/b0-fixture.png'] = expected_image
+                report['checks']['image_bytes_and_reference'] = {'status':'passed','original_paths':filenames,
+                    'normalization':'Only generated filename of the single PNG fixture; bytes match input SHA-256'}
+            assert contents[0] == contents[1], f'Package difference: {index}'
             for label in ('node','bun'):
                 select(label)
                 for path in paths:
@@ -140,6 +179,36 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
         invalid = Activity(title='Invalid',library='H5P.TrueFalse 1.8',params={'question':'Q','correct':True})
         assert not paired('prepare',activity=invalid.model_dump())['ok']
         report['checks']['invalid_select'] = 'passed'
+        # Use the same stale manifest and incomplete package with both runtimes.
+        stale = copy.deepcopy(activity.model_dump())
+        stale['preparation']['libraries'][activity.library]['patch'] = -1
+        incomplete = root / 'incomplete.h5p'
+        with ZipFile(paths[0]) as source, ZipFile(incomplete,'w') as target:
+            for name in ('h5p.json','content/content.json'):
+                target.writestr(name,source.read(name))
+        for label in ('node','bun'):
+            select(label)
+            output = root / f'{label}-stale'
+            try:
+                H5PExporter(export_dir=str(output)).export(Activity.model_validate(stale),output_name='stale')
+            except backend.BackendError as error:
+                assert error.code == 'STALE_PREPARATION', error
+            else:
+                raise AssertionError('Stale preparation was accepted')
+            assert not list(output.glob('*.h5p'))
+            assert not validate_h5p_package(incomplete).ok
+            missing = root / f'{label}-missing-math'
+            shutil.copytree(stores[label]/'libraries',missing/'libraries',ignore=shutil.ignore_patterns('H5P.MathDisplay-1.0'))
+            os.environ['H5P_MCP_DATA_DIR'] = str(missing)
+            try:
+                math = Activity(title='Missing math',**examples[5])
+                result = backend.run_lumi('prepare',activity=math.model_dump())
+                assert not result['ok'], result
+                assert 'MathDisplay' in ' '.join(result['errors']), result
+            finally:
+                select(label)
+            report['checks'][f'{label}_negative_packages'] = {
+                'stale_preparation':'passed','incomplete_package':'passed','missing_math':'passed'}
         report['local_subset'] = 'passed'
     except Exception as error:
         report['local_subset'] = 'failed'
