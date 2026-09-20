@@ -1,0 +1,66 @@
+{
+  "core": "2aeb0b83fa603e331381b3a6b8bf42c3773ba140",
+  "playback": [
+    {
+      "name": "fixture-0.h5p",
+      "controls": 3,
+      "graded": true,
+      "score": 1,
+      "maximum": 1,
+      "errors": []
+    },
+    {
+      "name": "fixture-1.h5p",
+      "controls": 1,
+      "graded": false,
+      "errors": []
+    },
+    {
+      "name": "fixture-2.h5p",
+      "controls": 3,
+      "graded": true,
+      "score": 1,
+      "maximum": 1,
+      "errors": []
+    },
+    {
+      "name": "fixture-3.h5p",
+      "controls": 2,
+      "graded": true,
+      "score": 0,
+      "maximum": 1,
+      "errors": []
+    },
+    {
+      "name": "fixture-4.h5p",
+      "controls": 6,
+      "graded": true,
+      "score": 1,
+      "maximum": 1,
+      "errors": []
+    },
+    {
+      "name": "fixture-5.h5p",
+      "controls": 3,
+      "graded": true,
+      "score": 1,
+      "maximum": 1,
+      "errors": []
+    }
+  ],
+  "runtimeReport": "b0-windows-runtime.json",
+  "grading": [
+    {
+      "name": "fixture-5.h5p",
+      "wrong": 0,
+      "correct": 1,
+      "maximum": 1,
+      "retry": true,
+      "answered": true,
+      "errors": []
+    }
+  ],
+  "status": "passed",
+  "exportedBy": "Bun 1.4.2",
+  "hostRuntime": "Node"
+}

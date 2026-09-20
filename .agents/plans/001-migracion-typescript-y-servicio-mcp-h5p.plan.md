@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 3: F0 cerrado para la línea base local disponible; comparación A/B/C trasladada explícitamente a F3.8 por depender de núcleos aún no implementados. Evidencia y límites en docs/architecture/001-baseline-and-decisions.md. B0 no iniciado.
+- Fecha: 2026-09-19. Revisión 3: F0 cerrado para la línea base local disponible; comparación A/B/C trasladada explícitamente a F3.8 por depender de núcleos aún no implementados. B0 en ejecución parcial: Windows x64 con Node 26/Bun 1.4.2; evidencia y pendientes en docs/architecture/002-bun-compatibility.md. Bun no adoptado.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base local inspeccionada: `ac10c50`, main, cinco commits por delante de la referencia local origin/main. No se actualizó el remoto durante esta revisión.
@@ -167,6 +167,8 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 ## 4B. B0 — Certificar Bun antes de reescribir o cambiar runtime
 
 **Entrada:** HEAD de la implementación endurecida, bridge CJS sin cambios funcionales, tarball Lumi efcfeebc y fixtures bloqueadas. La comparación no debe usar únicamente el commit antiguo 1a7aa54.
+
+**Avance 2026-09-19:** subconjunto local de B0.1–B0.7 ejecutado con resultados documentados; matriz, corpus ampliado y gates restantes pendientes. El workflow preparado solo prueba el subconjunto, no certifica B0 completo. Hallazgo: discover con caché ausente puede contactar Hub pese a refresh=false; corregir antes de promoción.
 
 **Archivos nuevos previstos:** `.bun-version`, configuración de instalación aislada bajo `tests/runtime-compat/`, `bun.lock` junto a su package.json, harness diferencial, fixtures multimedia autorizadas y workflow de compatibilidad. Mantener intacto el package-lock del producto Python mientras setup_lumi lo consuma.
 
