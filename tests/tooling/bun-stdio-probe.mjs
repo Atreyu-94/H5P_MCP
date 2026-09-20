@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import {createHash} from 'node:crypto';
+import {Client} from '@modelcontextprotocol/client';
+import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
+const [bun,entry,libraries]=process.argv.slice(2);
+const root=await fs.mkdtemp(path.join(os.tmpdir(),'h5p-f4-'));
+const env={...process.env,PATH:path.dirname(bun),H5P_MCP_DATA_DIR:path.join(root,'data'),H5P_MCP_EXPORT_DIR:path.join(root,'exports'),H5P_MCP_ADMIN_SCOPES:''};
+delete env.H5P_MCP_LUMI_RUNTIME;
+if(libraries) await fs.cp(libraries,path.join(root,'data/libraries'),{recursive:true});
+const shape={'~standard':{version:1,vendor:'probe',validate(value){return {value};}}};
+for(const modern of [false,true]) {
+ const client=new Client({name:'f4-probe',version:'1'},modern?{versionNegotiation:{mode:'auto'}}:{});
+ const args=entry.endsWith('.tgz')?['x','--bun','--package',entry,'h5p-mcp-bun','stdio']:[entry,'stdio'];
+ const transport=new StdioClientTransport({command:bun,args,cwd:root,env,stderr:'pipe'});
+ let errors='';transport.stderr?.on('data',chunk=>errors+=chunk);
+ try {
+  await client.connect(transport);
+  const tools=(await client.listTools()).tools;
+  assert(tools.some(t=>t.name==='prepare_h5p_activity'));
+  assert(!tools.some(t=>t.name==='install_h5p_library'));
+  const resources=(await client.listResources()).resources;
+  assert(resources.some(r=>r.uri.endsWith('references/security.md')));
+  const skillURI='skill://h5p-authoring/SKILL.md';
+  if(modern) {
+   const listed=await client.request({method:'skills/list',params:{}},shape);
+   assert.equal(listed.skills.length,1);
+   const skill=listed.skills[0];
+   assert.equal(skill.resources.length,13);
+   assert.deepEqual((await client.request({method:'skills/get',params:{uri:skillURI}},shape)).skill,skill);
+   for(const item of skill.resources) {
+    const text=(await client.readResource({uri:item.uri})).contents[0].text;
+    assert.equal(Buffer.byteLength(text),item.size);
+    assert.equal('sha256:'+createHash('sha256').update(text).digest('hex'),item.digest);
+   }
+   await assert.rejects(client.request({method:'skills/get',params:{uri:skillURI+'/../security.md'}},shape));
+  } else assert((await client.readResource({uri:skillURI})).contents[0].text.includes('prepare_h5p_activity'));
+  await assert.rejects(client.readResource({uri:'file:///etc/passwd'}));
+  const invalid=await client.callTool({name:'prepare_h5p_activity',arguments:{}});
+  assert.equal(invalid.isError,false);
+  assert.equal(invalid.structuredContent.ok,false);
+  const denied=await client.callTool({name:'refresh_h5p_catalog',arguments:{}});
+  assert.equal(denied.isError,true);
+  assert.equal(denied.structuredContent.diagnostics[0].code,'PERMISSION_DENIED');
+  const found=await client.callTool({name:'search_h5p_types',arguments:{installed_only:true}});
+  assert(Array.isArray(found.structuredContent.activities),JSON.stringify(found));
+  if(libraries&&modern) {
+   for(const type of ['true-false','multiple-choice','accordion','question-set']) {
+    const example=JSON.parse((await client.readResource({uri:'skill://h5p-authoring/examples/'+type+'.json'})).contents[0].text);
+    const prepared=await client.callTool({name:'prepare_h5p_activity',arguments:example});
+    assert.equal(prepared.structuredContent.ok,true,JSON.stringify(prepared));
+    const exported=await client.callTool({name:'export_h5p_activity',arguments:{activity:prepared.structuredContent.activity,output_name:type}});
+    assert.equal(exported.structuredContent.ok,true,JSON.stringify(exported));
+    const artifact=exported.structuredContent.artifact;
+    const bytes=Buffer.from((await client.readResource({uri:artifact.uri})).contents[0].blob,'base64');
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),artifact.sha256);
+    const checked=await client.callTool({name:'validate_h5p_package',arguments:{path:path.join(root,'exports',type+'.h5p')}});
+    assert.equal(checked.structuredContent.ok,true,JSON.stringify(checked));
+    console.log(type+': prepare/export/import passed');
+   }
+  }
+  console.log(JSON.stringify({modern,tools:tools.length,skills:'passed',errors}));
+ } finally {await client.close();}
+}
+console.log(JSON.stringify({status:'passed',root,entry,runtime:bun,childPATH:env.PATH,conformance:'official HTTP CLI not applicable to stdio'}));
