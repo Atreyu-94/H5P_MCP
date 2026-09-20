@@ -13,7 +13,7 @@ export class Engine {
   return this.pool.run(async()=>{
    const mutation=request.action==='setup'||request.refresh||request.install_if_missing;
    if(mutation) return exclusive(request.data_dir,signal,()=>isolated(request,signal));
-   const snapshot=await exclusive(request.data_dir,signal,()=>this.generations.acquire(request.data_dir));
+   const snapshot=await exclusive(request.data_dir,signal,()=>this.generations.acquire(request.data_dir,signal));
    try {
     const pinned={...request,data_dir:snapshot.root};
     // Keep untrusted semantics/ZIP work killable; persistent queries share the bounded schema cache.

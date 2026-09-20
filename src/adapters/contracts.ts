@@ -5,6 +5,7 @@ import {repositoryRoot} from '../infrastructure/runtime.js';
 import type {Native} from '../domain/types.js';
 const read=(name:string)=>JSON.parse(fs.readFileSync(path.join(repositoryRoot,'h5p_mcp/contracts',name),'utf8'));
 export const base=read('v1.json'), operations=read('operations-v1.json'), codes=read('codes-v1.json');
+export const examples=read('examples-v1.json');
 const defs={...base.$defs,...operations.$defs};
 export function schema(name:string):Native {
  const expand=(value:Native):Native=>Array.isArray(value)?value.map(expand):
@@ -30,4 +31,3 @@ export const failure=(code:string)=>Object.assign(new Error(code),{code});
 export function report(kind:string,ok:boolean,errors:Native[]=[],checks:Native={}) {
  return {contract_version:'1',ok,kind,diagnostics:errors.slice(0,100).map(diagnostic),diagnostics_truncated:errors.length>100,verification:verification(checks)};
 }
-

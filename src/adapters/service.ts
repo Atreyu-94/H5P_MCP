@@ -5,8 +5,8 @@ import {Engine} from '../application/engine.js';
 import type {CoreRequest,Native} from '../domain/types.js';
 import {checkTree,limit} from '../domain/limits.js';
 import {projectSemantics} from '../domain/contracts.js';
-import {Resources} from './resources.js';
-import {base,operations,codes,schema,valid,report,failure,diagnostic,verification} from './contracts.js';
+import {Resources,hash,canonical} from './resources.js';
+import {base,operations,codes,examples,schema,valid,report,failure,diagnostic,verification} from './contracts.js';
 const scopes:Record<string,string>={refresh_h5p_catalog:'catalog:refresh',install_h5p_library:'libraries:install',install_h5p_library_package:'libraries:install'};
 export const aliases:Record<string,string>={list_h5p_activities:'search_h5p_types',get_h5p_activity_schema:'get_h5p_type_contract',create_h5p_activity:'prepare_h5p_activity',export_h5p:'export_h5p_activity',validate_h5p:'validate_h5p_package'};
 export class Service {
@@ -66,7 +66,7 @@ export class Service {
    const raw=await this.run('schema',{...args,install_if_missing:name==='install_h5p_library'},signal);
    if(name==='install_h5p_library') return raw;
    return {contract_version:'1',format:'h5p-native-compact-v1',library:raw.library,patch_version:raw.patch_version,core:raw.core,
-    ...projectSemantics(raw.semantics),examples:[],raw_schema:this.resources.snapshot(raw),
+    ...projectSemantics(raw.semantics),examples:examples.filter((item:Native)=>item.library===raw.library&&item.patch_version===raw.patch_version&&item.semantics_sha256===hash(JSON.stringify(canonical(raw.semantics)))).map(({title,params,evidence}:Native)=>({title,params,evidence})),raw_schema:this.resources.snapshot(raw),
     'x-h5p':{verification:verification(),note:'Native semantics are authoritative; playback and grading require target testing.'}};
   }
   if(name==='install_h5p_library_package') {
@@ -119,7 +119,7 @@ export class Service {
    if(!valid(definition[1],result)) throw failure('INTERNAL_ERROR');
    if(Buffer.byteLength(JSON.stringify(result))>limit('OUTPUT_BYTES',16777216)) throw failure('LIMIT_EXCEEDED');
   } catch(error:Native) {
-   const code=error.name==='TimeoutError'?'BACKEND_TIMEOUT':error.code==='EEXIST'?'OUTPUT_ALREADY_EXISTS':error.code;
+   const code=['TimeoutError','AbortError'].includes(error.name)?'BACKEND_TIMEOUT':error.code==='EEXIST'?'OUTPUT_ALREADY_EXISTS':error.code==='ENOENT'?'ASSET_NOT_FOUND':['EACCES','EPERM'].includes(error.code)?'PERMISSION_DENIED':error.code;
    const item=diagnostic({...error,code});
    const validation=['SCHEMA_VALIDATION_FAILED','LIBRARY_NOT_INSTALLED','LIBRARY_VERSION_MISMATCH','UNSAFE_ARCHIVE','STALE_PREPARATION','ASSET_NOT_FOUND','MIME_MISMATCH'].includes(item.code);
    result=report(validation?'validation':'operational_error',false,[item]);
@@ -131,6 +131,8 @@ export class Service {
  }
  async legacy(name:string,args:Native,signal:AbortSignal):Promise<Native> {
   const target=aliases[name],input={...args};
+  const checked={...input};delete checked.refresh;delete checked.install_if_missing;
+  if(!valid(this.definitions[target][0],checked)) return this.call(target,checked,signal);
   for(const flag of ['refresh','install_if_missing']) if(flag in input&&typeof input[flag]!=='boolean') return this.call(target,{invalid:true},signal);
   let mapped=target;
   if(name==='list_h5p_activities') {

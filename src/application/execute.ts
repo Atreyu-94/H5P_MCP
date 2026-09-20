@@ -9,13 +9,18 @@ import {administer} from '../h5p/administration.js';
 import {prepare} from '../h5p/preparation.js';
 import {exportActivity} from '../h5p/export.js';
 import {validate} from '../h5p/validation.js';
+import {preflight} from '../infrastructure/archive.js';
 configureLimits(process.env);
 /** Internal trusted-host API. Filesystem authorization stays at the host boundary. */
 export async function execute(request: CoreRequest): Promise<unknown> {
  checkTree(request);
  if(!path.isAbsolute(request.data_dir)) throw new Error('Absolute data_dir required');
  if(request.action==='discover'||request.action==='schema') return query(request);
- if(request.action==='setup') return administer(request);
+ if(request.action==='setup') {
+  for(const filename of request.packages||[]) await preflight(filename);
+  return administer(request);
+ }
+ if(request.action==='validate') await preflight(request.path!,true);
  const libraries=path.join(request.data_dir,'libraries');
  const job=await fs.mkdtemp(path.join(os.tmpdir(),'h5p-core-'));
  try {

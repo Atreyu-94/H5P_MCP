@@ -6,6 +6,7 @@ import {readBounded} from '../infrastructure/media.js';
 import {failure} from './contracts.js';
 import type {Native} from '../domain/types.js';
 export const hash=(bytes:Buffer|string)=>createHash('sha256').update(bytes).digest('hex');
+export const canonical=(value:Native):Native=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value;
 export const skillURI='skill://h5p-authoring/SKILL.md';
 export const extensionID='io.modelcontextprotocol/skills';
 export class Resources {
@@ -27,7 +28,7 @@ export class Resources {
   this.skill={uri:skillURI,frontmatter:{name:'h5p-authoring',description:text.match(/^description: (.+)$/m)![1],license:'Apache-2.0'},resources};
  }
  snapshot(value:Native) {
-  const text=JSON.stringify(value);
+  const text=JSON.stringify(canonical(value));
   if(Buffer.byteLength(text)>2097152) throw failure('LIMIT_EXCEEDED');
   const sha256=hash(text),uri='h5p-schema://snapshot/'+sha256;
   if(!this.texts.has(uri)) {

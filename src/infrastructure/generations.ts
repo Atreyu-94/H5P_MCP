@@ -17,7 +17,7 @@ export async function exclusive<T>(root:string,signal:AbortSignal,work:()=>Promi
  try {signal.throwIfAborted();return await work();}
  finally {await fs.rmdir(lock);}
 }
-async function digestTree(root:string):Promise<string> {
+async function digestTree(root:string,signal?:AbortSignal):Promise<string> {
  const hash=createHash('sha256');let files=0,bytes=0;
  async function visit(dir:string,depth=0):Promise<void> {
   if(depth>32) throw new Error('Library path too deep');
@@ -25,6 +25,7 @@ async function digestTree(root:string):Promise<string> {
   try {entries=await fs.readdir(dir,{withFileTypes:true});}
   catch(error) {if((error as NodeJS.ErrnoException).code==='ENOENT') return;throw error;}
   for(const entry of entries.sort((a,b)=>a.name.localeCompare(b.name))) {
+   signal?.throwIfAborted();
    const full=path.join(dir,entry.name);
    if(entry.isSymbolicLink()) throw new Error('Library symlinks are unsupported');
    hash.update(path.relative(root,full).split(path.sep).join('/'));
@@ -35,6 +36,7 @@ async function digestTree(root:string):Promise<string> {
     try {
      const buffer=Buffer.alloc(65536);
      while(true) {
+      signal?.throwIfAborted();
       const {bytesRead}=await stream.read(buffer);if(!bytesRead) break;
       bytes+=bytesRead;if(bytes>limit('ZIP_BYTES',536870912)) throw new Error('Snapshot byte budget exceeded');
       hash.update(buffer.subarray(0,bytesRead));
@@ -50,8 +52,9 @@ export class Generations {
  private base?:string;
  constructor(private maximum=4) {}
  /** Caller holds exclusive() while acquiring; snapshots never mutate afterward. */
- async acquire(source:string):Promise<{root:string;release:()=>Promise<void>}> {
-  const digest=await digestTree(path.join(source,'libraries'));
+ async acquire(source:string,signal?:AbortSignal):Promise<{root:string;release:()=>Promise<void>}> {
+  signal?.throwIfAborted();
+  const digest=await digestTree(path.join(source,'libraries'),signal);
   // Config/cache are part of the generation, not a mutable shared editor.
   const config:Record<string,Buffer>={};
   for(const name of ['cache.json','config.json']) {
@@ -70,11 +73,11 @@ export class Generations {
    const destination=path.join(this.base,key);
    await fs.mkdir(destination);
    try {
-    try {await fs.cp(path.join(source,'libraries'),path.join(destination,'libraries'),{recursive:true,errorOnExist:true,force:false});}
+    try {await fs.cp(path.join(source,'libraries'),path.join(destination,'libraries'),{recursive:true,errorOnExist:true,force:false,filter:()=>{signal?.throwIfAborted();return true;}});}
     catch(error) {if((error as NodeJS.ErrnoException).code!=='ENOENT') throw error;await fs.mkdir(path.join(destination,'libraries'),{recursive:true});}
     for(const [name,data] of Object.entries(config)) await fs.writeFile(path.join(destination,name),data,{flag:'wx'});
-    if(await digestTree(path.join(source,'libraries'))!==digest ||
-       await digestTree(path.join(destination,'libraries'))!==digest) throw new Error('Libraries changed during snapshot');
+    if(await digestTree(path.join(source,'libraries'),signal)!==digest ||
+       await digestTree(path.join(destination,'libraries'),signal)!==digest) throw new Error('Libraries changed during snapshot');
     entry={root:destination,references:0};this.entries.set(key,entry);
    } catch(error) {await fs.rm(destination,{recursive:true,force:true});throw error;}
   }
