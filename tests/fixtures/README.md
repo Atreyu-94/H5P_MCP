@@ -16,6 +16,11 @@ deliberately; tests must not update this fixture from the Hub automatically.
 Audio 1.5.29 was added through the explicit isolated Hub probe on 2026-09-19.
 Both Node and Bun installed that version; its original notices are preserved.
 
+`video.webm` is project-generated test data: 0.2 seconds of 32x32 blue VP9 video,
+created with FFmpeg 9.0.1 (`-f lavfi -i color=c=blue:s=32x32:d=0.2 -an -c:v libvpx-vp9`).
+Its SHA-256 is enforced by check_repository.py. The runtime probe generates a
+0.2 second mono PCM WAV in its own temporary directory; no user media are used.
+
 Integration tests unpack it into a unique temporary data directory by default.
 Set `H5P_MCP_ISOLATED_TESTS=0` only for an explicit developer-cache run.
 The pinned Lumi runtime is installed there with `npm ci --ignore-scripts`.
