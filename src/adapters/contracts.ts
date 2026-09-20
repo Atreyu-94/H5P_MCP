@@ -6,7 +6,8 @@ import type {Native} from '../domain/types.js';
 const read=(name:string)=>JSON.parse(fs.readFileSync(path.join(repositoryRoot,'h5p_mcp/contracts',name),'utf8'));
 export const base=read('v1.json'), operations=read('operations-v1.json'), codes=read('codes-v1.json');
 export const examples=read('examples-v1.json');
-const defs={...base.$defs,...operations.$defs};
+export const storage=read('storage-v1.json');
+const defs={...base.$defs,...operations.$defs,...storage.$defs};
 export function schema(name:string):Native {
  const expand=(value:Native):Native=>Array.isArray(value)?value.map(expand):
   value&&typeof value==='object'?value.$ref?expand(defs[value.$ref.split('/').pop()]):
@@ -31,7 +32,8 @@ export function diagnostic(error:Native) {
  const key=Object.hasOwn(codes.codes,code)?code:'INTERNAL_ERROR';
  const [retryable,message,suggested_fix]=codes.codes[key];
  const pointer=typeof error?.pointer==='string'&&/^(?:\/(?:[^~/]|~[01])*)*$/.test(error.pointer)?error.pointer.slice(0,4096):'';
- return {code:key,pointer,message,expected:null,actual:null,retryable,suggested_fix};
+ const expected=key==='TARGET_INCOMPATIBLE'?String(Array.isArray(error.targetMissing)?error.targetMissing.filter((v:unknown)=>typeof v==='string'&&/^H5P\.[A-Za-z0-9 .()_-]+$/.test(v)).join(', '):error.expected||'').slice(0,1024)||null:null;
+ return {code:key,pointer,message,expected,actual:null,retryable,suggested_fix};
 }
 export const failure=(code:string)=>Object.assign(new Error(code),{code});
 export function report(kind:string,ok:boolean,errors:Native[]=[],checks:Native={}) {

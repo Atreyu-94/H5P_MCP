@@ -6,7 +6,7 @@ export interface Activity {
  assets?: Record<string,string>; preparation?: Native;
 }
 export interface CoreRequest {
- action: 'catalog'|'discover'|'schema'|'prepare'|'export'|'validate'|'setup';
+ action: 'catalog'|'discover'|'schema'|'prepare'|'export'|'validate'|'setup'|'inspect-archive';
  data_dir: string; activity?: Activity; path?: string; machine_name?: string;
  major_version?: number; minor_version?: number; query?: string; offset?: number; limit?: number;
  installed_only?: boolean; refresh?: boolean; install_if_missing?: boolean; packages?: string[];

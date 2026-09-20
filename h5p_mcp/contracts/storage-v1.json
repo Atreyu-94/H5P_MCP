@@ -1,0 +1,349 @@
+{
+  "$defs": {
+    "target_profile_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "core": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "major": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "minor": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "major",
+            "minor"
+          ]
+        },
+        "inventory_at": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "can_install": {
+          "type": "boolean"
+        },
+        "libraries": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "machine_name": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              },
+              "major": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minor": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "patch": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "machine_name",
+              "major",
+              "minor",
+              "patch"
+            ]
+          }
+        },
+        "allowed": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "machine_name": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]*$"
+              },
+              "major": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minor": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "patch": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "machine_name",
+              "major",
+              "minor",
+              "patch"
+            ]
+          }
+        }
+      },
+      "required": [
+        "core",
+        "inventory_at",
+        "can_install",
+        "libraries"
+      ]
+    },
+    "stored_upload_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mime": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31536000,
+          "default": 86400
+        }
+      },
+      "required": [
+        "path",
+        "mime"
+      ]
+    },
+    "stored_prepare_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "activity": {
+          "$ref": "#/$defs/prepare_remote_input"
+        },
+        "library_snapshot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31536000,
+          "default": 86400
+        }
+      },
+      "required": [
+        "activity"
+      ]
+    },
+    "stored_export_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "preparation_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "idempotency_key": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "target_profile_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31536000,
+          "default": 86400
+        }
+      },
+      "required": [
+        "preparation_id",
+        "idempotency_key"
+      ]
+    },
+    "stored_id_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        }
+      },
+      "required": [
+        "object_id"
+      ]
+    },
+    "stored_list_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "asset",
+            "package",
+            "preparation",
+            "artifact",
+            "libraries",
+            "target"
+          ]
+        }
+      },
+      "required": [
+        "kind"
+      ]
+    },
+    "stored_target_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "$ref": "#/$defs/target_profile_input"
+        },
+        "ttl_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 31536000,
+          "default": 86400
+        }
+      },
+      "required": [
+        "profile"
+      ]
+    },
+    "stored_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "object_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "kind": {
+          "enum": [
+            "asset",
+            "package",
+            "preparation",
+            "artifact",
+            "libraries",
+            "target"
+          ]
+        },
+        "expires": {
+          "type": "integer"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "mime_type": {
+          "type": "string"
+        },
+        "size": {
+          "type": "integer"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "library_snapshot_id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "verification": {
+          "$ref": "#/$defs/verification"
+        },
+        "target": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "object_id",
+        "kind",
+        "expires"
+      ]
+    },
+    "stored_list_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "objects": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "objects"
+      ]
+    },
+    "stored_delete_output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "revoked": {
+          "const": true
+        }
+      },
+      "required": [
+        "revoked"
+      ]
+    }
+  },
+  "local": {
+    "upload_h5p_asset": [
+      "stored_upload_input",
+      "stored_output"
+    ],
+    "upload_h5p_package": [
+      "stored_upload_input",
+      "stored_output"
+    ],
+    "prepare_stored_h5p_activity": [
+      "stored_prepare_input",
+      "stored_output"
+    ],
+    "export_prepared_h5p_activity": [
+      "stored_export_input",
+      "stored_output"
+    ],
+    "validate_stored_h5p_package": [
+      "stored_id_input",
+      "operation_report"
+    ],
+    "list_stored_h5p_objects": [
+      "stored_list_input",
+      "stored_list_output"
+    ],
+    "revoke_stored_h5p_object": [
+      "stored_id_input",
+      "stored_delete_output"
+    ],
+    "capture_h5p_library_snapshot": [
+      "empty_input",
+      "stored_output"
+    ],
+    "activate_h5p_library_snapshot": [
+      "stored_id_input",
+      "stored_output"
+    ],
+    "register_h5p_target_profile": [
+      "stored_target_input",
+      "stored_output"
+    ]
+  }
+}

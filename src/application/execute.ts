@@ -15,6 +15,7 @@ configureLimits(process.env);
 export async function execute(request: CoreRequest): Promise<unknown> {
  checkTree(request);
  if(!path.isAbsolute(request.data_dir)) throw new Error('Absolute data_dir required');
+ if(request.action==='inspect-archive'){await preflight(request.path!);return {ok:true};}
  if(request.action==='discover'||request.action==='schema') return query(request);
  if(request.action==='setup') {
   for(const filename of request.packages||[]) await preflight(filename);

@@ -6,27 +6,123 @@
     "INVALID_SUBCONTENT_ID": "SCHEMA_VALIDATION_FAILED",
     "DUPLICATE_SUBCONTENT_ID": "SCHEMA_VALIDATION_FAILED",
     "LUMI_TRANSFORMATION_REQUIRED": "SCHEMA_VALIDATION_FAILED",
-    "INPUT_TOO_DEEP": "LIMIT_EXCEEDED", "INPUT_TOO_LARGE": "LIMIT_EXCEEDED",
-    "OUTPUT_TOO_LARGE": "LIMIT_EXCEEDED", "BATCH_TOO_LARGE": "LIMIT_EXCEEDED",
-    "OUTPUT_EXISTS": "OUTPUT_ALREADY_EXISTS", "BACKEND_ERROR": "BACKEND_UNAVAILABLE"
+    "INPUT_TOO_DEEP": "LIMIT_EXCEEDED",
+    "INPUT_TOO_LARGE": "LIMIT_EXCEEDED",
+    "OUTPUT_TOO_LARGE": "LIMIT_EXCEEDED",
+    "BATCH_TOO_LARGE": "LIMIT_EXCEEDED",
+    "OUTPUT_EXISTS": "OUTPUT_ALREADY_EXISTS",
+    "BACKEND_ERROR": "BACKEND_UNAVAILABLE"
   },
   "codes": {
-    "PERMISSION_DENIED": [false, "The operation is not authorized by the host.", "Ask the operator to configure the required scope or authorized roots."],
-    "LIBRARY_NOT_INSTALLED": [false, "The required library is not installed.", "Install the exact library through an authorized administrator."],
-    "LIBRARY_VERSION_MISMATCH": [false, "The library version does not match the contract.", "Select an exact version allowed by the native semantics."],
-    "SCHEMA_VALIDATION_FAILED": [false, "The field does not satisfy its contract.", "Read the field contract and correct the indicated field."],
-    "UNSUPPORTED_SEMANTIC_TYPE": [false, "This native semantic type is not supported.", "Choose a supported field or extend the semantic validator."],
-    "STALE_PREPARATION": [false, "Preparation dependencies changed.", "Prepare the activity again before exporting."],
-    "ASSET_NOT_FOUND": [false, "A referenced asset is unavailable.", "Supply an existing file within the authorized asset roots."],
-    "ASSET_TOO_LARGE": [false, "Media exceeds the configured byte budget.", "Reduce the media size before preparing again."],
-    "MIME_MISMATCH": [false, "The declared media type is invalid or mismatches its bytes.", "Use a supported MIME type matching the actual file."],
-    "UNSAFE_ARCHIVE": [false, "The archive failed the safety checks.", "Rebuild the archive with safe unique paths and bounded entries."],
-    "OUTPUT_ALREADY_EXISTS": [false, "The output already exists.", "Choose a different output name."],
-    "HUB_UNAVAILABLE": [true, "The H5P Hub is unavailable.", "Retry later or use the installed catalog."],
-    "TARGET_INCOMPATIBLE": [false, "The library is incompatible with the target.", "Select a runnable library compatible with the configured H5P Core."],
-    "BACKEND_UNAVAILABLE": [false, "The backend could not complete the operation.", "Ask the administrator to check backend setup and local logs."],
-    "BACKEND_TIMEOUT": [true, "The backend deadline expired.", "Retry with a smaller workload or after the backend becomes available."],
-    "INTERNAL_ERROR": [false, "An unexpected internal error occurred.", "Ask the administrator to inspect the local logs."],
-    "LIMIT_EXCEEDED": [false, "The configured workload limit was exceeded.", "Reduce the input size or nesting depth." ]
+    "PERMISSION_DENIED": [
+      false,
+      "The operation is not authorized by the host.",
+      "Ask the operator to configure the required scope or authorized roots."
+    ],
+    "LIBRARY_NOT_INSTALLED": [
+      false,
+      "The required library is not installed.",
+      "Install the exact library through an authorized administrator."
+    ],
+    "LIBRARY_VERSION_MISMATCH": [
+      false,
+      "The library version does not match the contract.",
+      "Select an exact version allowed by the native semantics."
+    ],
+    "SCHEMA_VALIDATION_FAILED": [
+      false,
+      "The field does not satisfy its contract.",
+      "Read the field contract and correct the indicated field."
+    ],
+    "UNSUPPORTED_SEMANTIC_TYPE": [
+      false,
+      "This native semantic type is not supported.",
+      "Choose a supported field or extend the semantic validator."
+    ],
+    "STALE_PREPARATION": [
+      false,
+      "Preparation dependencies changed.",
+      "Prepare the activity again before exporting."
+    ],
+    "ASSET_NOT_FOUND": [
+      false,
+      "A referenced asset is unavailable.",
+      "Supply an existing file within the authorized asset roots."
+    ],
+    "ASSET_TOO_LARGE": [
+      false,
+      "Media exceeds the configured byte budget.",
+      "Reduce the media size before preparing again."
+    ],
+    "MIME_MISMATCH": [
+      false,
+      "The declared media type is invalid or mismatches its bytes.",
+      "Use a supported MIME type matching the actual file."
+    ],
+    "UNSAFE_ARCHIVE": [
+      false,
+      "The archive failed the safety checks.",
+      "Rebuild the archive with safe unique paths and bounded entries."
+    ],
+    "OUTPUT_ALREADY_EXISTS": [
+      false,
+      "The output already exists.",
+      "Choose a different output name."
+    ],
+    "HUB_UNAVAILABLE": [
+      true,
+      "The H5P Hub is unavailable.",
+      "Retry later or use the installed catalog."
+    ],
+    "TARGET_INCOMPATIBLE": [
+      false,
+      "The library is incompatible with the target.",
+      "Select a runnable library compatible with the configured H5P Core."
+    ],
+    "BACKEND_UNAVAILABLE": [
+      false,
+      "The backend could not complete the operation.",
+      "Ask the administrator to check backend setup and local logs."
+    ],
+    "BACKEND_TIMEOUT": [
+      true,
+      "The backend deadline expired.",
+      "Retry with a smaller workload or after the backend becomes available."
+    ],
+    "INTERNAL_ERROR": [
+      false,
+      "An unexpected internal error occurred.",
+      "Ask the administrator to inspect the local logs."
+    ],
+    "LIMIT_EXCEEDED": [
+      false,
+      "The configured workload limit was exceeded.",
+      "Reduce the input size or nesting depth."
+    ],
+    "OBJECT_NOT_FOUND": [
+      false,
+      "The stored object is unavailable.",
+      "Use an existing object owned by the authenticated principal."
+    ],
+    "OBJECT_EXPIRED": [
+      false,
+      "The stored object has expired.",
+      "Upload or prepare again using a current snapshot."
+    ],
+    "OBJECT_INTEGRITY_FAILED": [
+      false,
+      "Stored bytes do not match their immutable manifest.",
+      "Discard the object and prepare it again."
+    ],
+    "IDEMPOTENCY_CONFLICT": [
+      false,
+      "This idempotency key is already bound to different input.",
+      "Reuse the original input or choose a new key."
+    ],
+    "TARGET_INVENTORY_UNKNOWN": [
+      false,
+      "No verified current target inventory was supplied.",
+      "Register a target profile; do not claim Moodle compatibility."
+    ]
   }
 }

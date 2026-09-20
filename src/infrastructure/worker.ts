@@ -5,12 +5,12 @@ import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {limit} from '../domain/limits.js';
 import type {CoreRequest,Reply} from '../domain/types.js';
-export async function isolated(request:CoreRequest,signal:AbortSignal):Promise<unknown> {
+export async function isolated(request:CoreRequest,signal:AbortSignal,assetRoots?:string[]):Promise<unknown> {
  const root=await fs.mkdtemp(path.join(os.tmpdir(),'h5p-worker-core-'));
  try {
   return await new Promise((resolve,reject)=>{
    const child=spawn(process.execPath,[fileURLToPath(new URL('../adapters/worker.js',import.meta.url))],
-    {env:{...process.env,TMP:root,TEMP:root,TMPDIR:root},stdio:['pipe','pipe','pipe'],windowsHide:true});
+    {env:{...process.env,...(assetRoots?{H5P_MCP_ASSET_ROOTS:JSON.stringify(assetRoots)}:{}),TMP:root,TEMP:root,TMPDIR:root},stdio:['pipe','pipe','pipe'],windowsHide:true});
    let bytes=0,failed:Error|undefined;const chunks:Buffer[]=[];
    const abort=()=>{failed=Object.assign(new Error('Core job cancelled'),{code:'BACKEND_TIMEOUT'});child.kill();};
    signal.addEventListener('abort',abort,{once:true});
