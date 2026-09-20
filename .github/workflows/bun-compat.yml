@@ -25,6 +25,8 @@ jobs:
         with:
           bun-version: '1.4.2'
       - run: uv sync --locked
+      - name: Verify official Bun archive and installed binary hashes
+        run: ./tests/runtime-compat/verify-bun.ps1 -BunPath (Get-Command bun).Source -OutputPath b0-bun-identity.json
       - name: Verify TypeScript 7 and Oxlint without ESLint or TypeScript 6
         run: |
           npm ci --prefix tests/tooling --ignore-scripts --no-audit --no-fund
@@ -65,3 +67,4 @@ jobs:
             b0-installer.bun.lock
             b0-bun-tree.json
             b0-process.json
+            b0-bun-identity.json
