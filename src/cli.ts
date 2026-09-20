@@ -5,7 +5,15 @@ import {readBounded} from './infrastructure/media.js';
 const [command,...args]=process.argv.slice(2);
 try {
  if(command==='stdio') await stdio();
- else if(command==='--help'||!command) console.log('h5p-mcp-bun stdio | validate <file.h5p> | export <activity.json> <output-name> | admin <refresh|install|package> [name|path]');
+ else if(command==='http') {
+  const {config}=await import('./http/auth.js'),{http}=await import('./http/server.js');
+  const settings=config(JSON.parse((await readBounded(args[0],65536)).toString('utf8'))),app=http(settings);
+  const listener=Bun.serve({hostname:'127.0.0.1',port:settings.port,maxRequestBodySize:134217728,idleTimeout:255,fetch:app.fetch});
+  console.error(JSON.stringify({event:'http_ready',host:'127.0.0.1',port:listener.port}));
+  let closing=false;const close=async()=>{if(closing)return;closing=true;await app.close();await listener.stop(true);};
+  process.once('SIGINT',()=>{void close();});process.once('SIGTERM',()=>{void close();});
+ }
+ else if(command==='--help'||!command) console.log('h5p-mcp stdio | http <host-config.json> | validate <file.h5p> | export <activity.json> <output-name> | admin <refresh|install|package> [name|path]');
  else {
   const service=new Service();await service.initialize();
   try {
