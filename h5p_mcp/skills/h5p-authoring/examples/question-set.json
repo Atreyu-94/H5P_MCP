@@ -1,0 +1,23 @@
+{
+  "title": "Repaso de magnitudes",
+  "library": "H5P.QuestionSet 1.21",
+  "params": {
+    "introPage": {
+      "showIntroPage": false
+    },
+    "endGame": {
+      "showAnimations": false,
+      "skippable": false
+    },
+    "questions": [
+      {
+        "library": "H5P.TrueFalse 1.8",
+        "params": {
+          "question": "<p>La masa es una magnitud escalar.</p>",
+          "correct": "true"
+        }
+      }
+    ]
+  }
+}
+

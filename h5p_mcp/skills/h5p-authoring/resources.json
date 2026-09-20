@@ -1,0 +1,16 @@
+[
+  "SKILL.md",
+  "references/workflow.md",
+  "references/selecting-content-types.md",
+  "references/native-semantics.md",
+  "references/media.md",
+  "references/mathematics.md",
+  "references/moodle-handoff.md",
+  "references/validation-errors.md",
+  "references/security.md",
+  "examples/true-false.json",
+  "examples/multiple-choice.json",
+  "examples/accordion.json",
+  "examples/question-set.json"
+]
+
