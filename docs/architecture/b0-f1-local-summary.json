@@ -1,0 +1,43 @@
+{
+  "product_commit": "08e06634538c3d9a669fa92a482a4a7ae8f643ed",
+  "ci_commit": "060220ce65e1e743775642c5af69b259763201c9",
+  "repository": "Atreyu-94/H5P_MCP",
+  "platform": "windows-x64",
+  "node": "26.7.0",
+  "bun": "1.4.2",
+  "typescript": "7.0.2",
+  "oxlint": "1.83.0",
+  "tsgolint": "7.0.2002",
+  "tests": {"status": "passed", "count": 98, "seconds": 81.86},
+  "additional_real_cancellation_tests": {"status":"passed", "count":2, "seconds":15.04},
+  "checks": {
+    "npm_tree_corpus": "passed",
+    "bun_tree_corpus": "passed",
+    "native_crc": "passed",
+    "nine_packages_cross_import": "passed",
+    "browser_node_packages": "passed",
+    "browser_bun_packages": "passed",
+    "audio_video_decode": "passed",
+    "math_feedback_grading_both_runtimes": "passed",
+    "explicit_hub_refresh_install_both_runtimes": "passed",
+    "eof_termination_reap": "passed",
+    "backpressure_stream_error": "passed",
+    "repeated_operations": "passed",
+    "typescript_lint_positive_negative": "passed",
+    "bridge_lint": "passed",
+    "artifact_guard": "passed",
+    "windows_binary_identity": "passed",
+    "expanded_linux_macos_ci": "not_run",
+    "moodle_gradebook": "not_run",
+    "proxy": "not_run"
+  },
+  "decision": "keep_python_node_until_full_gate",
+  "platform_decisions": {
+    "windows_x64": "local_corpus_passed_no_mcp_runtime_promotion",
+    "linux_x64_glibc": "expanded_corpus_passed_binary_identity_ci_pending",
+    "macos_arm64": "expanded_corpus_passed_binary_identity_ci_pending",
+    "linux_arm64": "not_certified"
+  },
+  "ci_runs": [35486655700, 35486655779],
+  "limits": ["No indefinite leak guarantee", "No exhaustive HTML security claim", "No hostile filesystem TOCTOU isolation"]
+}

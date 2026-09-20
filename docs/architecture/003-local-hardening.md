@@ -44,6 +44,7 @@ glibc cargado en Linux; no incluye esta segunda entrega local.
 
 ## Pendientes
 
-No se promete eliminar TOCTOU entre preflight/importación: falta snapshot inmutable.
-Siguen abiertos contraste semántico, cancelación MCP efectiva, ampliación de CI y
-guardia de artefactos. La matriz B0 solo certifica el corpus implementado.
+La tercera entrega completa contraste semántico con Lumi, cancelación MCP con
+reap y temporales controlados por el padre, guardia de artefactos y CI ampliado.
+Evidencia y límites en 004-b0-f1-local-completion.md. No se promete eliminar
+TOCTOU frente a un proceso local hostil: los snapshots inmutables quedan en F5.
