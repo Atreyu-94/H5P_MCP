@@ -1,0 +1,16 @@
+{
+  "product_head": "ac10c502eec1d1c19a8c75caf86bdc5f911407c6",
+  "platform": "Windows 11 x64",
+  "python": "3.12.14",
+  "node": "26.7.0",
+  "provenance": "Results transcribed from completed command outputs in this task; raw pytest logs were not retained.",
+  "checks": [
+    {"command": "python -m pytest -q tests/test_hardening.py", "status": "passed", "passed": 6, "seconds": 5.03},
+    {"command": "python -m pytest -q", "status": "passed", "passed": 57, "seconds": 114.48, "isolated_libraries": true},
+    {"command": "uv build", "status": "passed", "artifacts": ["wheel", "sdist"]},
+    {"command": "python -m pytest -q tests", "environment": "fresh wheel venv, copied tests, cwd outside checkout", "status": "passed", "passed": 57, "seconds": 247.65, "isolated_libraries": true}
+  ],
+  "moodle": "not_run",
+  "bun": "not_run",
+  "linux_macos": "not_run"
+}

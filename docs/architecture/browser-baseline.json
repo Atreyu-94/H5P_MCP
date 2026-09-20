@@ -1,0 +1,24 @@
+{
+  "status": "passed",
+  "head": "a42518f48943bb38154bd6e6e217168357e8eadc",
+  "core": "2aeb0b83fa603e331381b3a6b8bf42c3773ba140",
+  "node": "v26.7.0",
+  "os": "Microsoft Windows 10.0.26200",
+  "fixtureLog": [
+    "",
+    "added 106 packages in 2s",
+    "{\"runtime\": \"C:\\\\Users\\\\Vic\\\\AppData\\\\Local\\\\Temp\\\\h5p-browser-baseline-f78cd4602a2f4eabb3334e51410c76ea\\\\data\\\\runtime\\\\be0c15da0762c96a\", \"packages\": \"C:\\\\Users\\\\Vic\\\\AppData\\\\Local\\\\Temp\\\\h5p-browser-baseline-f78cd4602a2f4eabb3334e51410c76ea\\\\packages\"}"
+  ],
+  "results": [
+    {
+      "name": "grading.h5p",
+      "wrong": 0,
+      "correct": 1,
+      "maximum": 1,
+      "retry": true,
+      "answered": true,
+      "errors": []
+    }
+  ],
+  "artifactDirectory": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-browser-baseline-f78cd4602a2f4eabb3334e51410c76ea"
+}
