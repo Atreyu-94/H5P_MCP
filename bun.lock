@@ -6,6 +6,8 @@
       "name": "h5p-mcp-core",
       "dependencies": {
         "@lumieducation/h5p-server": "file:h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz",
+        "@modelcontextprotocol/server": "2.0.0",
+        "ajv": "8.20.0",
       },
       "devDependencies": {
         "@types/bun": "1.4.2",
@@ -24,6 +26,10 @@
     "@keyv/serialize": ["@keyv/serialize@1.1.1", "", {}, "sha512-dXn3FZhPv0US+7dtJsIi2R+c7qWYiReoEh5zUntWCf4oSpMNib8FDhSoed6m3QyZdx5hK7iLFkYk3rNxwt8vTA=="],
 
     "@lumieducation/h5p-server": ["@lumieducation/h5p-server@h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz", { "dependencies": { "ajv": "^8.12.0", "ajv-keywords": "^5.1.0", "async-lock": "^1.4.0", "axios": "^1.4.0", "cache-manager": "^7.0.0", "cacheable": "^2.5.0", "debug": "^4.3.4", "flat": "^6.0.0", "https-proxy-agent": "^9.0.0", "jsonpath": "^1.1.1", "keyv": "^5.6.0", "magic-bytes.js": "^1.13.0", "mime-types": "^3.0.0", "node-machine-id": "^1.1.12", "probe-image-size": "^7.4.0", "promisepipe": "^3.0.0", "sanitize-html": "^2.10.0", "stream-buffers": "^3.0.2", "tmp-promise": "^3.0.3", "yauzl-promise": "^4.0.0", "yazl": "^3.0.0" } }, "sha512-CJLlZsecolbuFVaTB661khbSIttyLPqSuKZydwKqK5luRDBrGDzjxl+EcrIvjomdjUtV8sdAZiVqc/8HkVk2uw=="],
+
+    "@modelcontextprotocol/core": ["@modelcontextprotocol/core@2.0.0", "", { "dependencies": { "zod": "^4.2.0" } }, "sha512-pJCEwGG7Lfr/+PQp9ZTwKXNeO5wzbfKL7H3MYpCorM4oFBoQrdjnBgEoqG+RjhsvS1FKrDbKux+M1HhlnGWqcA=="],
+
+    "@modelcontextprotocol/server": ["@modelcontextprotocol/server@2.0.0", "", { "dependencies": { "@modelcontextprotocol/core": "2.0.0", "zod": "^4.2.0" } }, "sha512-YhHWdHfpFMQfd0prsEnxKeS3Qz3ytIGmsS0sth4KDjnacIT7hxk6hXHkJ9KysxlkvTM+WZAtQbbcUhdoP4Hvtw=="],
 
     "@node-rs/crc32": ["@node-rs/crc32@1.10.8", "", { "optionalDependencies": { "@node-rs/crc32-android-arm-eabi": "1.10.8", "@node-rs/crc32-android-arm64": "1.10.8", "@node-rs/crc32-darwin-arm64": "1.10.8", "@node-rs/crc32-darwin-x64": "1.10.8", "@node-rs/crc32-freebsd-x64": "1.10.8", "@node-rs/crc32-linux-arm-gnueabihf": "1.10.8", "@node-rs/crc32-linux-arm64-gnu": "1.10.8", "@node-rs/crc32-linux-arm64-musl": "1.10.8", "@node-rs/crc32-linux-x64-gnu": "1.10.8", "@node-rs/crc32-linux-x64-musl": "1.10.8", "@node-rs/crc32-win32-arm64-msvc": "1.10.8", "@node-rs/crc32-win32-ia32-msvc": "1.10.8", "@node-rs/crc32-win32-x64-msvc": "1.10.8" } }, "sha512-gOYKFwkojSdWrSmreCcGocRcAXSpRkNZYxv6nscmtddSWBKVGypdMbfLxu5qgmymdaCNApajuwZblYEfs7HswA=="],
 
@@ -322,6 +328,8 @@
     "yauzl-promise": ["yauzl-promise@4.0.0", "", { "dependencies": { "@node-rs/crc32": "^1.7.0", "is-it-type": "^5.1.2", "simple-invariant": "^2.0.1" } }, "sha512-/HCXpyHXJQQHvFq9noqrjfa/WpQC2XYs3vI7tBiAi4QiIU1knvYhZGaO1QPjwIVMdqflxbmwgMXtYeaRiAE0CA=="],
 
     "yazl": ["yazl@3.3.1", "", { "dependencies": { "buffer-crc32": "^1.0.0" } }, "sha512-BbETDVWG+VcMUle37k5Fqp//7SDOK2/1+T7X8TD96M3D9G8jK5VLUdQVdVjGi8im7FGkazX7kk5hkU8X4L5Bng=="],
+
+    "zod": ["zod@4.6.5", "", {}, "sha512-v5l/aFXZQeai4awLbOpSoHecE9UiMrnfx75tEXLjNonXVARxQ5mOeipTjROUchszUNCqnE+hqAMujRsRHsut2Q=="],
 
     "axios/https-proxy-agent": ["https-proxy-agent@5.0.1", "", { "dependencies": { "agent-base": "6", "debug": "4" } }, "sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA=="],
 

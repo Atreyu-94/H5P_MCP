@@ -2,15 +2,21 @@
   "name": "h5p-mcp-core",
   "version": "0.1.0",
   "private": true,
+  "bundledDependencies": ["@lumieducation/h5p-server"],
   "type": "module",
+  "bin": {"h5p-mcp-bun": "dist/core/cli.js"},
+  "files": ["dist/core", "h5p_mcp/contracts/*.json", "h5p_mcp/skills", "h5p_mcp/lumi/*.cjs", "h5p_mcp/lumi/*.json", "h5p_mcp/lumi/*.tgz", "LICENSE*", "NOTICE*"],
   "packageManager": "bun@1.4.2",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "build": "tsc",
+    "pack:local": "bun run build && bun tests/tooling/pack.mjs",
     "test": "bun test tests/core",
     "lint": "oxlint --deny-warnings src tests/core"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "ajv": "8.20.0",
     "@lumieducation/h5p-server": "file:h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz"
   },
   "devDependencies": {

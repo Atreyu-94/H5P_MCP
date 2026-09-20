@@ -7,7 +7,7 @@ configureLimits(process.env);
 let root=path.dirname(fileURLToPath(import.meta.url));
 while(!existsSync(path.join(root,'h5p_mcp/lumi/provenance.json'))) {
  const parent=path.dirname(root);
- if(parent===root) throw new Error('Core checkout resources unavailable');
+ if(parent===root) throw new Error('Core package resources unavailable');
  root=parent;
 }
 export const repositoryRoot=root;
