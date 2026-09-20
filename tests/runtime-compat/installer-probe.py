@@ -106,7 +106,7 @@ console.log(JSON.stringify(Object.keys(require.cache).filter(p=>p.endsWith('.nod
     for label, executable in [('node',shutil.which('node')),('bun',args.bun)]:
         paths = json.loads(subprocess.check_output([executable,'-e',script,str(replay)],text=True,timeout=30))
         assert paths, 'No loaded native addon observed'
-        loaded[label] = {Path(path).relative_to(replay/'node_modules').as_posix():hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in paths}
+        loaded[label] = {Path(path).resolve().relative_to((replay/'node_modules').resolve()).as_posix():hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in paths}
         assert loaded[label] == report['native_files']['npm'], 'Loaded native binary differs from npm reference'
     report['loaded_native_files'] = loaded
     report['checks']['loaded_native_crc'] = 'passed'
