@@ -148,3 +148,95 @@ def test_zip_corrupt_member_rejected_before_import(tmp_path, monkeypatch):
     path.write_bytes(path.read_bytes().replace(b'payload',b'payloae'))
     result = validator.validate_h5p_package(path)
     assert not result.ok and 'CRC' in ' '.join(result.errors)
+
+
+def test_administrative_archive_checked_before_runtime(tmp_path, monkeypatch):
+    from h5p_mcp import lumi_backend as backend
+    path = tmp_path/'libraries.zip'
+    with ZipFile(path, 'w') as archive:
+        archive.writestr('../escape', 'bad')
+    monkeypatch.setattr(backend, '_node', lambda: pytest.fail('Runtime initialized before preflight'))
+    with pytest.raises(ValueError, match='Unsafe ZIP'):
+        backend.setup_lumi([str(path)])
+
+
+def test_access_roots_resolve_and_deny_empty(tmp_path, monkeypatch):
+    import json
+    from h5p_mcp.utils.file_utils import authorized_path, resolve_export_dir
+    allowed = tmp_path/'allowed'
+    allowed.mkdir()
+    for variable in ['H5P_MCP_PACKAGE_ROOTS', 'H5P_MCP_EXPORT_ROOTS']:
+        monkeypatch.setenv(variable, json.dumps([str(allowed)]))
+        assert authorized_path(allowed/'new', variable) == allowed/'new'
+        with pytest.raises(ValueError):
+            authorized_path(allowed/'..'/'outside', variable)
+        monkeypatch.setenv(variable, '[]')
+        with pytest.raises(ValueError):
+            authorized_path(allowed, variable)
+        monkeypatch.setenv(variable, '["relative"]')
+        with pytest.raises(ValueError):
+            authorized_path(allowed, variable)
+    monkeypatch.setenv('H5P_MCP_EXPORT_ROOTS', json.dumps([str(allowed)]))
+    with pytest.raises(ValueError):
+        resolve_export_dir(str(tmp_path/'outside'))
+    assert not (tmp_path/'outside').exists()
+
+
+def test_backend_lock_consumes_deadline(tmp_path, monkeypatch):
+    import time
+    from filelock import FileLock
+    from h5p_mcp import lumi_backend as backend
+    monkeypatch.setattr(backend, 'data_dir', lambda: tmp_path)
+    monkeypatch.setattr(backend, '_invoke', lambda *a, **kw: pytest.fail('Launched after lock deadline'))
+    monkeypatch.setenv('H5P_MCP_MAX_SECONDS', '1')
+    start = time.monotonic()
+    with FileLock(str(tmp_path/'backend.lock')):
+        with pytest.raises(backend.BackendError) as error:
+            backend.run_lumi('export')
+    assert error.value.code == 'BACKEND_TIMEOUT'
+    assert time.monotonic()-start < 3
+
+
+def test_publication_without_hardlinks_is_exclusive(tmp_path, monkeypatch):
+    import errno
+    from concurrent.futures import ThreadPoolExecutor
+    from h5p_mcp.exporters import h5p_exporter as exporter
+    def unavailable(*args):
+        raise OSError(errno.ENOTSUP, 'No hardlinks')
+    monkeypatch.setattr(exporter.os, 'link', unavailable)
+    sources = [tmp_path/'a', tmp_path/'b']
+    for source in sources:
+        source.write_bytes(source.name.encode()*10000)
+    target = tmp_path/'final.h5p'
+    def publish(source):
+        try:
+            exporter.publish_exclusive(source, target)
+            return source.name
+        except FileExistsError:
+            return None
+    with ThreadPoolExecutor(2) as pool:
+        results = list(pool.map(publish, sources))
+    winners = [result for result in results if result]
+    assert len(winners) == 1
+    assert target.read_bytes() == winners[0].encode()*10000
+
+
+def test_manifest_dependency_budgets_and_cycles(tmp_path):
+    script = r'''
+const assert=require('node:assert/strict'), fs=require('node:fs');
+const {preparationManifest}=require(process.argv[1]+'/manifest.cjs');
+const root=process.argv[2];
+for(const name of ['A','B','C']) fs.mkdirSync(root+'/'+name+'-1.0');
+const dep=name=>({machineName:name,majorVersion:1,minorVersion:0});
+let graph={A:['B'],B:['C'],C:[]};
+const editor={libraryManager:{getLibrary:async lib=>({patchVersion:0,preloadedDependencies:graph[lib.machineName].map(dep)})}};
+const run=()=>preparationManifest(editor,root,{library:'A 1.0',params:{}},{detected:false});
+(async()=>{
+  assert.equal(Object.keys((await run()).libraries).length,3);
+  graph.C=['A']; await assert.rejects(run(),/Cyclic/); graph.C=[];
+  process.env.H5P_MCP_MAX_DEPENDENCY_DEPTH='1'; await assert.rejects(run(),/depth/); delete process.env.H5P_MCP_MAX_DEPENDENCY_DEPTH;
+  process.env.H5P_MCP_MAX_LIBRARIES='2'; await assert.rejects(run(),/node/); delete process.env.H5P_MCP_MAX_LIBRARIES;
+  process.env.H5P_MCP_MAX_DEPENDENCY_EDGES='1'; await assert.rejects(run(),/edge/);
+})().catch(e=>{console.error(e);process.exitCode=1});
+'''
+    subprocess.run(['node', '-e', script, str(SOURCE), str(tmp_path)], check=True, timeout=15)

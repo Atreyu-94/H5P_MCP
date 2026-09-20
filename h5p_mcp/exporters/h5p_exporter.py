@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 import os
+import errno
+import ctypes
+import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,5 +48,35 @@ class H5PExporter:
             result = run_lumi("export", activity=activity.model_dump(), path=str(package))
             # Same-filesystem, exclusive publication: no partial output or overwrite,
             # including two concurrent exports with the same output name.
-            os.link(package, out_path)
+            publish_exclusive(package, out_path)
         return ExportResult(output_path=out_path, h5p_json=result["h5p_json"], content_json=result["content_json"])
+
+
+def publish_exclusive(source: Path, destination: Path) -> None:
+    """Publish a complete staging file; never copy bytes to a visible final path."""
+    try:
+        os.link(source, destination)
+        return
+    except OSError as error:
+        if error.errno not in (errno.EPERM, errno.ENOTSUP, errno.ENOSYS, errno.EACCES):
+            raise
+    if os.name == 'nt':
+        # Windows rename fails if destination exists (unlike POSIX rename).
+        os.rename(source, destination)
+        return
+    libc = ctypes.CDLL(None, use_errno=True)
+    if sys.platform.startswith('linux') and hasattr(libc,'renameat2'):
+        operation = libc.renameat2
+        operation.argtypes = [ctypes.c_int,ctypes.c_char_p,ctypes.c_int,ctypes.c_char_p,ctypes.c_uint]
+        operation.restype = ctypes.c_int
+        result = operation(-100,os.fsencode(source),-100,os.fsencode(destination),1)
+    elif sys.platform == 'darwin' and hasattr(libc,'renamex_np'):
+        operation = libc.renamex_np
+        operation.argtypes = [ctypes.c_char_p,ctypes.c_char_p,ctypes.c_uint]
+        operation.restype = ctypes.c_int
+        result = operation(os.fsencode(source),os.fsencode(destination),4)
+    else:
+        raise OSError(errno.ENOTSUP,'Atomic no-replace publication unavailable')
+    if result:
+        code = ctypes.get_errno()
+        raise OSError(code,os.strerror(code),str(destination))
