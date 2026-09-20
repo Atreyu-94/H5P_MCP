@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-20. Revisión 12: F4 aprobada en CI; F4-R implementada y verificada localmente, pendiente del nuevo CI multiplataforma. Configuración MCP activa sin cambios.
+- Fecha: 2026-09-20. Revisión 13: F4 y F4-R implementadas y aprobadas en CI multiplataforma. Siguiente: F5. Configuración MCP activa sin cambios.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -321,7 +321,7 @@ Evidencia F4: docs/architecture/007-bun-mcp.md. CI aprobado: 35526615814, 355266
 
 **Aceptación:** cero invocaciones Python/Node en el camino normal observado, tarball íntegro, interfaz MCP equivalente y rollback documentado. La publicación pública sigue condicionada a licencias F7 aunque la retirada del código ya esté lista.
 
-F4-R: controles R.1 en `592e166`; retirada, tabla de paridad y rollback en docs/architecture/008-python-retirement.md. Build/lint, 13 pruebas Bun (88 assertions), 14 comparaciones Node/Bun y paquete externo aprobados localmente. Rollback: `python-final-f4` (`93060c5`), con CI automático conservado. Certificación multiplataforma de los cambios nuevos pendiente.
+F4-R: `592e166` (controles) y `3d3ac45` (retirada). Tabla de paridad: docs/architecture/008-python-retirement.md. Build/lint, 13 pruebas Bun (88 assertions), 14 comparaciones Node/Bun, CLI y paquete externo aprobados. CI Windows/Linux/macOS: 35527831750. Rollback: `python-final-f4` (`93060c5`), con CI automático conservado.
 
 ## 9. F5 — Stores, snapshots e idempotencia
 

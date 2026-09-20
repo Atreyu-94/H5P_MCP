@@ -37,7 +37,9 @@ El fallback nativo se prueba explícitamente; no se hace una copia parcial al de
   antes de reiniciar, o fijarse al SHA Python anterior. La configuración activa
   queda bajo control del usuario.
 
-F4 quedó aprobada en CI 35526615814, 35526615796 y 35526615792. F4-R tiene build,
-lint, controles locales y ensayo externo aprobados en Windows; su nuevo CI
-multiplataforma se registra en el plan. Estos checks no certifican Moodle ni
+F4 quedó aprobada en CI 35526615814, 35526615796 y 35526615792. F4-R (`3d3ac45`)
+pasó CI 35527831750 en Windows, Linux y macOS: build, lint, 13 pruebas Bun,
+14 comparaciones Node/Bun y ensayo externo de CLI/MCP. Cada runner genera su
+tarball con los componentes N-API de esa plataforma; no se certifica trasladar
+un tarball Windows a otro sistema operativo. Estos checks no certifican Moodle ni
 amplían las afirmaciones de reproducción/calificación de la baseline anterior.
