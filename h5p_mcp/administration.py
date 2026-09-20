@@ -52,5 +52,10 @@ class AdministrationMiddleware(Middleware):
     async def on_call_tool(self, context, call_next):
         scope = TOOL_SCOPES.get(context.message.name)
         if scope:
-            require(scope)
+            if not policy.allows(scope):
+                from fastmcp.tools.base import ToolResult
+                from h5p_mcp.contracts import diagnostic
+                from h5p_mcp.contracts.operations import operation_report
+                return ToolResult(structured_content=operation_report(
+                    diagnostics=[diagnostic('PERMISSION_DENIED', expected=scope)], operational=True), is_error=True)
         return await call_next(context)

@@ -10,6 +10,8 @@ from h5p_mcp.models.reports import verification
 
 _SCHEMA = json.loads(files(__package__).joinpath('v1.json').read_text('utf-8'))
 _CODES = json.loads(files(__package__).joinpath('codes-v1.json').read_text('utf-8'))
+OPERATIONS = json.loads(files(__package__).joinpath('operations-v1.json').read_text('utf-8'))
+_SCHEMA['$defs'].update(OPERATIONS['$defs'])
 
 
 def schema(name: str) -> dict:
@@ -45,8 +47,8 @@ def diagnostic(code: str, location: str = '', *, expected=None, actual=None) -> 
                 expected=expected, actual=actual, retryable=retryable, suggested_fix=fix)
 
 
-def input_diagnostics(arguments: dict) -> list[dict]:
-    errors = Draft202012Validator(schema('prepare_local_input')).iter_errors(arguments)
+def input_diagnostics(arguments: dict, name='prepare_local_input') -> list[dict]:
+    errors = Draft202012Validator(schema(name)).iter_errors(arguments)
     # Read one extra error to report truncation; never materialize an unbounded list.
     items = []
     missing_groups = set()

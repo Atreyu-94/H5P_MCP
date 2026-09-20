@@ -14,14 +14,15 @@ type's native schema instead of four fixed quiz templates.
    version numbers for an exact version, or neither for newest installed.
    `install_h5p_library` downloads the current Hub version and dependencies if
    absent and administration is enabled. Historical versions are not substituted.
-3. `create_h5p_activity(title, library, params, language="en", license="U",
-   assets={})` returns `{ok, errors, warnings, activity}`. It checks exact-version
+3. `prepare_h5p_activity(title, library, params, language="en", license="U",
+   assets={})` returns a versioned report with diagnostics and `activity`. It checks exact-version
    native fields and fills declared defaults and nested subcontent IDs.
 4. If `ok=true`, pass the normalized `activity` to
-   `export_h5p(activity, output_name)`. It rechecks and packages content, local
-   assets and libraries, returning `output_path`, `h5p_json`, `content_json`.
+   `export_h5p_activity(activity, output_name)`. It rechecks and packages content,
+   assets and libraries, returning a resource link, SHA-256, size and manifest.
    Existing files are never overwritten; downloads are never implicit.
-5. Call `validate_h5p(path)` to check JSON roots and import into empty Lumi storage.
+5. Read the artifact resource to retrieve the package. Use `validate_h5p_package(path)`
+   for an authorized local package. Legacy `export_h5p` still returns a local path.
 
 `export_h5p_batch(activities, name_prefix="activity")` returns per-item results,
 `count` and `succeeded`. Successful files remain when another item fails.
@@ -274,3 +275,28 @@ Examples are currently included for TrueFalse 1.8 patch 21 only when its native
 semantics SHA-256 matches the tested fixture. Other contracts return an empty
 examples array. Tests exercise both published examples through real preparation;
 they do not claim playback or grading evidence in Moodle.
+
+## F2 operation contracts and evidence
+
+`h5p-contract://v1/profiles` publishes resolved input/output schemas for the
+local operations and separate ID-only remote input schemas. Remote execution is
+disabled: durable preparation IDs/ownership require F5, and HTTP/auth requires F6.
+Local export accepts the prepared activity object and its dependency manifest.
+Native `params` remain dynamic; remote assets bind opaque IDs, never host paths.
+
+The catalog now reports `structurally_authorable` and per-installed-version
+evidence: library/patch, timestamp, schema digest, runnable/core/type checks and
+unexecuted preparation/import/playback/grading checks. `authoring_supported` is a
+compatibility alias. Hub presence alone is not authorability or test evidence.
+
+New operations validate closed input envelopes and return bounded diagnostics.
+Invalid content has `ok=false` without MCP `isError`; operational failures set
+`isError=true`. Batch retains per-item results and marks operational failures;
+successful files remain. Legacy tool names and synchronous APIs stay available.
+
+Export tools return a `resource_link`, never package base64. Binary resource reads
+use the MCP protocol encoding, verify size/digest and default to 16 MiB maximum
+(`H5P_MCP_MAX_RESOURCE_BYTES`). The process keeps at most 128 registered artifacts
+(`H5P_MCP_MAX_ARTIFACTS`); eviction/restart invalidates their IDs without deleting
+exported files. The manifest includes the exact preparation dependency snapshot.
+Oversized resources require a higher local read limit or a smaller package.

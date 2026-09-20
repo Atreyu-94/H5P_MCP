@@ -6,9 +6,9 @@ import unicodedata
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 
-from h5p_mcp.lumi_backend import run_lumi
+from h5p_mcp.lumi_backend import run_lumi, BackendError
 from h5p_mcp.limits import limit
 from h5p_mcp.models.reports import verification
 from h5p_mcp.utils.file_utils import authorized_path
@@ -23,13 +23,17 @@ class H5PValidationResult:
     verification: dict[str, str] = field(default_factory=verification)
 
 
-def validate_h5p_package(path: str | Path) -> H5PValidationResult:
+def validate_h5p_package(path: str | Path, *, strict_operations=False) -> H5PValidationResult:
     """
     Validate JSON roots, then import with Lumi into empty temporary storage.
 
     Requires a self-contained package. Import validation is not playback testing.
     """
     p = Path(path)
+    if strict_operations:
+        p = authorized_path(p, 'H5P_MCP_PACKAGE_ROOTS')
+        if not p.exists():
+            raise FileNotFoundError('Package unavailable')
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -69,6 +73,10 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
                 errors.append("content/content.json must contain a JSON object.")
 
     except Exception as e:  # noqa: BLE001
+        if strict_operations:
+            if isinstance(e, (ValueError, BadZipFile)):
+                raise BackendError('Archive rejected', 'UNSAFE_ARCHIVE') from e
+            raise
         errors.append(f"Failed to read zip: {e}")
 
     stages = verification(structure="failed" if errors else "passed")
@@ -78,6 +86,8 @@ def validate_h5p_package(path: str | Path) -> H5PValidationResult:
             errors.extend(report.get("errors", []))
             warnings.extend(report.get("warnings", []))
         except RuntimeError as error:
+            if strict_operations:
+                raise
             errors.append(str(error))
         stages["importation"] = "failed" if errors else "passed"
     return H5PValidationResult(ok=len(errors) == 0, errors=errors, warnings=warnings, verification=stages)

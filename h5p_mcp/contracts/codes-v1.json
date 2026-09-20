@@ -11,6 +11,7 @@
     "OUTPUT_EXISTS": "OUTPUT_ALREADY_EXISTS", "BACKEND_ERROR": "BACKEND_UNAVAILABLE"
   },
   "codes": {
+    "PERMISSION_DENIED": [false, "The operation is not authorized by the host.", "Ask the operator to configure the required scope or authorized roots."],
     "LIBRARY_NOT_INSTALLED": [false, "The required library is not installed.", "Install the exact library through an authorized administrator."],
     "LIBRARY_VERSION_MISMATCH": [false, "The library version does not match the contract.", "Select an exact version allowed by the native semantics."],
     "SCHEMA_VALIDATION_FAILED": [false, "The field does not satisfy its contract.", "Read the field contract and correct the indicated field."],

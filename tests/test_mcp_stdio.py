@@ -49,6 +49,12 @@ def test_installed_mcp_stdio(tmp_path):
                     preparation = prepared.structured_content or json.loads(prepared.content[0].text)
                     assert preparation['ok'] and preparation['contract_version'] == '1'
                     quiz = preparation['activity']
+                    if index == 0:
+                        artifact = await session.call_tool('export_h5p_activity', {'activity': quiz, 'output_name': 'resource_export'})
+                        assert not artifact.is_error and artifact.content[0].type == 'resource_link'
+                        info = artifact.structured_content['artifact']
+                        binary = await session.read_resource(info['uri'])
+                        assert binary.contents[0].mime_type == 'application/zip'
                     result = await session.call_tool("export_h5p", {"activity": quiz, "output_name": f"activity_{index}"})
                     assert not result.is_error, result
                     data = result.structured_content or json.loads(result.content[0].text)
