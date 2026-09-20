@@ -39,13 +39,36 @@ $setup = ./tests/runtime-compat/bootstrap-windows.ps1 -Destination $env:TEMP | C
 
 El probe conserva únicamente su directorio temporal propio para diagnóstico y navegador. Las bibliotecas se verifican antes de extraer; scripts de dependencias permanecen deshabilitados. El workflow bun-compat.yml está preparado para el subconjunto de runtime, con Bun exacto y setup-bun fijado por SHA; **no se ejecutó en GitHub**. El job macOS falla explícitamente si el runner no es arm64. Sus resultados no equivalen a certificación completa B0.
 
+## Actualización: CI y tooling local
+
+El CI de `deff523` terminó: `35483991534` pasó seis combinaciones
+Windows x64/Linux x64 glibc/macOS ARM64 con Node 22.12.0/24.21.0.
+El workflow de wheel `35483991550` pasó sus cuatro combinaciones.
+Las referencias anteriores «no ejecutado en GitHub» son históricas.
+
+El spike usa TypeScript 7.0.2, @types/bun 1.4.2, Oxlint 1.83.0 y
+oxlint-tsgolint 7.0.2002. Se descartó ESLint: typescript-eslint 8.70.0 exige
+TS <6.1. No conservamos TS6 ni alias para satisfacerlo. Oxlint usa typescript-go;
+el tsc independiente continúa como autoridad del typecheck. No se afirma
+equivalencia de todas las reglas ESLint.
+
+`node tests/tooling/verify-toolchain.mjs` y Bun 1.4.2 pasan: dominio sin globales
+Bun, adaptadores con tipos Bun, strict, noUncheckedIndexedAccess,
+noImplicitOverride, ES2022 y skipLibCheck=false. Una fixture negativa comprueba
+no-floating-promises; el verificador exige ausencia de ESLint en el lock.
+Instalación limpia npm ci --ignore-scripts comprobada. La ampliación aún debe
+correr en la matriz remota.
+
+Fuentes: [Oxlint con tipos](https://oxc.rs/docs/guide/usage/linter/type-aware),
+[tsgolint v7](https://oxc.rs/blog/2026-07-22-type-aware-linting-stable).
+
 ## Pendiente antes de adoptar Bun
 
 - Matriz real Windows/Linux/macOS y referencias Node 22.12.0/24.21.0; hashes por plataforma.
 - Audio/vídeo y presupuestos dentro del harness diferencial; la suite Python previa no sustituye ejecutar estos casos con Bun.
 - Comparación completa de integridades/recursos transitivos; el corpus sobre árbol instalado por Bun ya pasa localmente.
 - EOF, backpressure, streams, cancelación/señales, handles y memoria retenida bajo repetición.
-- Hub/TLS/proxy explícitos, TypeScript 7 y lint/API; nueva interfaz MCP todavía no implementada.
+- Hub/TLS/proxy explícitos; nueva interfaz MCP todavía no implementada.
 - El defecto de red implícita de discover ya está corregido en el checkout y cubierto por regresiones. El runtime del producto sigue Python/Node.
 
 ## Ampliación del corpus y corrección distribuida

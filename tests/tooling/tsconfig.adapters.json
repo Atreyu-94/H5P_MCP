@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.domain.json",
+  "compilerOptions": {"types": ["bun"]},
+  "files": ["adapter-probe.ts"]
+}
