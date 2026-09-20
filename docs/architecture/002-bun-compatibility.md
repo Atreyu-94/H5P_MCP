@@ -25,7 +25,7 @@ Esto no certifica todavía todos los bytes/integridades transitivos ni ejecució
 
 Con caché ausente, `ContentTypeCache.get()` de Lumi llama `forceUpdate()` aunque la herramienta haya recibido `refresh=false`. En la primera ejecución un runtime devolvió last_updated=null y el otro obtuvo una fecha del Hub. Inspección del código instalado confirmó la llamada implícita; no era una diferencia de representación de H5P.
 
-El corpus B0 cacheado ahora prepara explícitamente `{contentTypeCache:[], contentTypeCacheUpdate:1}` en ambos almacenes. Esto permite probar el caso cacheado, pero **no corrige el defecto del producto**. La corrección debe leer el cache storage sin autodescarga cuando refresh=false y reservar forceUpdate para la acción autorizada. Añadir una regresión que falle ante cualquier intento de red con caché ausente. Pendiente en F1/F2 y requisito para promover la migración.
+El corpus B0 cacheado prepara explícitamente `{contentTypeCache:[], contentTypeCacheUpdate:1}` en ambos almacenes. Posteriormente se corrigió el producto: discover lee JsonStorage directamente, y solo refresh=true llama forceUpdate. Tres regresiones instrumentan HTTP/HTTPS/socket/fetch: caché ausente y antigua no intentan conexiones con refresh=false; refresh=true sí intenta la actualización solicitada. Las 13 pruebas de descubrimiento y la suite completa de 60 pruebas pasan (103,71 s para la suite). La configuración del MCP activo no se ha actualizado.
 
 ## Reproducción en PowerShell
 
@@ -46,4 +46,4 @@ El probe conserva únicamente su directorio temporal propio para diagnóstico y 
 - Corpus sobre árbol instalado por Bun y comparación completa de integridades/recursos.
 - EOF, backpressure, streams, cancelación/señales, handles y memoria retenida bajo repetición.
 - Hub/TLS/proxy explícitos, TypeScript 7 y lint/API; nueva interfaz MCP todavía no implementada.
-- Corregir la red implícita de discover antes de promoción. La producción sigue Python/Node.
+- El defecto de red implícita de discover ya está corregido en el checkout y cubierto por regresiones. El runtime del producto sigue Python/Node.

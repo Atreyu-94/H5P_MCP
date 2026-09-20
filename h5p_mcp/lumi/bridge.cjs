@@ -63,7 +63,9 @@ async function main(request) {
       (Number(major) === editor.config.coreApiVersion.major && Number(minor) <= editor.config.coreApiVersion.minor);
     if (request.action === 'discover') {
       if (request.refresh && !await editor.contentTypeCache.forceUpdate()) throw new Error('H5P Hub refresh failed; retry with refresh=false to use cached data');
-      const hub = await editor.contentTypeCache.get() || [];
+      // ContentTypeCache.get() downloads on a cache miss. Discovery without an
+      // explicit refresh must read storage directly, including an absent cache.
+      const hub = await new stores.JsonStorage(path.join(request.data_dir, 'cache.json')).load('contentTypeCache') || [];
       const entries = new Map(hub.map(item => [item.machineName, {
         machine_name: item.machineName, title: item.title, summary: item.summary,
         hub_version: `${item.majorVersion}.${item.minorVersion}.${item.patchVersion}`,
