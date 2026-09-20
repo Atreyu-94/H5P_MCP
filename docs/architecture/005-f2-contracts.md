@@ -92,7 +92,7 @@ El CI de F2.5 (`bbf8c7e`) también pasó:
 [paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764390)
 y [matriz Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764477).
 
-## F2.6: contratos nativos compactos
+## F2.6: contratos nativos compactos (`21d3284`)
 
 `get_h5p_type_contract` consulta la biblioteca instalada sin instalar ni refrescar.
 Conserva el orden de campos, nombres, tipos, flags requeridos, defaults,
