@@ -1,5 +1,5 @@
 {
-  "sha256": "7596a179fafa9576b801030b109ae68d58795398883ed218ed5b84e0f2c42b85",
+  "sha256": "3187f655712f4a86cc1bd3e22eb9b7282a5aa424a344475b0cceaec14c2d2275",
   "libraries": {
     "FontAwesome-4.5": {
       "patch": 4,
@@ -13,6 +13,11 @@
     },
     "H5P.AdvancedText-1.1": {
       "patch": 14,
+      "license": null,
+      "author": "Joubel"
+    },
+    "H5P.Audio-1.5": {
+      "patch": 29,
       "license": null,
       "author": "Joubel"
     },

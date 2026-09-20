@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+import wave
 from zipfile import ZipFile
 
 
@@ -39,7 +40,7 @@ def main():
               'harness_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
               'checks':{}, 'decision':'not_certified',
               'known_findings':['Discovery now reads cache storage directly unless refresh is explicitly requested'],
-              'not_run':['Linux/macOS', 'Node 22/24 reference', 'audio/video', 'Hub/TLS/proxy',
+              'not_run':['Other platforms in this individual report', 'Hub/TLS/proxy',
                          'signals/backpressure/leak stress', 'TypeScript/lint', 'Bun installer comparison', 'browser']}
     # Keep isolated artifacts for subsequent browser/installer checks and failures.
     root = Path(tempfile.mkdtemp(prefix='h5p-b0-runtime-'))
@@ -117,6 +118,19 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
         examples.append({'library':'H5P.TrueFalse 1.8','assets':{'diagram':str(image)},'params':{
             'question':'<p>Image?</p>','correct':'true','media':{'type':{'library':'H5P.Image 1.1',
             'params':{'file':{'path':'asset:diagram','mime':'image/png'},'alt':'Diagram'}}}}})
+        audio = root/'source.wav'
+        with wave.open(str(audio),'wb') as stream:
+            stream.setparams((1,2,8000,0,'NONE','not compressed'))
+            stream.writeframes(b'\0\0'*1600)
+        video = root/'source.webm'
+        # Synthetic 32x32 blue VP9 video, 0.2 s, generated with FFmpeg 9.0.1.
+        shutil.copyfile(repo/'tests/fixtures/video.webm',video)
+        examples.append({'library':'H5P.Audio 1.5','assets':{'sound':str(audio)},'params':{
+            'files':[{'path':'asset:sound','mime':'audio/wav'}],'autoplay':False}})
+        examples.append({'library':'H5P.TrueFalse 1.8','assets':{'clip':str(video),'poster':str(image)},'params':{
+            'question':'<p>Video?</p>','correct':'true','media':{'type':{'library':'H5P.Video 1.6',
+            'params':{'sources':[{'path':'asset:clip','mime':'video/webm'}],
+            'visuals':{'poster':{'path':'asset:poster','mime':'image/png'}}}}}}})
         def fixed_ids(value, path='root'):
             if isinstance(value,dict):
                 if 'library' in value and 'params' in value:
@@ -152,22 +166,32 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
                     raise AssertionError('Existing export overwritten')
             contents = [package_contents(path) for path in paths]
             if 'assets' in example:
-                # This fixture has one PNG. Lumi randomizes its destination name;
-                # require original bytes, dimensions, MIME and logical reference
-                # before normalizing only that filename for the comparison.
+                # Only normalize declared fixture media after byte verification.
                 filenames = []
-                expected_image = hashlib.sha256(image.read_bytes()).hexdigest()
+                expected_media = {mime:hashlib.sha256(file.read_bytes()).hexdigest() for mime,file in
+                                  [('image/png',image),('audio/wav',audio),('video/webm',video)]}
                 for package in contents:
-                    field = package['content/content.json']['media']['type']['params']['file']
-                    name = 'content/' + field['path']
-                    filenames.append(field['path'])
-                    assert package.pop(name) == expected_image
-                    assert field['mime'] == 'image/png' and field['width'] == field['height'] == 1
-                    field['path'] = 'images/b0-fixture.png'
-                    assert 'content/images/b0-fixture.png' not in package
-                    package['content/images/b0-fixture.png'] = expected_image
-                report['checks']['image_bytes_and_reference'] = {'status':'passed','original_paths':filenames,
-                    'normalization':'Only generated filename of the single PNG fixture; bytes match input SHA-256'}
+                    fields=[]
+                    pending=[package['content/content.json']]
+                    while pending:
+                        value=pending.pop()
+                        if isinstance(value,dict):
+                            if 'path' in value and 'mime' in value: fields.append(value)
+                            pending.extend(value.values())
+                        elif isinstance(value,list): pending.extend(value)
+                    assert len(fields)==len(example['assets'])
+                    for number,field in enumerate(fields):
+                        name='content/'+field['path']
+                        filenames.append(field['path'])
+                        assert field['mime'] in expected_media
+                        digest=expected_media[field['mime']]
+                        assert package.pop(name)==digest
+                        if field['mime']=='image/png': assert field['width']==field['height']==1
+                        field['path']=f'b0-fixture-media-{number}'
+                        assert 'content/'+field['path'] not in package
+                        package['content/'+field['path']]=digest
+                report['checks'][f'media_{index}_bytes_and_reference'] = {'status':'passed','original_paths':filenames,
+                    'normalization':'Only generated filename of the single media fixture; bytes match input SHA-256'}
             assert contents[0] == contents[1], f'Package difference: {index}'
             for label in ('node','bun'):
                 select(label)
@@ -179,6 +203,13 @@ console.log(JSON.stringify({native,crc32:'passed',crc32c:'passed'}));
         invalid = Activity(title='Invalid',library='H5P.TrueFalse 1.8',params={'question':'Q','correct':True})
         assert not paired('prepare',activity=invalid.model_dump())['ok']
         report['checks']['invalid_select'] = 'passed'
+        invalid_ids=copy.deepcopy(examples[1])
+        invalid_ids['params']['panels'][0]['content']['subContentId']='invalid'
+        assert not paired('prepare',activity=Activity(title='Invalid UUID',**invalid_ids).model_dump())['ok']
+        duplicate_ids=copy.deepcopy(examples[1])
+        duplicate_ids['params']['panels'].append(copy.deepcopy(duplicate_ids['params']['panels'][0]))
+        assert not paired('prepare',activity=Activity(title='Duplicate UUID',**duplicate_ids).model_dump())['ok']
+        report['checks']['invalid_and_duplicate_uuid']='passed'
         # Use the same stale manifest and incomplete package with both runtimes.
         stale = copy.deepcopy(activity.model_dump())
         stale['preparation']['libraries'][activity.library]['patch'] = -1
