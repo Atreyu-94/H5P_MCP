@@ -249,6 +249,9 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 
 ### Trazabilidad de F2
 
+Las filas «Cierre F2» corresponden al commit `9c88322`
+(`feat(contracts): complete F2 operations and artifact resources`).
+
 | Tarea | Estado y alcance implementado | Commits | Verificación y pendiente |
 |---|---|---|---|
 | F2.1 | Completa: autoridad JSON compartida y validación de entradas/salidas de todas las operaciones vNext locales. | `0e2093c`, `9ad543b` + cierre F2 | Esquemas resueltos publicados por recurso; parámetros H5P permanecen dinámicos. |
