@@ -1,10 +1,50 @@
 """Discovery and native-schema contracts against the configured Lumi runtime."""
 import asyncio
+import json
+import os
+import subprocess
 
 import pytest
 from fastmcp import Client
 
 from h5p_mcp.server import mcp, list_h5p_activities, get_h5p_activity_schema
+
+
+@pytest.mark.parametrize('cached,refresh', [(False,False),(True,False),(False,True)])
+def test_discovery_network_requires_explicit_refresh(tmp_path, cached, refresh):
+    from h5p_mcp.lumi_backend import SOURCE, runtime_dir
+    marker = tmp_path / 'network-attempt'
+    guard = tmp_path / 'network-guard.cjs'
+    guard.write_text("""
+const fs = require('node:fs');
+function deny() {
+  fs.writeFileSync(process.env.NETWORK_MARKER, 'attempted');
+  throw new Error('TEST_NETWORK_DENIED');
+}
+require('node:http').request = deny;
+require('node:https').request = deny;
+require('node:net').Socket.prototype.connect = deny;
+globalThis.fetch = deny;
+""", encoding='utf-8')
+    if cached:
+        (tmp_path / 'cache.json').write_text(json.dumps({'contentTypeCache':[
+            {'machineName':'H5P.Cached','title':'Cached','majorVersion':1,
+             'minorVersion':0,'patchVersion':0,'h5pMajorVersion':1,'h5pMinorVersion':28}],
+            'contentTypeCacheUpdate':1}), encoding='utf-8')
+    result = subprocess.run(['node','--require',str(guard),str(SOURCE/'bridge.cjs')],
+        input=json.dumps({'action':'discover','data_dir':str(tmp_path),
+                          'refresh':refresh,'offset':0,'limit':10}),
+        env=dict(os.environ,H5P_MCP_LUMI_RUNTIME=str(runtime_dir()),NETWORK_MARKER=str(marker)),
+        capture_output=True,text=True,timeout=30)
+    if refresh:
+        assert marker.exists(), 'Explicit refresh must attempt the requested network update'
+        assert result.returncode != 0
+    else:
+        assert not marker.exists(), 'Read-only discovery attempted network access'
+        assert result.returncode == 0, result.stderr
+        report = json.loads(result.stdout)
+        assert report['total'] == int(cached)
+        assert report['last_updated'] == (1 if cached else None)
 
 
 def test_discovery_pagination_and_authoring_status():
