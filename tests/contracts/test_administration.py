@@ -110,6 +110,7 @@ def test_queries_leave_durable_state_unchanged():
     directories_before = {p.name for p in root.iterdir()}
     server.search_h5p_types(installed_only=True)
     server.get_h5p_activity_schema('H5P.TrueFalse', 1, 8)
+    server.get_h5p_type_contract('H5P.TrueFalse', 1, 8)
     assert before == {name: snapshot(root / name) for name in ['libraries']}
     assert files_before == {p.name: p.read_bytes() for p in root.glob('*.json')}
     assert directories_before - {'backend.lock'} == {p.name for p in root.iterdir()} - {'backend.lock'}

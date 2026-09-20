@@ -20,17 +20,24 @@ The four old create_*_quiz tools and Markdown quiz syntax have been removed.
 1. Call `search_h5p_types` with a query and pagination. It uses the local cache;
    `list_h5p_activities` remains a legacy alias. Catalog presence and
    `authoring_supported` indicate eligibility, not verified playback.
-2. Read `get_h5p_activity_schema`. Queries do not install or refresh the Hub.
+2. Read `get_h5p_type_contract`. Its `fields` preserve native types, required
+   flags, defaults and `constraints`; `sublibraries` lists exact nested versions.
+   Read `raw_schema.uri` for the complete canonical schema and metadata; verify
+   its SHA-256 when storing it. Rediscover after resource eviction or restart.
+   `get_h5p_activity_schema` remains available for the legacy full response.
+   Queries do not install or refresh the Hub.
    When needed and authorized, use `install_h5p_library` or
    `install_h5p_library_package`; `refresh_h5p_catalog` updates the Hub cache.
    These tools are hidden without administrative scopes and disabled in immutable
    mode. If unavailable, report the missing library to the operator; the legacy
    flags enforce the same permissions. Export never downloads libraries.
 3. Retain the exact returned `library` string (`Name major.minor`). Read schemas
-   of nested libraries at the exact versions in the parent's `options`.
+   of nested libraries at the exact versions in the parent's `constraints.options`.
 
 Native H5P semantics are not JSON Schema. Read `fields` for groups, `field` for
-list entries and `options` for selects/nested libraries. One-field groups use the
+list entries and `constraints.options` for selects/nested libraries (raw schemas
+use `options`). Inspect `x-h5p` for widgets and limits. Examples can be absent;
+available examples carry fixture evidence, not Moodle verification. One-field groups use the
 child value directly (e.g. `overallFeedback` is a list). The create tool fills
 schema defaults; supply required fields without defaults. Editor widgets may
 impose additional rules which the structural checker cannot infer.

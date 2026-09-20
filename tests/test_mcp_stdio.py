@@ -33,6 +33,11 @@ def test_installed_mcp_stdio(tmp_path):
                 schema_data = schema.structured_content or json.loads(schema.content[0].text)
                 assert schema_data["library"] == "H5P.QuestionSet 1.21"
                 assert schema_data["semantics"]
+                compact = await session.call_tool('get_h5p_type_contract', {'machine_name': 'H5P.TrueFalse', 'major_version': 1, 'minor_version': 8})
+                assert not compact.is_error
+                contract = compact.structured_content or json.loads(compact.content[0].text)
+                native = await session.read_resource(contract['raw_schema']['uri'])
+                assert json.loads(native.contents[0].text)['library'] == contract['library']
                 assert not {"create_mcq_quiz", "create_true_false_quiz", "create_fill_blanks_quiz", "create_questionset_quiz", "markdown_to_quizzes", "h5p_prompt_helpers"} & names
                 examples = [
                     {"library": "H5P.TrueFalse 1.8", "title": "TF", "params": {"question": "True?", "correct": "true"}},

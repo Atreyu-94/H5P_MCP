@@ -88,5 +88,47 @@ CI de F2.1–F2.4 (`9ad543b`) confirmado en verde durante la implementación de 
 - [Paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488159953).
 - [Matriz Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488160084).
 
-F2.6 y F2.7 continúan pendientes: proyección compacta de semánticas, recursos
-brutos y evidencia del catálogo. Tampoco se da por cerrada F2 en su conjunto.
+El CI de F2.5 (`bbf8c7e`) también pasó:
+[paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764390)
+y [matriz Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764477).
+
+## F2.6: contratos nativos compactos
+
+`get_h5p_type_contract` consulta la biblioteca instalada sin instalar ni refrescar.
+Conserva el orden de campos, nombres, tipos, flags requeridos, defaults,
+restricciones y subbibliotecas. Los grupos de un solo campo se identifican como
+`single_field`: no se inventa una envoltura JSON incompatible con H5P. Los flags
+requeridos son nativos; un default puede satisfacer la ausencia del valor.
+Las restricciones mantienen su sintaxis H5P/JavaScript, no se anuncian como un
+JSON Schema equivalente. La autoridad de envelopes vNext de otras operaciones
+sigue pendiente en F2.1–F2.4.
+
+`x-h5p` conserva widgets y extensiones, y documenta límites y reglas no
+certificadas. Se omiten etiquetas, descripciones y flags de agrupación visual.
+La información completa sigue accesible mediante `raw_schema`, que identifica
+un snapshot JSON canónico UTF-8 de semánticas y metadata: URI, MIME, longitud y
+SHA-256 de los bytes que devuelve el recurso. No es un hash de la representación
+original del archivo ni una ruta del sistema de archivos.
+
+La caché de snapshots está acotada a 16 entradas, 2 MiB por recurso y 16 MiB en
+total por defecto; lecturas e inserciones están sincronizadas. Tras reinicio o
+evicción hay que consultar de nuevo. No se sustituye un snapshot por datos nuevos
+bajo el mismo URI; no se implementan todavía los stores persistentes de F5.
+
+Dos ejemplos de TrueFalse 1.8 patch 21 se preparan con Lumi en las pruebas.
+Solo se publican si coinciden patch y SHA-256 de semánticas del fixture. Los demás
+tipos devuelven `examples: []`; no se fabrican ejemplos ni evidencia de Moodle.
+La proyección se contrasta con los 9 archivos de semánticas del corpus fijado.
+La prueba también compara reglas publicadas con preparación real, verifica bytes
+y digest a través de MCP, límites de caché/recursos y conservación del estado local.
+
+En el fixture TrueFalse, el contrato ocupa 5.634 bytes frente a 6.703 del snapshot
+fuente usado para esa medición. No se promete reducción para todos los tipos:
+los metadatos de recurso y las advertencias tienen un costo fijo.
+
+La siguiente tarea es F2.7, evidencia del catálogo. F2 continúa abierta.
+
+Cierre local de F2.6: 135 pruebas de la suite completa y 10 pruebas de contratos,
+recursos, skill y stdio desde el wheel instalado fuera del checkout, todas
+aprobadas con las dependencias fijadas. Build, validación de skill y revisión de
+diff aprobados. Estas comprobaciones no son una prueba nueva en Moodle.
