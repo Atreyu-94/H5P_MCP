@@ -21,6 +21,8 @@ import psutil
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--installation-only', action='store_true',
+                        help='Measure isolated empty/cached npm installs without rerunning activity benchmarks')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(repo))
@@ -96,15 +98,35 @@ def main():
         print(name, round(statistics.median(samples), 2), flush=True)
     with tempfile.TemporaryDirectory(prefix='h5p-baseline-') as temporary:
         root = Path(temporary)
+        # A new npm cache gives a controlled cold dependency installation without
+        # deleting the user's cache or pretending to flush the OS page cache.
+        cache = root / 'npm-cache'
+        cache.mkdir()
+        assert not list(cache.iterdir())
+        os.environ['npm_config_cache'] = str(cache)
+        os.environ['npm_config_offline'] = 'false'
         os.environ['H5P_MCP_DATA_DIR'] = str(root / 'data')
         os.environ['H5P_MCP_EXPORT_DIR'] = str(root / 'exports')
         fixture = repo / 'tests/fixtures/libraries.zip'
         assert digest(fixture) == json.loads((fixture.parent / 'libraries.lock.json').read_text())['sha256']
         with ZipFile(fixture) as archive:
             archive.extractall(root / 'data/libraries')
-        measure('setup_clean_npm_cache_uncontrolled', 1, lambda _: setup_lumi())
+        measure('setup_empty_npm_cache', 1, lambda _: setup_lumi())
+        report['installation'] = {'initial_npm_cache': 'empty_unique_directory',
+                                  'scripts': 'disabled', 'cached_install_offline': True,
+                                  'runtime_directories': 'distinct', 'os_page_cache': 'uncontrolled'}
+        cached_data = root / 'data-cached'
+        os.environ['H5P_MCP_DATA_DIR'] = str(cached_data)
+        os.environ['npm_config_offline'] = 'true'
+        with ZipFile(fixture) as archive:
+            archive.extractall(cached_data / 'libraries')
+        measure('setup_cached_npm_offline_new_runtime', 1, lambda _: setup_lumi())
         measure('setup_ready', 1, lambda _: setup_lumi())
         measure('catalog_first_after_setup', 1, lambda _: run_lumi('catalog'))
+        if args.installation_only:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
+            return
         measure('catalog', 20, lambda _: run_lumi('catalog'))
         measure('schema', 20, lambda _: run_lumi('schema', machine_name='H5P.TrueFalse', major_version=1, minor_version=8))
         def prepare(_):
@@ -139,7 +161,7 @@ def main():
         measure('batch_100_override', 1, large_batch)
         report['batch_100_override'] = {'H5P_MCP_MAX_BATCH': 100, 'succeeded': 100}
         # Synchronize with an independent lock owner; timeout rather than hang.
-        lock_path = root / 'data/backend.lock'
+        lock_path = cached_data / 'backend.lock'
         signal = root / 'lock-ready'
         code = ('import sys,time; from pathlib import Path; from filelock import FileLock; '
                 'lock=FileLock(sys.argv[1]); lock.acquire(); Path(sys.argv[2]).touch(); '

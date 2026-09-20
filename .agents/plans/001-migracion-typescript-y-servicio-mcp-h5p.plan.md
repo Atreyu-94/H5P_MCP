@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 2: integración contrastada de la propuesta Bun-first. Estado: F0 en ejecución parcial; evidencia en docs/architecture/001-baseline-and-decisions.md. B0 no iniciado.
+- Fecha: 2026-09-19. Revisión 3: F0 cerrado para la línea base local disponible; comparación A/B/C trasladada explícitamente a F3.8 por depender de núcleos aún no implementados. Evidencia y límites en docs/architecture/001-baseline-and-decisions.md. B0 no iniciado.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base local inspeccionada: `ac10c50`, main, cinco commits por delante de la referencia local origin/main. No se actualizó el remoto durante esta revisión.
@@ -159,7 +159,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 - [x] F0.3 Inventariar H5P históricos y consumidores de html_utils/zip_utils. Retirar solo archivos confirmados del árbol activo; no reescribir historial Git ni borrar material local del usuario.
 - [x] F0.4 ADR de licencias: comprobar contenido real del tgz, fuentes/parches, componentes y obligaciones; registrar responsable y condición de desbloqueo. Inventario generado; la autorización de distribución sigue pendiente para F7.
 - [x] F0.5 Fijar SDK v2 y conformidad por versión/commit; comprobar APIs reales de Skills/Tasks y toolchain Bun 1.4.2/TypeScript 7 y Node 22/24 de referencia. Tarball SDK verificado y Skills probado por stdio; tipos Tasks inspeccionados, su ciclo de vida permanece not_run para F4/F6; runtimes candidatos no certificados hasta B0.
-- [ ] F0.6 Benchmark frío/caliente de catálogo, esquema, preparación, exportación, importación y lote: mediana/p95, RSS pico, bytes y espera del lock. Al menos 20 repeticiones de operaciones cortas y 5 exportaciones; separar descargas. Comparar A: Python+Node por petición, B: núcleo persistente Node, C: mismo núcleo persistente Bun. B/C usarán el mismo corpus, scheduler y módulos portables; documentar cualquier diferencia de adaptador. Medir también instalación limpia/cacheada, primera llamada, handles y lotes de 10/100. El lote 100 excede el límite actual de 50: probar su rechazo por defecto y ampliarlo explícitamente solo en el benchmark aislado, registrando la configuración.
+- [x] F0.6 Línea base A (Python+Node por petición): catálogo, esquema, preparación, exportación, importación y lotes; mediana/p95, RSS muestreado del árbol, bytes, handles y adquisición del lock. 20 repeticiones de operaciones cortas y 5 exports/imports. Instalación con caché npm inicialmente vacía y nueva instalación offline con caché reutilizada verificadas; runtime ya instalado y primera llamada separados. Lotes 10/100 medidos, 100 rechazado por defecto y permitido solo mediante override aislado. Evidencia en baseline-a-instrumented.json y baseline-installation.json. Caché física del SO no vaciada: no se certifica arranque frío del SO. Comparación B/C pendiente en F3.8, no marcada como ejecutada.
 - [x] F0.7 Proponer ventana de compatibilidad Python y nombre npm sin publicarlo. Revisar existencia de Release Please antes de configurar releases.
 
 **Aceptación:** resultados reproducibles y decisiones pendientes explícitas. No sustituir fallos actuales por reportes históricos. Moodle no bloquea baseline local; sus checks quedan not_run.
@@ -243,7 +243,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 - [ ] F3.5 Pool acotado y temporales únicos; generaciones inmutables de bibliotecas y escritura exclusiva. Retirar lock global solo tras pruebas lector/escritor.
 - [ ] F3.6 Adaptador IPC Python transitorio con correlación, límites, errores y cancelación para comparar el núcleo portado; no convertirlo en requisito de la release Bun. Export/import aislados usarán procesos Bun donde lo requiera F1.
 - [ ] F3.7 Comparar manifest, JSON, dependencias/parches, medios/hashes, IDs y diagnósticos Python/TS. Normalizar únicamente datos volátiles justificados; no exigir ZIP idéntico.
-- [ ] F3.8 Repetir benchmarks con igual hardware/input/caché. Investigar regresiones; no reducir aislamiento por una cifra de rendimiento.
+- [ ] F3.8 Completar la comparación iniciada en F0.6: A Python+Node por petición, B núcleo persistente Node, C el mismo núcleo persistente Bun. B/C usarán el mismo corpus, scheduler y módulos portables; documentar diferencias de adaptador. Repetir A/B/C con igual hardware/input/caché, incluyendo instalación limpia/cacheada, primeras llamadas y lotes 10/100. Investigar regresiones; no reducir aislamiento por una cifra de rendimiento. Caché física del SO solo se declarará fría con un procedimiento verificado; en otro caso mantener esa limitación explícita.
 
 **Aceptación:** corpus positivo/negativo equivalente o diferencias aprobadas/documentadas; importación fresca y navegador conservan comportamiento; rollback al runtime Python disponible.
 

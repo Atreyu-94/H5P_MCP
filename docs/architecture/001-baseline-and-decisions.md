@@ -1,6 +1,6 @@
 # F0 — Línea base y decisiones de transición
 
-Estado: baseline local implementado, 2026-09-19. Base del producto: `ac10c502eec1d1c19a8c75caf86bdc5f911407c6`.
+Estado: F0 cerrado para el baseline local disponible, 2026-09-19. Base del producto: `ac10c502eec1d1c19a8c75caf86bdc5f911407c6`. La revisión 3 del plan ubica la comparación de los núcleos futuros en F3.8; no se considera ejecutada.
 No se promueve Bun ni se modifica el MCP activo. Las limitaciones de medición y verificaciones pendientes se detallan al final; no constituyen certificación B0.
 
 ## Evidencia local
@@ -38,6 +38,25 @@ El wheel debe instalarse en un venv temporal y ejecutar una copia de tests desde
 | Importación vacía, 5 muestras | 1335.7 | 1998.9 | 216.4 |
 
 Lote 10: 11.12 s; lote 100 con override: 103.78 s; rechazo por defecto de 100 confirmado. Son mediciones únicas, no percentiles representativos de lotes. La contención con propietario independiente produjo 996.9 ms de adquisición del lock. Las descargas quedan separadas en setup.
+
+### Instalación con caché controlada
+
+`baseline-installation.json` completa la medición anterior: un directorio npm nuevo y vacío, luego otro directorio runtime con la misma caché y `npm_config_offline=true`. No se borró ni reutilizó la caché personal. Ambas instalaciones usaron el lock Lumi y scripts deshabilitados; setup incluye la consulta de catálogo posterior a la instalación.
+
+| Estado | Tiempo observado |
+|---|---:|
+| Runtime nuevo y caché npm vacía | 8,54 s |
+| Otro runtime nuevo, caché reutilizada, npm offline | 7,46 s |
+| Runtime ya instalado | 0,412 s |
+| Primera llamada de catálogo tras setup | 0,401 s |
+
+Una muestra por estado: no inferir una mejora estadística ni atribuirla exclusivamente a npm. La caché de páginas del SO permanece sin controlar. El modo offline exitoso demuestra que la segunda instalación dispuso de las dependencias en la caché aislada.
+
+```powershell
+uv run --with psutil==7.0.0 python tests/benchmarks/baseline.py --installation-only --output exports/baseline-installation.json
+```
+
+El benchmark completo ahora también utiliza este aislamiento. `--installation-only` permite repetir la comprobación sin volver a generar los 100 paquetes ya medidos.
 
 ## ADR: runtime y compatibilidad
 
@@ -86,7 +105,7 @@ No hay consumidores internos de html_utils/zip_utils: búsqueda de módulos y de
 
 ## Límites y gates posteriores
 
-- No se vació la caché del SO ni npm. Primera llamada e instalación limpia se nombran explícitamente según su estado; cold start físico permanece no medido. El harness conserva muestras completas, no promete precisión submuestreo.
+- No se vació la caché del SO; cold start físico permanece no medido. La nueva ejecución sí controla la caché npm mediante un directorio inicialmente vacío y verifica su reutilización offline. El harness conserva muestras completas, no promete precisión submuestreo.
 - Skills interoperable con SDK confirmado; Tasks completo y conformance quedan para F4/F6. No extrapolar recursos/Skills a todas las herramientas.
 - Node 22/24 y Bun, Linux/macOS y dependencias nativas quedan para B0.
 - Comparación B/C: diferida a F3 porque esos núcleos persistentes aún no existen. Conservar corpus/scheduler equivalentes y no bloquear F0 por una implementación de F3.

@@ -1,0 +1,106 @@
+{
+  "head": "951622a1a9da7df1fb819138e88095eb76208bdb",
+  "tree": "M tests/benchmarks/baseline.py",
+  "remote": "https://github.com/Atreyu-94/H5P_MCP.git",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14 (main, Sep  1 2026, 14:17:39) [MSC v.1944 64 bit (AMD64)]",
+  "node": "v26.7.0",
+  "checksums": {
+    "h5p_mcp/lumi/authoring.cjs": "4efc05bf147d5488f906de2da9df44cd3cdd75f27dad996473ca6553878c401c",
+    "h5p_mcp/lumi/bridge.cjs": "9f7507f26380e1338def2c7bdb06185901a6ee825dcff8a094878d5d6fc13745",
+    "h5p_mcp/lumi/build-upstream.ps1": "08ea4c2783cd5e8bb4e90cb641e3df593eb578617770f5ce2eb0bbdb76a54c86",
+    "h5p_mcp/lumi/limits.cjs": "afd0881f13d9f59985533904965d4e494846b63e48815f3ca17ed1dad0897a69",
+    "h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz": "ac81c65d876aa013591add8de83ad05e8354bdd12e893fe86979371af11d0dd0",
+    "h5p_mcp/lumi/manifest.cjs": "1e6332c07fb44b65bd8721a70400f182d93566b9331127b6d671afa2ee64292d",
+    "h5p_mcp/lumi/math.cjs": "031c1ca02971c9162805d5d146aca4d2182e673c256a943df9a25eea16b604c4",
+    "h5p_mcp/lumi/media.cjs": "7cc64d482bb3e1293ea36454a5cb2be3bedc461b148eb8977276f7218256600c",
+    "h5p_mcp/lumi/package-lock.json": "be0c15da0762c96a0c4bb4de9c014db84f26fa251d1768e1204969f58d6b3232",
+    "h5p_mcp/lumi/package.json": "6f65688d0fbb7f8845c0dff9af7dcdabf7fa3b4b8817bf849c8d26f2db9d6f48",
+    "h5p_mcp/lumi/provenance.json": "38eec34aa258ebe2da260d75da4e816df6b09b757ade2ed2dc67b06aeecff6c1",
+    "h5p_mcp/lumi/semantics.cjs": "7e7f70d33501af2e802f33fec241e1f290e8e2be4e2357f4d7c79a50510b6649",
+    "tests/fixtures/README.md": "8c3b3fa757bcfdaadb56884d946350a091052539b934098fb395bf687525e205",
+    "tests/fixtures/libraries.lock.json": "de43a8bad5708cba5bf701da4d2fcd4c170606aa403f6af76e3096976d5b9738",
+    "tests/fixtures/libraries.zip": "7596a179fafa9576b801030b109ae68d58795398883ed218ed5b84e0f2c42b85"
+  },
+  "legacy_exports": {},
+  "lumi_archive": {
+    "license": "GPL-3.0-or-later",
+    "version": "10.0.4-h5pmcp.efcfeebc",
+    "license_files": [
+      "package/LICENSE"
+    ],
+    "source_files": 64
+  },
+  "harness_sha256": "82a585cfcaa234e6f3d882e99317b70739033d74f4f9270eb8662cede479882d",
+  "psutil": "7.0.0",
+  "sampling_interval_ms": 10,
+  "measurements": {
+    "setup_empty_npm_cache": {
+      "samples_ms": [
+        8541.20160000457
+      ],
+      "median_ms": 8541.20160000457,
+      "p95_ms": 8541.20160000457,
+      "resources": [
+        {
+          "rss_bytes": 322469888,
+          "handles_or_fds": 711,
+          "lock_acquire_ms": 0.5563000013353303
+        }
+      ]
+    },
+    "setup_cached_npm_offline_new_runtime": {
+      "samples_ms": [
+        7458.663900004467
+      ],
+      "median_ms": 7458.663900004467,
+      "p95_ms": 7458.663900004467,
+      "resources": [
+        {
+          "rss_bytes": 282537984,
+          "handles_or_fds": 762,
+          "lock_acquire_ms": 0.3806000022450462
+        }
+      ]
+    },
+    "setup_ready": {
+      "samples_ms": [
+        411.70910000801086
+      ],
+      "median_ms": 411.70910000801086,
+      "p95_ms": 411.70910000801086,
+      "resources": [
+        {
+          "rss_bytes": 180174848,
+          "handles_or_fds": 513,
+          "lock_acquire_ms": 0.3417000116314739
+        }
+      ]
+    },
+    "catalog_first_after_setup": {
+      "samples_ms": [
+        400.6989999907091
+      ],
+      "median_ms": 400.6989999907091,
+      "p95_ms": 400.6989999907091,
+      "resources": [
+        {
+          "rss_bytes": 181919744,
+          "handles_or_fds": 513,
+          "lock_acquire_ms": 0.6611000135308132
+        }
+      ]
+    }
+  },
+  "not_measured": [
+    "OS page-cache cold start",
+    "persistent Node/Bun (not implemented)"
+  ],
+  "installation": {
+    "initial_npm_cache": "empty_unique_directory",
+    "scripts": "disabled",
+    "cached_install_offline": true,
+    "runtime_directories": "distinct",
+    "os_page_cache": "uncontrolled"
+  }
+}
