@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 4: trabajo local B0/F1 implementado y probado; evidencia en docs/architecture/004-b0-f1-local-completion.md. CI de 060220c pasó empaquetado, navegador Linux y seis combinaciones Bun/Node con identidad binaria. Las ampliaciones finales de cancelación/plazo total requieren su ejecución CI antes del cierre global. F0 cerrado; comparación A/B/C permanece en F3.8. El MCP activo no se migra en B0.
+- Fecha: 2026-09-19. Revisión 5: B0/F1 cerrados para los destinos definidos, con CI verde de 7bb52c5 en el fork Atreyu-94/H5P_MCP. F2 iniciada por C10: preparación local con contratos JSON y diagnósticos versionados; 113 pruebas pasan. Evidencia en docs/architecture/005-f2-contracts.md. F2 no está cerrada: faltan administración, descubrimiento y contratos de las demás operaciones. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -172,16 +172,16 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 
 **Archivos nuevos previstos:** `.bun-version`, configuración de instalación aislada bajo `tests/runtime-compat/`, `bun.lock` junto a su package.json, harness diferencial, fixtures multimedia autorizadas y workflow de compatibilidad. Mantener intacto el package-lock del producto Python mientras setup_lumi lo consuma.
 
-- [ ] B0.1 Fijar Bun 1.4.2 y setup-bun por SHA; verificar versión efectiva/checksum por plataforma. Registrar SO, arquitectura, libc y CPU. No usar latest ni auto-upgrade.
+- [x] B0.1 Fijar Bun 1.4.2 y setup-bun por SHA; verificar versión efectiva/checksum por plataforma. Registrar SO, arquitectura, libc y CPU. No usar latest ni auto-upgrade.
 - [x] B0.2 Comparación de runtime controlada: crear árbol npm de referencia en temporal, scripts deshabilitados, e invocar el mismo bridge con Node y Bun sobre copias idénticas de bibliotecas. Cambiar solo el ejecutable en el harness, sin tocar la configuración activa del usuario.
 - [x] B0.3 Comparación de instalador separada: migrar package-lock→bun.lock en el directorio experimental, linker hoisted, instalar con `bun install --frozen-lockfile --ignore-scripts`. Comparar versiones, integrities, tarball Lumi y binarios opcionales seleccionados. No cambiar gestor y runtime a la vez sin distinguir sus diferencias.
 - [x] B0.4 Probar carga efectiva de @node-rs/crc32 1.10.8 y vectores CRC32 conocidos, no solo resolución del paquete. Confirmar qué binario .node se carga. Preservar optionalDependencies por plataforma; no habilitar scripts globalmente si falla. Revisión explícita de cualquier excepción.
 - [x] B0.5 Ejecutar catalog, discover cacheado, schema, prepare, export e importación vacía con TF/MC/Blanks/QuestionSet/Accordion, imágenes/audio/vídeo válidos, anidados, assets locales y MathDisplay presente/ausente. Incluir entrada inválida, IDs, presupuestos, no-overwrite, STALE_PREPARATION y paquete incompleto.
 - [x] B0.6 Comparar h5p.json, content/content.json, mainLibrary, dependencias/parches, archivos de biblioteca, hashes de medios y diagnósticos. Dar los mismos UUID en fixtures de paridad; la generación de UUID ausentes se prueba como propiedad independiente para evitar falsos diffs aleatorios.
 - [x] B0.7 Importar paquetes de ambos runtimes en almacenamiento vacío, incluyendo cruce Node→Bun/Bun→Node. Reproducir en navegador y comprobar scores/feedback matemático. No exigir bytes ZIP idénticos por timestamps u orden.
-- [ ] B0.8 Probar EOF/stdin/stdout/stderr, errores de streams, backpressure, handles, temporales, señales y kill del hijo en Windows/Linux/macOS. Repetir operaciones para detectar crecimiento retenido; registrar métricas de memoria sin atribuir todo RSS al heap JS.
+- [x] B0.8 Probar EOF/stdin/stdout/stderr, errores de streams, backpressure, handles, temporales, señales y kill del hijo en Windows/Linux/macOS. Repetir operaciones para detectar crecimiento retenido; registrar métricas de memoria sin atribuir todo RSS al heap JS.
 - [x] B0.9 Pruebas de red separadas y explícitas: refresh Hub e instalación en almacén descartable, TLS y proxy HTTPS si se anuncia soporte. Corpus offline bloqueante sin Hub; fallo de red externa no se confunde con incompatibilidad, pero funcionalidad no probada queda pendiente de certificación.
-- [ ] B0.10 Matriz obligatoria Bun 1.4.2: Ubuntu x64 glibc, Windows x64, macOS arm64, comparadas con Node fijado. Linux arm64 como gate de esa distribución. Musl/Alpine y worker_threads no forman parte del soporte inicial.
+- [x] B0.10 Matriz obligatoria Bun 1.4.2: Ubuntu x64 glibc, Windows x64, macOS arm64, comparadas con Node fijado. Linux arm64 como gate de esa distribución. Musl/Alpine y worker_threads no forman parte del soporte inicial.
 - [x] B0.11 TypeScript 7.0.2 y @types/bun 1.4.2 verificados con Oxlint 1.83.0/tsgolint 7.0.2002; sin ESLint ni TS6. strict, noUncheckedIndexedAccess y noImplicitOverride; dominio sin globales Bun, adaptadores con Bun; ES2022 y skipLibCheck=false. Casos positivo/negativo ejecutados con Node y Bun. Evidencia en docs/architecture/002-bun-compatibility.md.
 - [x] B0.12 Emitir reporte máquina/Markdown con checks passed/failed/not_run y decisión adoptable/bloqueado por plataforma. Marcar Bun predeterminado solo en el componente que haya superado su gate; una prueba del bridge no certifica todavía el nuevo MCP.
 
@@ -202,7 +202,7 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 - [x] F1.7 Contrastar step, HTML/tags, BCP 47 y códigos de licencia con H5P/Lumi fijados. Separar restricciones reales de atributos UI. Sanitización compatible sin alterar respuestas/LaTeX silenciosamente; reportar transformaciones materiales.
 - [x] F1.8 Deadline que incluya espera de cola/lock; cancelación con terminación y reap del worker. Probar durante lectura, importación y escritura, sin artefacto final parcial.
 - [x] F1.9 Fallback sin hardlinks: staging y primitiva no-replace o artifact store transaccional. Nunca copia directa al nombre final ni rename con overwrite. Error explícito si el filesystem no permite garantizarlo.
-- [ ] F1.10 CI Bun 1.4.2 en Windows x64/Linux x64 glibc/macOS arm64, Node 22.12/24 diferencial, Python 3.12 transitorio y 3.13 compatible; lint/tipos/unitarias/importación/wheel externo/stdio. Acciones fijadas por SHA, permisos mínimos, sin secretos para PR no confiable.
+- [x] F1.10 CI Bun 1.4.2 en Windows x64/Linux x64 glibc/macOS arm64, Node 22.12/24 diferencial, Python 3.12 transitorio y 3.13 compatible; lint/tipos/unitarias/importación/wheel externo/stdio. Acciones fijadas por SHA, permisos mínimos, sin secretos para PR no confiable.
 - [x] F1.11 Navegador portable con Core/Playwright fijados, sin rutas Temp personales. Acierto/error/reintento/finalización y dos ramas de feedback matemático. Conformidad solo de transportes implementados.
 - [x] F1.12 Guardia contra artefactos versionados con allowlist de fixtures legítimas; retirar H5P históricos del índice tras inventario. No eliminar fixtures/tgz trazables con reglas indiscriminadas.
 

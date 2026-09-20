@@ -1,5 +1,5 @@
 """Public MCP report schemas; unexecuted checks never imply verification."""
-from typing import Any, Literal, TypedDict
+from typing import Any, Literal, NotRequired, TypedDict
 from h5p_mcp.models.activity import Activity
 
 Status = Literal['passed', 'failed', 'not_run']
@@ -18,6 +18,7 @@ class Diagnostic(TypedDict):
     path: str
     message: str
     retryable: bool
+    pointer: NotRequired[str]
 
 
 class PreparationReport(TypedDict):

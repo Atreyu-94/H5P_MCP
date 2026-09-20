@@ -6,6 +6,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 from h5p_mcp.skills_extension import register_authoring_skill
+from h5p_mcp.contracts.tool import register_preparation
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.activity import Activity
@@ -36,6 +37,7 @@ def _configure_logging() -> None:
 
 mcp = FastMCP("h5p-authoring")
 register_authoring_skill(mcp)
+register_preparation(mcp)
 
 
 def local_tool(**options):

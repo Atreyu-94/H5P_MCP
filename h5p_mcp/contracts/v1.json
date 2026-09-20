@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "h5p-contract://v1/schema",
+  "title": "H5P MCP local preparation contracts v1",
+  "$defs": {
+    "diagnostic": {
+      "type": "object", "additionalProperties": false,
+      "required": ["code", "pointer", "message", "expected", "actual", "retryable", "suggested_fix"],
+      "properties": {
+        "code": {"type": "string", "enum": ["LIBRARY_NOT_INSTALLED", "LIBRARY_VERSION_MISMATCH", "SCHEMA_VALIDATION_FAILED", "UNSUPPORTED_SEMANTIC_TYPE", "STALE_PREPARATION", "ASSET_NOT_FOUND", "ASSET_TOO_LARGE", "MIME_MISMATCH", "UNSAFE_ARCHIVE", "OUTPUT_ALREADY_EXISTS", "HUB_UNAVAILABLE", "TARGET_INCOMPATIBLE", "BACKEND_UNAVAILABLE", "BACKEND_TIMEOUT", "INTERNAL_ERROR", "LIMIT_EXCEEDED"]},
+        "pointer": {"type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)*$", "maxLength": 4096},
+        "message": {"type": "string", "maxLength": 256},
+        "expected": {"type": ["string", "null"], "maxLength": 256},
+        "actual": {"type": ["string", "null"], "maxLength": 256},
+        "retryable": {"type": "boolean"},
+        "suggested_fix": {"type": "string", "maxLength": 256}
+      }
+    },
+    "verification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["structure", "semantics", "importation", "playback", "grading"],
+      "properties": {
+        "structure": {"$ref": "#/$defs/status"}, "semantics": {"$ref": "#/$defs/status"},
+        "importation": {"$ref": "#/$defs/status"}, "playback": {"$ref": "#/$defs/status"},
+        "grading": {"$ref": "#/$defs/status"}
+      }
+    },
+    "status": {"enum": ["passed", "failed", "not_run"]},
+    "prepare_local_input": {
+      "type": "object", "additionalProperties": false, "required": ["title", "library", "params"],
+      "properties": {
+        "title": {"type": "string", "minLength": 1, "maxLength": 200},
+        "library": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]* [0-9]+\\.[0-9]+$"},
+        "params": {"type": "object", "additionalProperties": true},
+        "language": {"type": "string", "minLength": 2, "maxLength": 20, "default": "en"},
+        "license": {"type": "string", "default": "U"},
+        "assets": {"type": "object", "additionalProperties": {"type": "string"}, "default": {}, "description": "Local asset IDs mapped to absolute paths; never a remote input contract."}
+      }
+    },
+    "prepared_activity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["title", "library", "params", "language", "license", "assets", "preparation"],
+      "properties": {
+        "title": {"type": "string"}, "library": {"type": "string"},
+        "params": {"type": "object", "additionalProperties": true},
+        "language": {"type": "string"}, "license": {"type": "string"},
+        "assets": {"type": "object", "additionalProperties": {"type": "string"}},
+        "preparation": {"type": "object", "additionalProperties": true}
+      }
+    },
+    "preparation_report": {
+      "type": "object", "additionalProperties": false,
+      "required": ["contract_version", "ok", "kind", "diagnostics", "diagnostics_truncated", "activity", "verification"],
+      "properties": {
+        "contract_version": {"const": "1"}, "ok": {"type": "boolean"},
+        "kind": {"enum": ["preparation", "validation", "operational_error"]},
+        "diagnostics": {"type": "array", "maxItems": 100, "items": {"$ref": "#/$defs/diagnostic"}},
+        "diagnostics_truncated": {"type": "boolean"},
+        "activity": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/prepared_activity"}]},
+        "verification": {"$ref": "#/$defs/verification"}
+      },
+      "allOf": [
+        {"if": {"properties": {"ok": {"const": true}}}, "then": {"properties": {"kind": {"const": "preparation"}, "activity": {"$ref": "#/$defs/prepared_activity"}, "diagnostics": {"maxItems": 0}}}, "else": {"properties": {"kind": {"enum": ["validation", "operational_error"]}, "activity": {"type": "null"}, "diagnostics": {"minItems": 1}}}}
+      ]
+    }
+  }
+}
