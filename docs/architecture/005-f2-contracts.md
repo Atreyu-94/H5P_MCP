@@ -46,3 +46,47 @@ El commit `7bb52c55d3424fc3a44f32046a334fe623c5858a` pasó en el fork del usuari
 
 La evidencia cierra B0/F1 para los destinos definidos; no certifica Linux arm64,
 musl ni la futura implementación TypeScript.
+
+## C11: administración local separada
+
+`search_h5p_types` consulta sin flags de instalación o actualización. Se añaden
+`refresh_h5p_catalog`, `install_h5p_library` e `install_h5p_library_package`.
+El proceso local fija al iniciar sus scopes administrativos mediante
+`H5P_MCP_ADMIN_SCOPES`: `catalog:refresh` y `libraries:install`, separados por
+espacios. Por defecto no concede ninguno. El segundo scope permite contactar
+al Hub y actualizar su caché cuando sea necesario para instalar una biblioteca.
+El paquete local pasa autorización de ruta y preflight ZIP antes del importador.
+Puede actualizar bibliotecas existentes; no es una instalación transaccional.
+
+El middleware filtra el listado y rechaza la invocación incluso en stdio.
+Las funciones Python administrativas y los flags legados comprueban la misma
+política. `H5P_MCP_IMMUTABLE=1` prevalece sobre los scopes y también bloquea el
+comando `--setup-lumi`. La configuración pertenece al host, no a argumentos del
+LLM. No constituye OAuth, aislamiento entre tenants ni sandbox del sistema.
+La API Python interna del backend sigue siendo código de confianza del host.
+
+Lumi inicializa directorios incluso para lecturas. Por ello las consultas usan
+una copia temporal de configuración/caché y almacenamiento temporal eliminado
+al terminar. Las bibliotecas instaladas se leen en su ubicación original; una
+consulta sin bibliotecas no crea ese directorio. El lock de coordinación puede
+crearse y sigue serializando consultas con instalaciones; no es estado de autoría.
+Las anotaciones describen efectos, pero la autorización no depende de ellas.
+
+Las 27 pruebas iniciales de administración/descubrimiento pasaron: rechazo por
+scope, modo inmutable, stdio real, flags legados, instalación real en almacén
+vacío, ZIP inseguro y rutas no autorizadas, consultas sin red y sin cambios en
+contenido de caché/configuración/bibliotecas. La skill empaquetada se actualizó
+para enseñar el flujo administrativo y pasó `quick_validate.py`.
+
+Cierre local C11: suite completa con 128 pruebas aprobadas; 30 pruebas adicionales
+de administración, descubrimiento, skill y stdio aprobadas desde el wheel
+instalado fuera del checkout con dependencias bloqueadas. Build, Oxlint y guardia
+de artefactos también pasan. No se cambió la configuración del MCP activo.
+
+CI de C10 (`9ad543b`) confirmado en verde durante C11:
+
+- [Paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488159953).
+- [Matriz Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488160084).
+
+C12 continúa pendiente: proyección compacta de semánticas, recursos brutos y
+evidencia del catálogo. Tampoco se da por cerrada F2 en su conjunto.

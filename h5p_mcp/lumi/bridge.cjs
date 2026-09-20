@@ -55,7 +55,19 @@ async function main(request) {
   if (!request.data_dir || !path.isAbsolute(request.data_dir)) throw new Error('An absolute data_dir is required');
   const libraries = path.join(request.data_dir, 'libraries');
   if (['discover', 'schema'].includes(request.action)) {
-    const editor = await editorAt(request.data_dir, libraries);
+    // Lumi constructors create storage directories. Ordinary queries use an
+    // ephemeral configuration/cache snapshot, leaving durable state untouched.
+    const readonly = !request.refresh && !request.install_if_missing;
+    const root = readonly ? await fsp.mkdtemp(path.join(os.tmpdir(), 'h5p-query-')) : request.data_dir;
+    try {
+    if (readonly) {
+      for (const name of ['config.json', 'cache.json']) {
+        try { await fsp.copyFile(path.join(request.data_dir,name),path.join(root,name)); }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+      }
+    }
+    const libraryRoot = readonly && !fs.existsSync(libraries) ? path.join(root,'libraries') : libraries;
+    const editor = await editorAt(root, libraryRoot);
     const manager = editor.libraryManager;
     let installed = await manager.listInstalledLibraries();
     const sortVersions = versions => [...versions].sort((a, b) =>
@@ -64,10 +76,10 @@ async function main(request) {
       Number(major) < editor.config.coreApiVersion.major ||
       (Number(major) === editor.config.coreApiVersion.major && Number(minor) <= editor.config.coreApiVersion.minor);
     if (request.action === 'discover') {
-      if (request.refresh && !await editor.contentTypeCache.forceUpdate()) throw new Error('H5P Hub refresh failed; retry with refresh=false to use cached data');
+      if (request.refresh && !await editor.contentTypeCache.forceUpdate()) throw Object.assign(new Error('H5P Hub refresh failed; retry with refresh=false to use cached data'), {code:'HUB_UNAVAILABLE'});
       // ContentTypeCache.get() downloads on a cache miss. Discovery without an
       // explicit refresh must read storage directly, including an absent cache.
-      const hub = await new stores.JsonStorage(path.join(request.data_dir, 'cache.json')).load('contentTypeCache') || [];
+      const hub = await new stores.JsonStorage(path.join(root, 'cache.json')).load('contentTypeCache') || [];
       const entries = new Map(hub.map(item => [item.machineName, {
         machine_name: item.machineName, title: item.title, summary: item.summary,
         hub_version: `${item.majorVersion}.${item.minorVersion}.${item.patchVersion}`,
@@ -97,22 +109,25 @@ async function main(request) {
       request.major_version == null || (Number(v.majorVersion) === request.major_version && Number(v.minorVersion) === request.minor_version));
     let version = select();
     if (!version && request.install_if_missing) {
-      if (!await editor.contentTypeCache.forceUpdate()) throw new Error('H5P Hub refresh failed');
+      if (!await editor.contentTypeCache.forceUpdate()) throw Object.assign(new Error('H5P Hub refresh failed'), {code:'HUB_UNAVAILABLE'});
       const [entry] = await editor.contentTypeCache.get(name);
       if (!entry) throw new Error('Activity is not available in the H5P Hub');
       if (request.major_version != null && (Number(entry.majorVersion) !== request.major_version || Number(entry.minorVersion) !== request.minor_version)) {
-        throw new Error('Requested version is not installed and is not the current Hub version');
+        throw Object.assign(new Error('Requested version is not installed and is not the current Hub version'), {code:'LIBRARY_VERSION_MISMATCH'});
       }
       await editor.installLibraryFromHub(name, user);
       installed = await manager.listInstalledLibraries();
       version = select();
     }
-    if (!version) throw new Error('Library version is not installed. Use install_if_missing=true for an explicit Hub download, or install a local package with --setup-lumi --lumi-package.');
+    if (!version) throw Object.assign(new Error('Library version is not installed. Use an authorized installation tool or CLI setup.'), {code:'LIBRARY_NOT_INSTALLED'});
     const metadata = await manager.getLibrary(version);
     return { core: editor.config.h5pVersion, library: `${name} ${version.majorVersion}.${version.minorVersion}`,
       patch_version: metadata.patchVersion, metadata, semantics: await manager.getSemantics(version),
       authoring_supported: Number(metadata.runnable) === 1 && compatible(metadata.coreApi?.majorVersion, metadata.coreApi?.minorVersion) !== false,
       note: 'Native H5P semantics, not JSON Schema. Nested library options refer to separate schemas; query those exact versions. Use the exact library and native params with create_h5p_activity.' };
+    } finally {
+      if (readonly) await fsp.rm(root, {recursive:true, force:true});
+    }
   }
   if (request.action === 'setup') {
     const editor = await editorAt(request.data_dir, libraries);

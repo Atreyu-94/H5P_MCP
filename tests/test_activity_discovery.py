@@ -31,6 +31,7 @@ globalThis.fetch = deny;
             {'machineName':'H5P.Cached','title':'Cached','majorVersion':1,
              'minorVersion':0,'patchVersion':0,'h5pMajorVersion':1,'h5pMinorVersion':28}],
             'contentTypeCacheUpdate':1}), encoding='utf-8')
+    before = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
     result = subprocess.run(['node','--require',str(guard),str(SOURCE/'bridge.cjs')],
         input=json.dumps({'action':'discover','data_dir':str(tmp_path),
                           'refresh':refresh,'offset':0,'limit':10}),
@@ -45,6 +46,8 @@ globalThis.fetch = deny;
         report = json.loads(result.stdout)
         assert report['total'] == int(cached)
         assert report['last_updated'] == (1 if cached else None)
+        assert {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()} == before
+        assert not any(p.is_dir() for p in tmp_path.iterdir()), 'Query created durable storage'
 
 
 def test_discovery_pagination_and_authoring_status():
