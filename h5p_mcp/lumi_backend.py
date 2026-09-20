@@ -58,7 +58,10 @@ def _invoke(action: str, *, deadline: float | None = None, **payload) -> dict:
     if len(encoded.encode("utf-8")) > limit("JSON_BYTES", 16777216):
         raise BackendError("JSON byte budget exceeded", "INPUT_TOO_LARGE")
     # Files bound output memory; polling also enforces output and wall-clock budgets.
-    with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, tempfile.TemporaryFile() as errors:
+    with tempfile.TemporaryDirectory(prefix='h5p-worker-') as work, tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, tempfile.TemporaryFile() as errors:
+        # The parent owns all worker staging, including after a hard kill when
+        # JavaScript finally blocks cannot execute.
+        env.update(TMP=work, TEMP=work, TMPDIR=work)
         incoming.write(encoded.encode("utf-8"))
         incoming.seek(0)
         if time.monotonic() >= deadline:

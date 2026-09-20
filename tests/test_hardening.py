@@ -250,13 +250,15 @@ def test_cancel_reaps_worker_and_removes_staging(tmp_path, monkeypatch, action):
     from h5p_mcp import lumi_backend as backend
     from h5p_mcp.jobs import cancellable
     (tmp_path/'.ready').touch()
-    (tmp_path/'bridge.cjs').write_text('setInterval(()=>{},1000)')
+    (tmp_path/'bridge.cjs').write_text("require('node:fs').mkdirSync(require('node:path').join(require('node:os').tmpdir(),'child-staging'));setInterval(()=>{},1000)")
     monkeypatch.setattr(backend, 'SOURCE', tmp_path)
     monkeypatch.setattr(backend, 'runtime_dir', lambda: tmp_path)
     monkeypatch.setattr(backend, 'data_dir', lambda: tmp_path)
     children = []
+    workspaces = []
     real_popen = backend.subprocess.Popen
     def launch(*args, **kwargs):
+        workspaces.append(kwargs['env']['TMPDIR'])
         process = real_popen(*args, **kwargs)
         children.append(process)
         return process
@@ -278,6 +280,8 @@ def test_cancel_reaps_worker_and_removes_staging(tmp_path, monkeypatch, action):
     assert time.monotonic()-start < 5
     assert children and all(child.poll() is not None for child in children)
     assert not list(tmp_path.glob('staging-*'))
+    from pathlib import Path
+    assert all(not Path(work).exists() for work in workspaces)
 
 
 def test_cancel_while_waiting_for_lock(tmp_path, monkeypatch):
