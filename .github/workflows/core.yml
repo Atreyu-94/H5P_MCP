@@ -45,3 +45,15 @@ jobs:
         with:
           name: f3-${{ matrix.os }}
           path: f3-parity.json
+      - name: Verify F4 installed Bun package and SDK clients
+        run: |
+          npm ci --prefix tests/tooling --ignore-scripts
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $report=Get-Content f3-parity.json -Raw | ConvertFrom-Json
+          ./tests/tooling/package-probe.ps1 -Bun (Get-Command bun).Source -Libraries (Join-Path $report.artifacts 'data/libraries')
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: f4-source-${{ matrix.os }}
+          path: docs/architecture/007-bun-mcp.md
