@@ -6,6 +6,7 @@ from threading import Event
 from typing import get_type_hints
 
 import anyio
+from h5p_mcp.limits import limit
 
 _cancel: ContextVar[Event | None] = ContextVar('h5p_job_cancel', default=None)
 
@@ -33,13 +34,18 @@ def cancellable(function):
             finally:
                 finished.set()
         try:
-            return await anyio.to_thread.run_sync(work, abandon_on_cancel=True)
-        except anyio.get_cancelled_exc_class():
+            # One deadline per MCP call, including thread admission and all batch
+            # items; individual backend invocations must not reset the tool budget.
+            with anyio.fail_after(limit('SECONDS', 300)):
+                return await anyio.to_thread.run_sync(work, abandon_on_cancel=True)
+        except (TimeoutError, anyio.get_cancelled_exc_class()) as error:
             cancelled.set()
             # Wait for subprocess reaping and staging cleanup before returning.
             with anyio.CancelScope(shield=True):
                 if started.is_set():
                     await anyio.to_thread.run_sync(finished.wait)
+            if isinstance(error, TimeoutError):
+                raise RuntimeError('BACKEND_TIMEOUT: MCP tool deadline exceeded') from error
             raise
         finally:
             _cancel.reset(token)
