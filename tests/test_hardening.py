@@ -240,3 +240,58 @@ const run=()=>preparationManifest(editor,root,{library:'A 1.0',params:{}},{detec
 })().catch(e=>{console.error(e);process.exitCode=1});
 '''
     subprocess.run(['node', '-e', script, str(SOURCE), str(tmp_path)], check=True, timeout=15)
+
+
+@pytest.mark.parametrize('action', ['prepare', 'validate', 'export'])
+def test_cancel_reaps_worker_and_removes_staging(tmp_path, monkeypatch, action):
+    import anyio
+    import tempfile
+    import time
+    from h5p_mcp import lumi_backend as backend
+    from h5p_mcp.jobs import cancellable
+    (tmp_path/'.ready').touch()
+    (tmp_path/'bridge.cjs').write_text('setInterval(()=>{},1000)')
+    monkeypatch.setattr(backend, 'SOURCE', tmp_path)
+    monkeypatch.setattr(backend, 'runtime_dir', lambda: tmp_path)
+    monkeypatch.setattr(backend, 'data_dir', lambda: tmp_path)
+    children = []
+    real_popen = backend.subprocess.Popen
+    def launch(*args, **kwargs):
+        process = real_popen(*args, **kwargs)
+        children.append(process)
+        return process
+    monkeypatch.setattr(backend.subprocess, 'Popen', launch)
+    @cancellable
+    def job():
+        with tempfile.TemporaryDirectory(dir=tmp_path, prefix='staging-'):
+            backend.run_lumi(action)
+            pytest.fail('Cancelled worker returned successfully')
+    async def exercise():
+        with anyio.fail_after(5):
+            async with anyio.create_task_group() as group:
+                group.start_soon(job)
+                while not children:
+                    await anyio.sleep(0.01)
+                group.cancel_scope.cancel()
+    start = time.monotonic()
+    anyio.run(exercise)
+    assert time.monotonic()-start < 5
+    assert children and all(child.poll() is not None for child in children)
+    assert not list(tmp_path.glob('staging-*'))
+
+
+def test_cancel_while_waiting_for_lock(tmp_path, monkeypatch):
+    import anyio
+    from filelock import FileLock
+    from h5p_mcp import lumi_backend as backend
+    from h5p_mcp.jobs import cancellable
+    monkeypatch.setattr(backend, 'data_dir', lambda: tmp_path)
+    monkeypatch.setattr(backend, '_invoke', lambda *a, **kw: pytest.fail('Cancelled queue launched worker'))
+    async def exercise():
+        with anyio.fail_after(3):
+            async with anyio.create_task_group() as group:
+                group.start_soon(cancellable(lambda: backend.run_lumi('export')))
+                await anyio.sleep(0.2)
+                group.cancel_scope.cancel()
+    with FileLock(str(tmp_path/'backend.lock')):
+        anyio.run(exercise)

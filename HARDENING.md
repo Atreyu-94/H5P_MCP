@@ -64,8 +64,11 @@ additionally applies full Unicode case folding. The preflight and later import a
 file snapshot. JSON reads are bounded. Node input and Python output collection are
 bounded. Process timeout and local interruption kill and reap the child.
 Output is monitored in temporary files at 50 ms intervals; these are operational
-budgets, not an OS memory/disk sandbox. MCP cancellation of a synchronous worker
-is not guaranteed to terminate it immediately; its deadline still applies.
+budgets, not an OS memory/disk sandbox. MCP tools run in a cancellable thread
+boundary: cancellation is polled during lock waits, ZIP reads and subprocess
+execution; the child is killed/reaped and staging cleaned before acknowledgement.
+Cancellation does not undo already completed batch items. OS calls blocked on a
+faulty local filesystem may delay cooperative cleanup.
 
 Optional `H5P_MCP_ASSET_ROOTS`, `H5P_MCP_PACKAGE_ROOTS`, and
 `H5P_MCP_EXPORT_ROOTS` are JSON arrays of permitted absolute directories.

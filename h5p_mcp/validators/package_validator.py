@@ -12,6 +12,7 @@ from h5p_mcp.lumi_backend import run_lumi
 from h5p_mcp.limits import limit
 from h5p_mcp.models.reports import verification
 from h5p_mcp.utils.file_utils import authorized_path
+from h5p_mcp.jobs import check_cancelled
 
 
 @dataclass(frozen=True)
@@ -128,6 +129,7 @@ def _check_archive(archive: ZipFile) -> None:
     paths = {}
     expanded = 0
     for member in members:
+        check_cancelled()
         _check_member_path(member, paths)
         if member.file_size > limit('ZIP_MEMBER_BYTES', 134217728):
             raise ValueError('ZIP member byte budget exceeded')
@@ -137,6 +139,7 @@ def _check_archive(archive: ZipFile) -> None:
         read = 0
         with archive.open(member) as stream:
             while chunk := stream.read(65536):
+                check_cancelled()
                 read += len(chunk)
                 expanded += len(chunk)
                 if read > limit('ZIP_MEMBER_BYTES', 134217728) or expanded > limit('ZIP_BYTES', 536870912):
