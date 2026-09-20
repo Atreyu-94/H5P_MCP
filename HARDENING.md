@@ -42,12 +42,21 @@ Positive integer environment variables configure these defaults:
 | ZIP_MEMBERS | 20000 |
 | ZIP_MEMBER_BYTES | 134217728 |
 | ZIP_BYTES | 536870912 |
+| ZIP_ARCHIVE_BYTES | 134217728 |
+| ZIP_RATIO | 1000 |
+| ZIP_PATH_DEPTH | 32 |
 | BATCH | 50 |
 | SECONDS | 300 |
 
 Media reads run sequentially and are bounded even if a file grows after stat.
-ZIP prevalidation rejects duplicate names, unsafe paths and excess declared
-sizes; JSON reads are bounded. Node input and Python output collection are
+ZIP validation checks compressed size before opening, bounds expansion ratio,
+and drains members in 64 KiB chunks to check readable byte counts and CRC before
+Lumi import. It rejects symlinks/special entries, ambiguous separators, Windows
+reserved names/ADS, Unicode NFC/case-fold collisions and file/directory conflicts.
+Explicit directory entries remain allowed. These checks apply to package
+validation; administrative installation and bounded extraction inside Lumi still
+need the same enforcement. The preflight and later import are not an immutable
+file snapshot. JSON reads are bounded. Node input and Python output collection are
 bounded. Process timeout and local interruption kill and reap the child.
 Output is monitored in temporary files at 50 ms intervals; these are operational
 budgets, not an OS memory/disk sandbox. MCP cancellation of a synchronous worker

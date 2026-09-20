@@ -1,6 +1,7 @@
 """Offline regressions: no Lumi installation or personal cache required."""
 import subprocess
 from zipfile import ZipFile
+from zipfile import ZipInfo, ZIP_DEFLATED
 
 import pytest
 
@@ -78,3 +79,72 @@ def test_batch_budget_precedes_export(monkeypatch):
     monkeypatch.setenv('H5P_MCP_MAX_BATCH', '1')
     with pytest.raises(ValueError, match='BATCH_TOO_LARGE'):
         export_h5p_batch([{}, {}])
+
+
+@pytest.mark.parametrize('names', [
+    ['../escape'], ['/absolute'], ['C:/drive'], ['folder/file:stream'],
+    ['folder\\file'], ['folder//file'], ['folder/./file'], ['CON.txt'],
+    ['folder/LPT1.png'], ['trailing.'], ['space '], ['A/x','a/y'],
+    ['caf\u00e9/x','cafe\u0301/y'], ['content','content/file'],
+    ['bad?name'], ['/'.join(['deep']*33)],
+])
+def test_portable_zip_paths_reject_before_import(tmp_path, monkeypatch, names):
+    import h5p_mcp.validators.package_validator as validator
+    monkeypatch.setattr(validator, 'run_lumi', lambda *a, **k: pytest.fail('Unsafe package reached importer'))
+    path = tmp_path/'paths.h5p'
+    with ZipFile(path,'w') as archive:
+        for name in names:
+            archive.writestr(name,'x')
+    if names == ['folder\\file']:
+        # Windows ZipInfo normalizes separators while writing. Preserve the raw
+        # hostile name in both headers without changing lengths or data CRC.
+        path.write_bytes(path.read_bytes().replace(b'folder/file',b'folder\\file'))
+    result = validator.validate_h5p_package(path)
+    assert not result.ok and 'Unsafe ZIP' in ' '.join(result.errors)
+
+
+def test_zip_symlink_rejected(tmp_path):
+    import stat
+    path = tmp_path/'symlink.h5p'
+    entry = ZipInfo('link')
+    entry.create_system = 3
+    entry.external_attr = (stat.S_IFLNK | 0o777) << 16
+    with ZipFile(path,'w') as archive:
+        archive.writestr(entry,'../outside')
+    assert 'symlink' in ' '.join(validate_h5p_package(path).errors)
+
+
+def test_zip_ratio_and_archive_size_limits(tmp_path, monkeypatch):
+    path = tmp_path/'compressed.h5p'
+    with ZipFile(path,'w',compression=ZIP_DEFLATED) as archive:
+        archive.writestr('large.txt',b'0'*100000)
+    monkeypatch.setenv('H5P_MCP_MAX_ZIP_RATIO','10')
+    assert 'ratio' in ' '.join(validate_h5p_package(path).errors)
+    monkeypatch.setenv('H5P_MCP_MAX_ZIP_ARCHIVE_BYTES',str(path.stat().st_size-1))
+    assert 'compressed byte' in ' '.join(validate_h5p_package(path).errors)
+
+
+def test_zip_explicit_directories_and_size_boundary(tmp_path, monkeypatch):
+    import json
+    import h5p_mcp.validators.package_validator as validator
+    monkeypatch.setattr(validator,'run_lumi',lambda *a,**k:{'errors':[],'warnings':[]})
+    path = tmp_path/'valid.h5p'
+    with ZipFile(path,'w') as archive:
+        archive.writestr('content/','')
+        archive.writestr('h5p.json',json.dumps({'mainLibrary':'Test','preloadedDependencies':[{}]}))
+        archive.writestr('content/content.json','{}')
+    monkeypatch.setenv('H5P_MCP_MAX_ZIP_ARCHIVE_BYTES',str(path.stat().st_size))
+    assert validator.validate_h5p_package(path).ok
+    monkeypatch.setenv('H5P_MCP_MAX_ZIP_ARCHIVE_BYTES',str(path.stat().st_size+1))
+    assert validator.validate_h5p_package(path).ok
+
+
+def test_zip_corrupt_member_rejected_before_import(tmp_path, monkeypatch):
+    import h5p_mcp.validators.package_validator as validator
+    monkeypatch.setattr(validator,'run_lumi',lambda *a,**k:pytest.fail('Corrupt data reached importer'))
+    path = tmp_path/'corrupt.h5p'
+    with ZipFile(path,'w') as archive:
+        archive.writestr('asset.bin',b'payload')
+    path.write_bytes(path.read_bytes().replace(b'payload',b'payloae'))
+    result = validator.validate_h5p_package(path)
+    assert not result.ok and 'CRC' in ' '.join(result.errors)
