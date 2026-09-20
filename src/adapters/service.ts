@@ -22,7 +22,14 @@ async function resolved(filename:string):Promise<string> {
 }
 export class Service {
  private vaultPromise?:Promise<Vault>;
- constructor(private readonly principal:Principal={tenant:'local',owner:'local'}){this.principal=Object.freeze({...principal});}
+ constructor(private readonly principal:Principal={tenant:'local',owner:'local'},options:{data?:string;store?:string;immutable?:boolean;adminScopes?:string[]}={}){
+  this.principal=Object.freeze({...principal});
+  if(options.data)this.data=options.data;
+  this.store=options.store||path.resolve(process.env.H5P_MCP_STORE_DIR||path.join(this.data,'objects'));
+  if(options.immutable!==undefined)this.immutable=options.immutable;
+  if(options.adminScopes){this.scopes.clear();for(const scope of options.adminScopes)this.scopes.add(scope);}
+ }
+ readonly store:string;
  engine=new Engine();
  resources=new Resources();
  readonly data=path.resolve(process.env.H5P_MCP_DATA_DIR||path.join(os.homedir(),'.h5p-mcp'));
@@ -31,13 +38,13 @@ export class Service {
  readonly scopes=new Set((process.env.H5P_MCP_ADMIN_SCOPES||'').split(/\s+/).filter(Boolean));
  readonly roots:Record<string,string[]|undefined>={};
  readonly definitions:Record<string,string[]>={...operations.local,...storage.local,prepare_h5p_activity:['prepare_local_input','preparation_report']};
- private vault() {
+ vault() {
   return this.vaultPromise??=(async()=>{
-   const objects=new Objects(path.resolve(process.env.H5P_MCP_STORE_DIR||path.join(this.data,'objects')),this.principal);
+   const objects=new Objects(this.store,this.principal);
    await objects.initialize();return new Vault(objects,this.data);
   })();
  }
- private stored(value:Stored):Native {
+ stored(value:Stored):Native {
   const result:Native={object_id:value.id,kind:value.kind,expires:value.expires};
   if(value.metadata.library_snapshot_id)result.library_snapshot_id=value.metadata.library_snapshot_id;
   if(value.files.payload)Object.assign(result,{mime_type:value.metadata.mime,size:value.files.payload.size,sha256:value.files.payload.sha256});
@@ -74,6 +81,7 @@ export class Service {
    annotations:{readOnlyHint:['search_h5p_types','get_h5p_type_contract','validate_h5p_package','validate_stored_h5p_package','list_stored_h5p_objects'].includes(name),destructiveHint:name==='revoke_stored_h5p_object',openWorldHint:!!scopes[name]}
   }));
   for(const [name,target] of Object.entries(aliases)) {
+   if(!Object.hasOwn(this.definitions,target))continue;
    const inputSchema=schema(this.definitions[target][0]);
    if(name==='list_h5p_activities') inputSchema.properties.refresh={type:'boolean',default:false};
    if(name==='get_h5p_activity_schema') inputSchema.properties.install_if_missing={type:'boolean',default:false};

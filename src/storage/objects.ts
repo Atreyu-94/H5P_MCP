@@ -6,7 +6,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {checkTree} from '../domain/limits.js';
 import {readBounded} from '../infrastructure/media.js';
 import type {Native} from '../domain/types.js';
-export type Kind='asset'|'package'|'preparation'|'artifact'|'libraries'|'target';
+export type Kind='asset'|'package'|'preparation'|'artifact'|'libraries'|'target'|'schema';
 export interface Principal {tenant:string;owner:string}
 export const storageError=(code:string)=>Object.assign(new Error(code),{code});
 export const canonical=(v:Native):Native=>Array.isArray(v)?v.map(canonical):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,canonical(v[k])])):v;
@@ -98,6 +98,8 @@ export class Objects {
     }
     const usage=this.db.query('SELECT COUNT(*) AS count,COALESCE(SUM(bytes),0) AS bytes FROM objects WHERE tenant=?').get(this.principal.tenant) as Native;
     if(usage.count>=this.budgets.count||usage.bytes+this.budgets.bytes>this.budgets.tenantBytes) throw storageError('LIMIT_EXCEEDED');
+    const global=this.db.query('SELECT COUNT(*) AS count,COALESCE(SUM(bytes),0) AS bytes FROM objects').get() as Native;
+    if(global.count>=32768||global.bytes+this.budgets.bytes>8589934592)throw storageError('LIMIT_EXCEEDED');
     const fresh=randomBytes(16).toString('hex');
     this.db.query('INSERT INTO objects VALUES(?,?,?,?,?,?,?,?,?,?)').run(fresh,this.principal.tenant,this.principal.owner,kind,'staging',this.now()+ttl,this.now()+this.budgets.seconds*1000,'{}','{}',this.budgets.bytes);
     if(options.key) this.db.query('INSERT OR REPLACE INTO requests VALUES(?,?,?,?,?)').run(this.principal.tenant,this.principal.owner,options.key,options.digest!,fresh);

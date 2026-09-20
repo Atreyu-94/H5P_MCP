@@ -34,8 +34,10 @@
     "export_h5p_batch": ["batch_input","batch_output"]
   },
   "remote": {
-    "execution_supported": false,
-    "requires": ["F5 stores and ownership", "F6 authenticated HTTP"],
-    "inputs": {"search_h5p_types":"search_input","get_h5p_type_contract":"library_input","prepare_h5p_activity":"prepare_remote_input","export_h5p_activity":"export_remote_input","validate_h5p_package":"package_remote_input","install_h5p_library_package":"package_remote_input","read_h5p_artifact":"resource_remote_input","refresh_h5p_catalog":"empty_input","install_h5p_library":"library_input"}
+    "execution_supported": true,
+    "requires": ["Explicit HTTP configuration", "OIDC access JWT and host-managed public JWKS", "Authenticated principal and operation scopes"],
+    "inputs": {"search_h5p_types":"search_input","get_h5p_type_contract":"library_input","prepare_stored_h5p_activity":"stored_prepare_input","export_prepared_h5p_activity":"stored_export_input","validate_stored_h5p_package":"stored_id_input","install_h5p_library_package":"stored_id_input","list_stored_h5p_objects":"stored_list_input","revoke_stored_h5p_object":"stored_id_input","register_h5p_target_profile":"stored_target_input","capture_h5p_library_snapshot":"empty_input","activate_h5p_library_snapshot":"stored_id_input"},
+    "rest": {"POST /uploads/assets":"authenticated raw media bytes","POST /uploads/packages":"authenticated raw application/zip bytes","GET /artifacts/{id}":"owner-authorized package download"},
+    "tasks": "not advertised; bounded synchronous operations"
   }
 }
