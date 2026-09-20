@@ -1,0 +1,140 @@
+{
+  "phase": "F3",
+  "status": "local_verified_ci_pending",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "node": "v26.7.0",
+  "bun": "1.4.2",
+  "typescript": "7.0.2",
+  "checks": {
+    "build": "passed",
+    "lint": "passed",
+    "bun_tests": 6,
+    "wheel_tests": 139,
+    "wheel_seconds": 128.15,
+    "parity_fixtures": 9,
+    "native_contracts": 9,
+    "negative_diagnostics": "passed",
+    "stale_cleanup_cancel_recovery": "passed",
+    "browser": {
+      "name": "grading.h5p",
+      "wrong": 0,
+      "correct": 1,
+      "maximum": 1,
+      "retry": true,
+      "answered": true,
+      "errors": []
+    }
+  },
+  "measurements_ms": {
+    "first_A_catalog": 417.1,
+    "first_B_catalog": 13356.86,
+    "first_C_catalog": 14395.06,
+    "first_catalog_ABC": 28169.1,
+    "first_A_discover": 417.72,
+    "first_B_discover": 402.15,
+    "first_C_discover": 312.96,
+    "first_discover_ABC": 1133.3,
+    "first_A_schema": 420.28,
+    "first_B_schema": 394.94,
+    "first_C_schema": 264.61,
+    "first_schema_ABC": 1080.77,
+    "first_A_prepare": 471.46,
+    "first_B_prepare": 868.32,
+    "first_C_prepare": 608.38,
+    "first_A_export": 622.33,
+    "first_A_validate": 839.36,
+    "first_B_export": 1188.08,
+    "first_B_validate": 1158.15,
+    "first_C_export": 923.94,
+    "first_C_validate": 1178.14,
+    "A": {
+      "catalog": {
+        "median": 398.85,
+        "p95": 526.5,
+        "samples": 20
+      },
+      "schema": {
+        "median": 401.8,
+        "p95": 470.94,
+        "samples": 20
+      },
+      "prepare": {
+        "median": 533.35,
+        "p95": 626.73,
+        "samples": 20
+      },
+      "batch_10": 6696.98,
+      "batch_100": 67638.28
+    },
+    "B": {
+      "catalog": {
+        "median": 319.98,
+        "p95": 369.1,
+        "samples": 20
+      },
+      "schema": {
+        "median": 313.72,
+        "p95": 409.75,
+        "samples": 20
+      },
+      "prepare": {
+        "median": 635.04,
+        "p95": 785,
+        "samples": 20
+      },
+      "batch_10": 9639.54,
+      "batch_100": 92906.73
+    },
+    "C": {
+      "catalog": {
+        "median": 152.62,
+        "p95": 166.49,
+        "samples": 20
+      },
+      "schema": {
+        "median": 153.45,
+        "p95": 216.38,
+        "samples": 20
+      },
+      "prepare": {
+        "median": 511.86,
+        "p95": 601.01,
+        "samples": 20
+      },
+      "batch_10": 6858.25,
+      "batch_100": 75714.87
+    }
+  },
+  "installation": {
+    "scope": "A: pinned legacy Lumi runtime; B/C: same frozen production core tree",
+    "measurements_ms": {
+      "legacy": {
+        "empty_package_cache": 3256.85,
+        "reused_package_cache": 4203.98
+      },
+      "core": {
+        "empty_package_cache": 11450.64,
+        "reused_package_cache": 8974.73
+      }
+    },
+    "os_cache": "not cleared"
+  },
+  "bun_lock_sha256": "e1b054c4a58df5434c3c4a8999071b2f9a2ccff372ca1277dea80194a47c1f8d",
+  "normalization": [
+    "catalog observation timestamp",
+    "additional core code hashes verified as SHA-256; legacy backend hashes compared",
+    "generated media filenames replaced with verified package-byte digest"
+  ],
+  "limits": [
+    "Windows measurements only; CI for other platforms pending",
+    "Single batch/installation observations; not a universal performance claim",
+    "Snapshots copy and verify installed libraries on first acquisition; Node reference regresses on authoring and exports",
+    "Bun batch 100: 75.7 s vs legacy 67.6 s; preserve isolation rather than promote runtime on throughput alone",
+    "Benchmark preceded final IPC backpressure and metadata-budget guards; final build, unit/IPC tests and wheel regression passed afterward",
+    "No cold OS cache, Moodle or HTTP verification"
+  ],
+  "artifacts": {
+    "parity": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-f3-derdjpv2",
+    "installation": "C:\\Users\\Vic\\AppData\\Local\\Temp\\h5p-f3-installs-gps_zztw"
+  }
+}

@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+from contextlib import contextmanager
 
 from filelock import FileLock, Timeout
 from h5p_mcp.limits import limit, check_tree
@@ -44,7 +45,33 @@ def _node() -> str:
     return node
 
 
+@contextmanager
+def core_lock(deadline):
+    root = data_dir()
+    root.mkdir(parents=True, exist_ok=True)
+    lock = root / '.core-lock'
+    while True:
+        check_cancelled()
+        try:
+            lock.mkdir()
+            break
+        except FileExistsError:
+            if time.monotonic() >= deadline:
+                raise BackendError('Core lock deadline exceeded', 'BACKEND_TIMEOUT')
+            time.sleep(.025)
+    try:
+        yield
+    finally:
+        lock.rmdir()
+
+
 def _invoke(action: str, *, deadline: float | None = None, **payload) -> dict:
+    deadline = deadline if deadline is not None else time.monotonic() + limit('SECONDS', 300)
+    with core_lock(deadline):
+        return _invoke_legacy(action, deadline=deadline, **payload)
+
+
+def _invoke_legacy(action: str, *, deadline: float | None = None, **payload) -> dict:
     check_cancelled()
     deadline = deadline if deadline is not None else time.monotonic() + limit("SECONDS", 300)
     runtime = runtime_dir()

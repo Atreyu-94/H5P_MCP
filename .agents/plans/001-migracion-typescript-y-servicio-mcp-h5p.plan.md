@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 9: B0/F1 cerrados para los destinos definidos. F2.1–F2.9 cerradas para el alcance local y contractual: 139 pruebas aprobadas desde el wheel instalado fuera del checkout. La siguiente fase es F3. El contrato remoto está publicado pero su ejecución permanece deshabilitada hasta F5/F6; no se modifica el MCP activo. Evidencia en docs/architecture/005-f2-contracts.md y en la tabla de trazabilidad de F2.
+- Fecha: 2026-09-19. Revisión 10: F3 implementada y verificada localmente; CI multiplataforma pendiente. Siguiente: F4. Python y el MCP activo se conservan.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -280,14 +280,16 @@ Verificación del cierre F2: 139 pruebas aprobadas desde el wheel instalado fuer
 
 **Árbol previsto:** src/domain, src/application, src/h5p, src/infrastructure, src/adapters y src/skills, en un solo paquete. Bun.* solo en infraestructura/adaptadores; casos de uso y validadores siguen comparables con Node. Crear módulos cuando exista responsabilidad real.
 
-- [ ] F3.1 TypeScript 7 strict, bun.lock, lint y bun:test; Python continúa disponible hasta cerrar gate.
-- [ ] F3.2 Migrar tipos, límites, diagnósticos, reglas puras, UUID y MathDisplay; después medios, manifiesto y grafo.
-- [ ] F3.3 Dividir bridge en catálogo, contratos, preparación, exportación, validación y administración; mismo Lumi fijado durante comparación.
-- [ ] F3.4 Compilar/cachear schemas por digest, generación y versión de compilador; límites e invalidación comprobados.
-- [ ] F3.5 Pool acotado y temporales únicos; generaciones inmutables de bibliotecas y escritura exclusiva. Retirar lock global solo tras pruebas lector/escritor.
-- [ ] F3.6 Adaptador IPC Python transitorio con correlación, límites, errores y cancelación para comparar el núcleo portado; no convertirlo en requisito de la release Bun. Export/import aislados usarán procesos Bun donde lo requiera F1.
-- [ ] F3.7 Comparar manifest, JSON, dependencias/parches, medios/hashes, IDs y diagnósticos Python/TS. Normalizar únicamente datos volátiles justificados; no exigir ZIP idéntico.
-- [ ] F3.8 Completar la comparación iniciada en F0.6: A Python+Node por petición, B núcleo persistente Node, C el mismo núcleo persistente Bun. B/C usarán el mismo corpus, scheduler y módulos portables; documentar diferencias de adaptador. Repetir A/B/C con igual hardware/input/caché, incluyendo instalación limpia/cacheada, primeras llamadas y lotes 10/100. Investigar regresiones; no reducir aislamiento por una cifra de rendimiento. Caché física del SO solo se declarará fría con un procedimiento verificado; en otro caso mantener esa limitación explícita.
+- [x] F3.1 TypeScript 7 strict, bun.lock, Oxlint y bun:test; Python conservado.
+- [x] F3.2 Tipos, límites, diagnósticos, reglas, UUID, MathDisplay, medios, manifiesto y grafo portados.
+- [x] F3.3 Operaciones Lumi separadas, con el mismo upstream fijado.
+- [x] F3.4 Caché de semánticas/regexps por digest, generación y compilador; límites e invalidación probados.
+- [x] F3.5 Pool, staging y generaciones privadas inmutables; publicación exclusiva. Se conserva el lock legado.
+- [x] F3.6 IPC Python correlacionado, acotado y cancelable; trabajos sensibles en procesos aislados.
+- [x] F3.7 Paridad A/B/C: 9 fixtures y 9 proyecciones; JSON, dependencias, medios, UUID y diagnósticos.
+- [x] F3.8 Instalación vacía/cacheada, primeras llamadas, 20 muestras cortas y lotes 10/100 medidos. Regresiones documentadas; caché física del SO no vaciada.
+
+Validación: 139 pruebas del wheel, 6 del núcleo/IPC y navegador aprobados. Evidencia y límites: docs/architecture/006-typescript-core.md y f3-local-summary.json. CI pendiente; la corrección del comparador de fechas de F2 está en `eeb44aa`.
 
 **Aceptación:** corpus positivo/negativo equivalente o diferencias aprobadas/documentadas; importación fresca y navegador conservan comportamiento; rollback al runtime Python disponible.
 
