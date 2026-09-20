@@ -1,0 +1,10 @@
+{
+  "name": "h5p-mcp-verification-tooling",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "@modelcontextprotocol/client": "2.0.0",
+    "@playwright/test": "1.63.0"
+  }
+}
