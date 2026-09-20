@@ -45,6 +45,9 @@ Positive integer environment variables configure these defaults:
 | ZIP_ARCHIVE_BYTES | 134217728 |
 | ZIP_RATIO | 1000 |
 | ZIP_PATH_DEPTH | 32 |
+| LIBRARIES | 1000 |
+| DEPENDENCY_EDGES | 5000 |
+| DEPENDENCY_DEPTH | 32 |
 | BATCH | 50 |
 | SECONDS | 300 |
 
@@ -53,18 +56,35 @@ ZIP validation checks compressed size before opening, bounds expansion ratio,
 and drains members in 64 KiB chunks to check readable byte counts and CRC before
 Lumi import. It rejects symlinks/special entries, ambiguous separators, Windows
 reserved names/ADS, Unicode NFC/case-fold collisions and file/directory conflicts.
-Explicit directory entries remain allowed. These checks apply to package
-validation; administrative installation and bounded extraction inside Lumi still
-need the same enforcement. The preflight and later import are not an immutable
+Explicit directory entries remain allowed. Package validation and administrative
+installation share this preflight. A version-specific adapter bounds Lumi's ZIP
+extraction in the isolated worker, including streamed bytes and exclusive files.
+The worker also rejects portable path collisions (NFC/lowercase); Python preflight
+additionally applies full Unicode case folding. The preflight and later import are not an immutable
 file snapshot. JSON reads are bounded. Node input and Python output collection are
 bounded. Process timeout and local interruption kill and reap the child.
 Output is monitored in temporary files at 50 ms intervals; these are operational
 budgets, not an OS memory/disk sandbox. MCP cancellation of a synchronous worker
 is not guaranteed to terminate it immediately; its deadline still applies.
 
-Optional `H5P_MCP_ASSET_ROOTS` is a JSON array of permitted absolute directories.
-Roots and files are resolved before containment checks. Omit it to retain the
-local MCP's existing absolute-path media workflow.
+Optional `H5P_MCP_ASSET_ROOTS`, `H5P_MCP_PACKAGE_ROOTS`, and
+`H5P_MCP_EXPORT_ROOTS` are JSON arrays of permitted absolute directories.
+Roots and paths are resolved before containment checks; an empty array denies
+all access of that kind. Omit a variable to retain the existing local absolute-path
+workflow. These controls do not prevent a hostile local process replacing a path
+between resolution and opening; stronger snapshots/isolation belong to the remote
+storage phase. Internal disposable import/export paths are not user-selected roots.
+
+Local media must match detected magic bytes and the declared MIME allowlist:
+raster images, supported audio/video containers, PDF and WebVTT. SVG and HTML are
+rejected. Magic bytes do not establish codec validity or browser playback. The same
+bounded bytes inspected for MIME are sent to Lumi; remote playback URLs are not
+downloaded. Dependency manifests bound nodes, edges and depth and reject cycles.
+
+The backend deadline includes lock contention. Publication uses an exclusive hardlink
+or a platform no-replace rename; it never copies to a visible final filename.
+Unsupported atomic primitives fail explicitly. Linux/macOS fallback implementation
+is covered by portable tests but requires execution on those platforms.
 
 MathDisplay remains the only explicitly resolved addon. Other installed addons
 are not exported indiscriminately. Add new adapters only with a real content

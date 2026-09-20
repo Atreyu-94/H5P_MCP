@@ -6,6 +6,8 @@ const {limit} = require('./limits.cjs');
 const hash = data => createHash('sha256').update(data).digest('hex');
 async function preparationManifest(editor, root, activity, mathematics) {
   const libraries = {};
+  const visiting = new Set();
+  let edges = 0;
   let total = 0, files = 0;
   async function digestFile(filename) {
     const data = await readBounded(filename, limit('ASSET_BYTES', 67108864));
@@ -13,8 +15,12 @@ async function preparationManifest(editor, root, activity, mathematics) {
     if (++files > limit('ZIP_MEMBERS', 20000) || total > limit('ZIP_BYTES', 536870912)) throw new Error('Manifest file budget exceeded');
     return hash(data);
   }
-  async function add(name) {
+  async function add(name, depth = 0) {
+    if (visiting.has(name)) throw new Error('Cyclic library dependency');
+    if (depth > limit('DEPENDENCY_DEPTH',32)) throw new Error('Library dependency depth budget exceeded');
     if (libraries[name]) return;
+    if (Object.keys(libraries).length >= limit('LIBRARIES',1000)) throw new Error('Library node budget exceeded');
+    visiting.add(name);
     const [machineName, version] = name.split(' ');
     const [majorVersion, minorVersion] = version.split('.').map(Number);
     const meta = await editor.libraryManager.getLibrary({machineName, majorVersion, minorVersion});
@@ -30,8 +36,11 @@ async function preparationManifest(editor, root, activity, mathematics) {
       }
     }
     await walk(base);
-    for (const dep of [...(meta.preloadedDependencies || []), ...(meta.dynamicDependencies || []), ...(meta.editorDependencies || [])])
-      await add(`${dep.machineName} ${dep.majorVersion}.${dep.minorVersion}`);
+    for (const dep of [...(meta.preloadedDependencies || []), ...(meta.dynamicDependencies || []), ...(meta.editorDependencies || [])]) {
+      if (++edges > limit('DEPENDENCY_EDGES',5000)) throw new Error('Library edge budget exceeded');
+      await add(`${dep.machineName} ${dep.majorVersion}.${dep.minorVersion}`, depth + 1);
+    }
+    visiting.delete(name);
   }
   await add(activity.library);
   const stack = [activity.params];

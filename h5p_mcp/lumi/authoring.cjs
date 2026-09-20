@@ -3,7 +3,7 @@
 const {createMediaResolver} = require('./media.cjs');
 const { randomUUID } = require('node:crypto');
 const { inspectMath } = require('./math.cjs');
-const { checkTree } = require('./limits.cjs');
+const { checkTree, limit } = require('./limits.cjs');
 const { scalarErrors } = require('./semantics.cjs');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -16,6 +16,8 @@ async function prepareActivity(editor, activity, user, upload = false) {
   }
   const warnings = new Set(['Native field checks do not verify editor-widget rules, HTML safety, playback, accessibility or Moodle grading.']);
   const schemas = new Map();
+  let visitedFields = 0;
+  let exhausted = false;
   const usedAssets = new Set();
   const assets = activity.assets || {};
   const fail = (at, message, code = 'INVALID_PARAMETER') => { errors.push(`${at}: ${message}`); diagnostics.push({code, path:at, message, retryable:false}); };
@@ -25,13 +27,16 @@ async function prepareActivity(editor, activity, user, upload = false) {
     const version = { machineName: match[1], majorVersion: Number(match[2]), minorVersion: Number(match[3]) };
     try {
       if (!schemas.has(library)) {
+        if (schemas.size >= limit('LIBRARIES',1000)) throw new Error('Library node budget exceeded');
         const metadata = await editor.libraryManager.getLibrary(version);
         const core = metadata.coreApi;
         if (core && (core.majorVersion > editor.config.coreApiVersion.major ||
           (core.majorVersion === editor.config.coreApiVersion.major && core.minorVersion > editor.config.coreApiVersion.minor))) {
           throw new Error('requires a newer H5P Core');
         }
-        schemas.set(library, { metadata, fields: await editor.libraryManager.getSemantics(version) });
+        const semantics = await editor.libraryManager.getSemantics(version);
+        checkTree(semantics);
+        schemas.set(library, { metadata, fields: semantics });
       }
       const result = schemas.get(library);
       if (top && Number(result.metadata.runnable) !== 1) { fail(at, 'library is not runnable'); return; }
@@ -51,7 +56,9 @@ async function prepareActivity(editor, activity, user, upload = false) {
   }
   const media = createMediaResolver({editor, user, upload, assets, usedAssets, warnings, fail});
   async function field(entry, value, at, depth) {
-    if (depth > 64) { fail(at, 'maximum nesting depth exceeded'); return value; }
+    if (exhausted) return undefined;
+    if (++visitedFields > limit('NODES',100000)) { exhausted = true; fail(at,'Expanded field budget exceeded','INPUT_TOO_LARGE'); return undefined; }
+    if (depth > limit('DEPTH',64)) { fail(at, 'maximum nesting depth exceeded'); return value; }
     // H5P flattens a group with one field (e.g. overallFeedback) into
     // that field's value; this must agree with Lumi's ContentScanner.
     if (entry.type === 'group' && entry.fields?.length === 1) {

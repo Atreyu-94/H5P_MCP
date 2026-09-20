@@ -61,6 +61,20 @@ def resolve_export_dir(configured: str | None) -> Path:
     env = os.environ.get("H5P_MCP_EXPORT_DIR")
     # Installed tools must not store user activities in site-packages or uv's cache.
     base = Path(env or configured or Path.cwd() / "exports").expanduser().resolve()
+    base = authorized_path(base, 'H5P_MCP_EXPORT_ROOTS')
     ensure_dir(base)
     return base
+
+
+def authorized_path(path: Path, variable: str) -> Path:
+    resolved = path.expanduser().resolve()
+    raw = os.environ.get(variable)
+    if raw is None:
+        return resolved
+    roots = json.loads(raw)
+    if not isinstance(roots, list) or any(not isinstance(root,str) or not Path(root).is_absolute() for root in roots):
+        raise ValueError(f'{variable} must be a JSON list of absolute directories')
+    if not any(resolved.is_relative_to(Path(root).resolve()) for root in roots):
+        raise ValueError(f'Path outside authorized roots: {variable}')
+    return resolved
 

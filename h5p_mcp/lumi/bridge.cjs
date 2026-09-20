@@ -7,6 +7,7 @@ const { finished } = require('node:stream/promises');
 const { createRequire } = require('node:module');
 const load = createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || __dirname, 'package.json'));
 const { H5PEditor, H5PConfig, fsImplementations: stores } = load('@lumieducation/h5p-server');
+require('./extraction.cjs').installBoundedExtraction(load);
 const { prepareActivity } = require('./authoring.cjs');
 const {preparationManifest, sameManifest} = require('./manifest.cjs');
 const {limit} = require('./limits.cjs');

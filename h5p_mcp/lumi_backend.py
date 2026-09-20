@@ -10,7 +10,7 @@ import subprocess
 import tempfile
 import time
 
-from filelock import FileLock
+from filelock import FileLock, Timeout
 from h5p_mcp.limits import limit, check_tree
 
 class BackendError(RuntimeError):
@@ -43,7 +43,8 @@ def _node() -> str:
     return node
 
 
-def _invoke(action: str, **payload) -> dict:
+def _invoke(action: str, *, deadline: float | None = None, **payload) -> dict:
+    deadline = deadline if deadline is not None else time.monotonic() + limit("SECONDS", 300)
     runtime = runtime_dir()
     if not (runtime / ".ready").is_file():
         raise RuntimeError("Lumi is not initialized. Run h5p-mcp --setup-lumi once (requires Node.js 22.12+ and npm).")
@@ -58,9 +59,10 @@ def _invoke(action: str, **payload) -> dict:
     with tempfile.TemporaryFile() as incoming, tempfile.TemporaryFile() as outgoing, tempfile.TemporaryFile() as errors:
         incoming.write(encoded.encode("utf-8"))
         incoming.seek(0)
+        if time.monotonic() >= deadline:
+            raise BackendError('Backend deadline exceeded before launch', 'BACKEND_TIMEOUT')
         process = subprocess.Popen([_node(), str(SOURCE / "bridge.cjs")], stdin=incoming,
                                    stdout=outgoing, stderr=errors, env=env)
-        deadline = time.monotonic() + limit("SECONDS", 300)
         try:
             while process.poll() is None:
                 if time.monotonic() >= deadline:
@@ -88,15 +90,23 @@ def _invoke(action: str, **payload) -> dict:
 
 
 def run_lumi(action: str, **payload) -> dict:
+    deadline = time.monotonic() + limit("SECONDS", 300)
     root = data_dir()
     root.mkdir(parents=True, exist_ok=True)
     # Separate MCP processes may share the same library cache. Serialize updates
     # and exports so an installation cannot change libraries halfway through a ZIP.
-    with FileLock(str(root / "backend.lock"), timeout=300):
-        return _invoke(action, **payload)
+    try:
+        with FileLock(str(root / "backend.lock"), timeout=max(0, deadline-time.monotonic())):
+            return _invoke(action, deadline=deadline, **payload)
+    except Timeout as error:
+        raise BackendError('Backend deadline exceeded while waiting for lock', 'BACKEND_TIMEOUT') from error
 
 
 def setup_lumi(packages: list[str] | None = None) -> dict:
+    if packages:
+        from h5p_mcp.validators.package_validator import prevalidate_archive
+        for package in packages:
+            prevalidate_archive(Path(package))
     node = _node()
     version = subprocess.check_output([node, "--version"], text=True).strip()
     if tuple(map(int, version.lstrip("v").split(".")[:2])) < (22, 12):
