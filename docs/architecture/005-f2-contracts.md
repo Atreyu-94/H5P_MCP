@@ -1,6 +1,6 @@
 # F2 — Contratos incrementales
 
-## C10: preparación local y diagnósticos v1
+## F2.1–F2.4: preparación local y diagnósticos v1 (parcial)
 
 La autoridad contractual está en `h5p_mcp/contracts/v1.json` y el mapping en
 `codes-v1.json`. Python valida con JSON Schema 2020-12; la migración TypeScript
@@ -29,7 +29,7 @@ códigos a partir de palabras en mensajes internos. Los códigos de archivo, Hub
 exportación se aplicarán a sus nuevas interfaces en los siguientes incrementos.
 No se afirma aún paridad contractual vNext para validación de paquetes o batch.
 
-Verificación C10: 113 pruebas iniciales con dependencias bloqueadas; después,
+Verificación de F2.1–F2.4 (`0e2093c`, `9ad543b`): 113 pruebas iniciales con dependencias bloqueadas; después,
 114 pruebas de la suite completa pasaron desde el wheel instalado fuera del
 checkout en Windows con Lumi aislado. La instalación del wheel resolvió
 FastMCP 4.0.5 dentro del rango permitido (el lock fija 4.0.3). Incluyen cliente
@@ -47,7 +47,7 @@ El commit `7bb52c55d3424fc3a44f32046a334fe623c5858a` pasó en el fork del usuari
 La evidencia cierra B0/F1 para los destinos definidos; no certifica Linux arm64,
 musl ni la futura implementación TypeScript.
 
-## C11: administración local separada
+## F2.5: administración local separada
 
 `search_h5p_types` consulta sin flags de instalación o actualización. Se añaden
 `refresh_h5p_catalog`, `install_h5p_library` e `install_h5p_library_package`.
@@ -78,15 +78,15 @@ vacío, ZIP inseguro y rutas no autorizadas, consultas sin red y sin cambios en
 contenido de caché/configuración/bibliotecas. La skill empaquetada se actualizó
 para enseñar el flujo administrativo y pasó `quick_validate.py`.
 
-Cierre local C11: suite completa con 128 pruebas aprobadas; 30 pruebas adicionales
+Cierre local de F2.5 (`bbf8c7e`): suite completa con 128 pruebas aprobadas; 30 pruebas adicionales
 de administración, descubrimiento, skill y stdio aprobadas desde el wheel
 instalado fuera del checkout con dependencias bloqueadas. Build, Oxlint y guardia
 de artefactos también pasan. No se cambió la configuración del MCP activo.
 
-CI de C10 (`9ad543b`) confirmado en verde durante C11:
+CI de F2.1–F2.4 (`9ad543b`) confirmado en verde durante la implementación de F2.5:
 
 - [Paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488159953).
 - [Matriz Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488160084).
 
-C12 continúa pendiente: proyección compacta de semánticas, recursos brutos y
-evidencia del catálogo. Tampoco se da por cerrada F2 en su conjunto.
+F2.6 y F2.7 continúan pendientes: proyección compacta de semánticas, recursos
+brutos y evidencia del catálogo. Tampoco se da por cerrada F2 en su conjunto.
