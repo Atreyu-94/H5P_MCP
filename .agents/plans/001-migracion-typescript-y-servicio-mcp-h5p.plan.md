@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-20. Revisión 14: F5 implementada y verificada localmente; CI multiplataforma pendiente. Siguiente: F6. Configuración MCP activa sin cambios.
+- Fecha: 2026-09-20. Revisión 15: F5 aprobada en CI 35529773895; F6 implementada para validación local, sin listener público. Configuración MCP activa sin cambios. Gate de hosting/IdP real pendiente.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -341,15 +341,17 @@ F5: almacenamiento en `8c2242c`; integración stdio/Skills y prueba SDK en el co
 
 ## 10. F6 — Streamable HTTP, autorización y tareas
 
-- [ ] F6.1 Spike de transporte con middleware oficial Hono, Request/Response y Bun.serve contra versiones fijadas; /mcp con negociación y ciclo real del SDK, sin copiar supuestos del antiguo SSE. Conformidad HTTP en CI.
-- [ ] F6.2 OAuth resource server: metadata, issuer/audience/scopes, expiración/rotación y bearer por petición; TLS, Origin/Host y DNS rebinding donde aplique. Seleccionar proveedor tras requisitos.
-- [ ] F6.3 Scopes h5p:read/author/export/validate/admin:libraries aplicados en casos de uso. Tenant deriva de identidad autenticada, no de argumento libre.
-- [ ] F6.4 REST mínimo para uploads/downloads y jobs si hace falta; mismos stores/casos de uso. Administración ausente en modo inmutable; borrado explícito y autorizado.
-- [ ] F6.5 Límites body/tiempo/memoria de worker/disco, jobs por usuario/tenant, cola y concurrencia global; backpressure. Muchos lotes pequeños también consumen cuota.
-- [ ] F6.6 Egress cerrado por defecto. Instalaciones solo vía administración autorizada. Si se descargan URLs, bloquear redes privadas/metadata, redirecciones y cambios DNS; preferir uploads. Medios remotos de playback no se descargan implícitamente.
-- [ ] F6.7 Tasks solo cuando se negocie y el SDK/cliente lo soporte: estados, progreso, cancelación, TTL, recuperación. Fallback a lote síncrono pequeño o jobs propios explícitos; no anunciar tasks/* ficticios.
-- [ ] F6.8 Logs correlacionados por operación/job/tenant sin tokens, rutas sensibles ni material educativo completo. Métricas de cola, bytes, memoria, errores, duración y cancelación.
-- [ ] F6.9 Adversariales: ZIP traversal/bomb, MIME falso, abuso de IDs/scopes/tokens, SSRF, concurrencia y prompt injection del material. El texto educativo nunca autoriza administración.
+- [x] F6.1 Hono/SDK fijados, Request/Response y Bun.serve loopback; cliente moderno/legacy y subconjunto conformance oficial HTTP en CI. No equivale a certificación total 2026-07-28.
+- [x] F6.2 Resource server con metadata, issuer/audience/scopes, exp/nbf, rotación JWKS y bearer por petición; Host/Origin estrictos. Usuario eligió OIDC/JWKS configurable. TLS del proxy y proveedor real pendientes del gate público.
+- [x] F6.3 Scopes h5p:read/author/export/validate/admin:libraries en casos de uso; tenant/owner derivados del JWT verificado.
+- [x] F6.4 Uploads binarios y descargas autenticadas sobre F5; administración por package_id/snapshot ID, ausente en modo inmutable. Sin rutas remotas ni jobs innecesarios.
+- [ ] F6.5 Implementados límites incrementales body/tiempo, cuotas store global/tenant, admisión por usuario/tenant y cola/concurrencia global. Pendiente antes de hosting: límites duros RSS/volumen para workers y bibliotecas administrativas, mediante F7/infraestructura.
+- [x] F6.6 Sin fetch de URLs: JWKS público provisionado por host, bibliotecas solo desde uploads autorizados; no Hub remoto. URLs de playback nunca se descargan aquí.
+- [x] F6.7 Fallback síncrono acotado implementado; recuperación de exportación por idempotencia F5. Tasks diferida y no anunciada, sin estados ficticios.
+- [x] F6.8 Logs correlacionados y métricas de cola/bytes/RSS/errores/duración/cancelación, sin tokens ni contenido educativo.
+- [x] F6.9 Pruebas de tokens/scopes/IDs/Host/Origin, MIME/cuerpo, límites/cancelación; corpus ZIP adversarial conservado. Ningún campo educativo altera permisos ni habilita fetch/administración.
+
+F6 local: `d9d506e` implementa transporte, scopes y cuotas. docs/architecture/010-authenticated-http.md describe contratos, configuración y límites. Build/lint y 23 pruebas (158 assertions) aprobados; cuatro escenarios conformance 0.1.16 (legacy) y cliente SDK moderno/legacy aprobados localmente, además de export/import y reinicio. El gate público sigue abierto por F6.5, TLS/IdP real y CI del nuevo commit; no se habilitó hosting.
 
 **Aceptación:** esquema remoto sin rutas; dos tenants aislados; cancelación libera worker/cuota; reinicio recupera estado; límites durante streaming. No exponer listener público antes del gate y decisión de hosting.
 
