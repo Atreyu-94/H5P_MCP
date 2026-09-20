@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-20. Revisión 11: F3 con CI aprobado; F4 implementada y verificada en Windows, pendiente de CI multiplataforma. Python y el MCP activo se conservan.
+- Fecha: 2026-09-20. Revisión 12: F4 aprobada en CI; F4-R implementada y verificada localmente, pendiente del nuevo CI multiplataforma. Configuración MCP activa sin cambios.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -300,10 +300,10 @@ Commit: `f47fb7b`. Validación: 139 pruebas del wheel, 6 del núcleo/IPC y naveg
 - [x] F4.3 Migrar Skills con digest/tamaño/URI allowlist. Verificar estructura real de SEP-2640: no asumir que cada archivo de referencia debe publicarse como una skill separada en skills/list.
 - [x] F4.4 SKILL.md breve y referencias workflow, selecting-content-types, native-semantics, media, mathematics, moodle-handoff, validation-errors y security. Ejemplos TF/MC/Accordion/QuestionSet validados. Cada recurso adicional registrado y autorizado, nunca ruta arbitraria.
 - [x] F4.5 Interoperabilidad stdio con SDK oficial v2, Skills y fallback legacy aprobados. La CLI oficial fijada en 7169291 solo admite HTTP (--url); su ejecución queda en F6, sin atribuir conformidad HTTP a estas pruebas.
-- [ ] F4.6 Empaquetar con bun pm pack --ignore-scripts después del build e instalar tarball externo sin checkout/caché, con dist, Skills, notices y dependencias Lumi/N-API completas. Probar bunx --bun <paquete>@<version> stdio y shebang #!/usr/bin/env bun en tres SO; comprobar proceso efectivo con Node/Python ausentes del entorno de ejecución. El paquete/versión concretos se deciden en F0, no copiar h5p-mcp@0.2.0 como identidad disponible.
+- [x] F4.6 Empaquetar con bun pm pack --ignore-scripts después del build e instalar tarball externo sin checkout/caché, con dist, Skills, notices y dependencias Lumi/N-API completas. Probar bunx --bun <paquete>@<version> stdio y shebang #!/usr/bin/env bun en tres SO; comprobar proceso efectivo con Node/Python ausentes del entorno de ejecución. El paquete/versión concretos se deciden en F0, no copiar h5p-mcp@0.2.0 como identidad disponible.
 - [x] F4.7 Documentar uvx→bunx y transición hacia la última release Python congelada; F4-R decide la retirada tras paridad. No modificar ni desinstalar el MCP activo automáticamente.
 
-Evidencia F4: docs/architecture/007-bun-mcp.md. Build/lint, 9 pruebas Bun (72 assertions), Skills Python y tarball externo con cuatro ejemplos aprobados. F4.6 está implementada y aprobada localmente; falta el resultado CI de tres SO. F4-R conserva su gate de paridad de seguridad antes de retirar Python.
+Evidencia F4: docs/architecture/007-bun-mcp.md. CI aprobado: 35526615814, 35526615796 y 35526615792; F4.6 cerrada en Linux, Windows y macOS.
 
 **Aceptación:** paridad funcional y de protocolo, recursos/Skills correctos, tarball instalable y sin procesos huérfanos. Retirar Python solo tras gate y transición acordada.
 
@@ -311,15 +311,17 @@ Evidencia F4: docs/architecture/007-bun-mcp.md. Build/lint, 9 pruebas Bun (72 as
 
 **No ejecutar al cerrar únicamente B0.** La frase de la propuesta que liga la retirada a B0 se sustituye por el gate completo de F4: B0 demuestra el motor, no las herramientas, Skills, seguridad ni el empaquetado del servidor nuevo.
 
-- [ ] R.1 Tabla de paridad de cada responsabilidad Python: modelos, ZIP, rutas, publicaciones, locks, errores, cancelación, CLI, MCP y Skills. Todas deben tener implementación y tests Bun antes de borrar el original.
-- [ ] R.2 Resolver disponibilidad del tarball Lumi al instalar el paquete distribuido: no dejar un file: relativo a un checkout inexistente. Usar dependencia trazable compatible con la decisión de licencias o contenido vendorizado completo, manteniendo hash y fuente.
-- [ ] R.3 Validar dist con Bun. Mantener Lumi/N-API externos al bundle inicial si la resolución dinámica lo requiere; verificar que están en el artefacto instalable. Bun build no incluye automáticamente archivos .node, Skills ni bibliotecas dinámicas.
-- [ ] R.4 Entorno limpio con Bun y sin Python/Node para ejecución stdio/CLI: descubrir→preparar→exportar→validar, Skills y cierre/cancelación. Herramientas auxiliares de CI pueden requerir Node, pero el producto instalado no.
-- [ ] R.5 Retirar FastMCP/Pydantic, lumi_backend, puente IPC y ficheros Python de producto en commit separado; portar primero las pruebas a bun:test y mantener la release Python congelada como rollback. No borrar datos ni bibliotecas del usuario.
-- [ ] R.6 Promover bun.lock como única autoridad de dependencias de producto. Conservar package-lock antiguo solo en fixture/harness legado identificado si el oráculo aún lo necesita; no dos gestores actualizando la misma raíz. Documentar uvx→bunx sin editar el cliente activo.
-- [ ] R.7 Conservar corpus Node diferencial durante al menos dos releases estables Bun; después retirar el harness mediante reporte de estabilidad y decisión explícita. Eliminarlo no implica borrar evidencia histórica.
+- [x] R.1 Tabla de paridad de cada responsabilidad Python: modelos, ZIP, rutas, publicaciones, locks, errores, cancelación, CLI, MCP y Skills. Todas deben tener implementación y tests Bun antes de borrar el original.
+- [x] R.2 Resolver disponibilidad del tarball Lumi al instalar el paquete distribuido: no dejar un file: relativo a un checkout inexistente. Usar dependencia trazable compatible con la decisión de licencias o contenido vendorizado completo, manteniendo hash y fuente.
+- [x] R.3 Validar dist con Bun. Mantener Lumi/N-API externos al bundle inicial si la resolución dinámica lo requiere; verificar que están en el artefacto instalable. Bun build no incluye automáticamente archivos .node, Skills ni bibliotecas dinámicas.
+- [x] R.4 Entorno limpio con Bun y sin Python/Node para ejecución stdio/CLI: descubrir→preparar→exportar→validar, Skills y cierre/cancelación. Herramientas auxiliares de CI pueden requerir Node, pero el producto instalado no.
+- [x] R.5 Retirar FastMCP/Pydantic, lumi_backend, puente IPC y ficheros Python de producto en commit separado; portar primero las pruebas a bun:test y mantener la release Python congelada como rollback. No borrar datos ni bibliotecas del usuario.
+- [x] R.6 Promover bun.lock como única autoridad de dependencias de producto. Conservar package-lock antiguo solo en fixture/harness legado identificado si el oráculo aún lo necesita; no dos gestores actualizando la misma raíz. Documentar uvx→bunx sin editar el cliente activo.
+- [x] R.7 Conservar corpus Node diferencial durante al menos dos releases estables Bun; después retirar el harness mediante reporte de estabilidad y decisión explícita. Eliminarlo no implica borrar evidencia histórica.
 
 **Aceptación:** cero invocaciones Python/Node en el camino normal observado, tarball íntegro, interfaz MCP equivalente y rollback documentado. La publicación pública sigue condicionada a licencias F7 aunque la retirada del código ya esté lista.
+
+F4-R: controles R.1 en `592e166`; retirada, tabla de paridad y rollback en docs/architecture/008-python-retirement.md. Build/lint, 13 pruebas Bun (88 assertions), 14 comparaciones Node/Bun y paquete externo aprobados localmente. Rollback: `python-final-f4` (`93060c5`), con CI automático conservado. Certificación multiplataforma de los cambios nuevos pendiente.
 
 ## 9. F5 — Stores, snapshots e idempotencia
 
@@ -465,4 +467,3 @@ Referencias de trabajo de la auditoría que deben verificarse y fijarse en sus s
 - [Tasks](https://tasks.extensions.modelcontextprotocol.io/specification/draft/tasks).
 - [H5P semantics](https://h5p.org/semantics).
 - [OWASP File Upload](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html). La referencia [1] de la auditoría enlaza Input Validation aunque describe File Upload; distinguir ambas al construir pruebas.
-

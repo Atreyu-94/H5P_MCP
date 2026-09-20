@@ -39,7 +39,7 @@ export async function stdio() {
  });
  const handle=serveStdio(()=>server,{transport:new StdioServerTransport(process.stdin,process.stdout,{maxBufferSize:limit('INPUT_BYTES',16777216)}),onerror:()=>console.error('MCP transport error')});
  let closing:Promise<void>|undefined;
- const close=()=>closing??=(async()=>{shutdown.abort();await handle.close();await Promise.allSettled(pending);await service.close();})();
+ const close=()=>closing??=Promise.resolve().then(async()=>{shutdown.abort();await handle.close();await Promise.allSettled(pending);await service.close();});
  server.onclose=()=>{void close();};
  process.stdin.once('end',()=>{void close();});
  process.once('SIGINT',()=>{void close();});

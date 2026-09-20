@@ -12,4 +12,4 @@ while(!existsSync(path.join(root,'h5p_mcp/lumi/provenance.json'))) {
 }
 export const repositoryRoot=root;
 export const legacyRoot=path.join(root,'h5p_mcp/lumi');
-export const load=createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || root,'package.json'));
+export const load=createRequire(path.join(root,'package.json'));

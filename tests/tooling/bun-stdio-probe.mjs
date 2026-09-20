@@ -3,6 +3,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import {createHash} from 'node:crypto';
+import {spawnSync} from 'node:child_process';
 import {Client} from '@modelcontextprotocol/client';
 import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
 const [bun,entry,libraries]=process.argv.slice(2);
@@ -13,7 +14,7 @@ if(libraries) await fs.cp(libraries,path.join(root,'data/libraries'),{recursive:
 const shape={'~standard':{version:1,vendor:'probe',validate(value){return {value};}}};
 for(const modern of [false,true]) {
  const client=new Client({name:'f4-probe',version:'1'},modern?{versionNegotiation:{mode:'auto'}}:{});
- const args=entry.endsWith('.tgz')?['x','--bun','--package',entry,'h5p-mcp-bun','stdio']:[entry,'stdio'];
+ const args=entry.endsWith('.tgz')?['x','--bun','--package',entry,'h5p-mcp','stdio']:[entry,'stdio'];
  const transport=new StdioClientTransport({command:bun,args,cwd:root,env,stderr:'pipe'});
  let errors='';transport.stderr?.on('data',chunk=>errors+=chunk);
  try {
@@ -58,10 +59,24 @@ for(const modern of [false,true]) {
     assert.equal(createHash('sha256').update(bytes).digest('hex'),artifact.sha256);
     const checked=await client.callTool({name:'validate_h5p_package',arguments:{path:path.join(root,'exports',type+'.h5p')}});
     assert.equal(checked.structuredContent.ok,true,JSON.stringify(checked));
+    if(type==='true-false'&&!entry.endsWith('.tgz')) {
+     const input=path.join(root,'cli-input.json');await fs.writeFile(input,JSON.stringify(example));
+     const cli=(args)=>spawnSync(bun,[entry,...args],{cwd:root,env,encoding:'utf8',timeout:30000});
+     const exportedCLI=cli(['export',input,'cli-proof']);assert.equal(exportedCLI.status,0,exportedCLI.stdout+exportedCLI.stderr);
+     const validatedCLI=cli(['validate',path.join(root,'exports/cli-proof.h5p')]);assert.equal(validatedCLI.status,0,validatedCLI.stdout+validatedCLI.stderr);
+     const admin=cli(['admin','refresh']);assert.equal(admin.status,1);assert.equal(JSON.parse(admin.stdout).diagnostics[0].code,'PERMISSION_DENIED');
+     assert((await fs.readFile(entry,'utf8')).startsWith('#!/usr/bin/env bun'));
+    }
     console.log(type+': prepare/export/import passed');
    }
   }
-  console.log(JSON.stringify({modern,tools:tools.length,skills:'passed',errors}));
+  if(modern) {
+   await fs.mkdir(path.join(root,'data/.core-lock'));
+   const pending=client.callTool({name:'search_h5p_types',arguments:{}}).then(()=>false,()=>true);
+   await new Promise(resolve=>setTimeout(resolve,30));await client.close();assert(await pending);
+   await fs.rmdir(path.join(root,'data/.core-lock'));
+  }
+  console.log(JSON.stringify({modern,tools:tools.length,skills:'passed',shutdown:'passed',errors}));
  } finally {await client.close();}
 }
 console.log(JSON.stringify({status:'passed',root,entry,runtime:bun,childPATH:env.PATH,conformance:'official HTTP CLI not applicable to stdio'}));

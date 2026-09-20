@@ -34,8 +34,8 @@ this local author's trust model; hashes are not filesystem isolation.
 
 Reports expose `verification`: structure, semantics, importation, playback and
 grading each use `passed`, `failed` or `not_run`. Export does not itself run an
-import, browser or Moodle grading test. FastMCP clients may deserialize typed
-reports as objects; use `structured_content` for the JSON dictionary contract.
+import, browser or Moodle grading test. MCP clients expose the JSON dictionary
+through structuredContent (the client SDK may adapt its property spelling).
 
 ## Budgets
 
@@ -109,12 +109,11 @@ type and regression evidence.
 
 ## Repeating verification
 
-Run `python -m pytest tests/test_hardening.py` for offline boundary regressions.
-Integration tests use isolated libraries by default (`H5P_MCP_ISOLATED_TESTS=1`);
-set it to `0` only to explicitly reuse a developer cache. The
-fixture lock is checked before use. CI builds a wheel, installs it, copies tests
-outside the checkout and runs with isolated libraries on Python 3.12/3.13 and
-Windows/Linux using Node 22.12.
+Run `bun run build`, `bun run lint` and `bun test tests/core` for current boundary
+regressions. `tests/tooling/retirement-parity.mjs` checks the fixture hash before
+the Node/Bun differential corpus. `tests/tooling/package-probe.ps1` installs a
+tarball outside the checkout with a fresh cache and a Bun-only server PATH.
+The automatic Python CI tests the frozen rollback commit, not the current product.
 
 The browser smoke supports `H5P_MCP_GRADING_SMOKE=1` for a True/False fixture
 whose correct answer is True, with retry enabled and LaTeX in both feedback

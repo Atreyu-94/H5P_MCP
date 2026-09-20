@@ -7,6 +7,7 @@ import {publishFile} from '../../src/infrastructure/publish-file.js';
 import {load} from '../../src/infrastructure/runtime.js';
 import {configureLimits} from '../../src/domain/limits.js';
 import {Engine} from '../../src/application/engine.js';
+import {isolated} from '../../src/infrastructure/worker.js';
 function zip(entries:Array<[string,string,number?]>) {
  const local:Buffer[]=[],central:Buffer[]=[];let offset=0;
  for(const [filename,text,mode=0x8000] of entries) {
@@ -62,4 +63,13 @@ test('cancelled snapshot acquisition releases its lock and engine remains usable
   expect(result).toMatchObject({libraries:{}});
  }finally{await engine.close();await fs.rm(root,{recursive:true,force:true});}
 });
-
+test('aborted isolated worker is reaped before its temporary directory is removed',async()=>{
+ const root=await fs.mkdtemp(path.join(os.tmpdir(),'h5p-worker-cancel-test-'));
+ const before=new Set((await fs.readdir(os.tmpdir())).filter(name=>name.startsWith('h5p-worker-core-')));
+ try {
+  const controller=new AbortController();controller.abort();
+  await expect(isolated({action:'catalog',data_dir:root},controller.signal)).rejects.toMatchObject({code:'BACKEND_TIMEOUT'});
+  const after=(await fs.readdir(os.tmpdir())).filter(name=>name.startsWith('h5p-worker-core-')&&!before.has(name));
+  expect(after).toEqual([]);
+ }finally{await fs.rm(root,{recursive:true,force:true});}
+});

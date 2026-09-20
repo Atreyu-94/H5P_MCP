@@ -1,4 +1,4 @@
-name: TypeScript core parity
+name: Bun runtime and Node reference
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
@@ -17,9 +17,6 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.21.0'
-      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff
-        with:
-          python-version: '3.12'
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
           bun-version: '1.4.2'
@@ -32,24 +29,20 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           bun test tests/core
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          uv sync --locked
-      - name: Compare legacy and persistent Node/Bun cores
+      - name: Compare retained Node and Bun corpus
         run: |
-          uv run python tests/core/parity.py --bun (Get-Command bun).Source --output f3-parity.json
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $report=Get-Content f3-parity.json -Raw | ConvertFrom-Json
-          uv run python tests/core/contracts-probe.py (Join-Path $report.artifacts 'data/libraries')
+          node tests/tooling/retirement-parity.mjs (Get-Command bun).Source retirement-parity.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: f3-${{ matrix.os }}
-          path: f3-parity.json
+          name: retirement-${{ matrix.os }}
+          path: retirement-parity.json
       - name: Verify F4 installed Bun package and SDK clients
         run: |
           npm ci --prefix tests/tooling --ignore-scripts
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          $report=Get-Content f3-parity.json -Raw | ConvertFrom-Json
+          $report=Get-Content retirement-parity.json -Raw | ConvertFrom-Json
           ./tests/tooling/package-probe.ps1 -Bun (Get-Command bun).Source -Libraries (Join-Path $report.artifacts 'data/libraries')
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
