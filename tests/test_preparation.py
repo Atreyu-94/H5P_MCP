@@ -102,3 +102,23 @@ const importer=load('@lumieducation/h5p-server/build/src/PackageImporter').defau
 })().catch(e=>{console.error(e);process.exitCode=1});
 '''
     subprocess.run(['node','-e',script,str(runtime_dir()),str(SOURCE),str(package),str(tmp_path/'extracted')],check=True,timeout=15)
+
+
+def test_lumi_html_changes_require_explicit_review():
+    text = '<p onclick="alert(1)">Answer \\(x=2\\)</p><script>alert(1)</script>'
+    report = create_h5p_activity('HTML', 'H5P.TrueFalse 1.8', {'question':text})
+    assert not report['ok']
+    assert report['activity']['params']['question'] == text
+    change = next(c for c in report['transformations'] if c['path']=='params.question')
+    assert 'onclick' not in change['after'] and '<script' not in change['after']
+    assert r'\(x=2\)' in change['after']
+    accepted = create_h5p_activity('HTML', 'H5P.TrueFalse 1.8', {'question':change['after']})
+    assert accepted['ok'] and not accepted['transformations']
+
+
+@pytest.mark.parametrize('metadata', [{'license':'invalid'}, {'language':'es--MX'}, {'language':'es-419'}])
+def test_metadata_rejected_before_export(metadata):
+    # es-419 is valid BCP 47 but unsupported by the pinned H5P metadata schema.
+    report = create_h5p_activity('Metadata', 'H5P.TrueFalse 1.8', {'question':'Q'}, **metadata)
+    assert not report['ok']
+    assert any(d['code']=='INVALID_METADATA' for d in report['diagnostics'])

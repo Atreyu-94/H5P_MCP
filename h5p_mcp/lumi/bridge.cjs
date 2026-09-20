@@ -11,6 +11,7 @@ require('./extraction.cjs').installBoundedExtraction(load);
 const { prepareActivity } = require('./authoring.cjs');
 const {preparationManifest, sameManifest} = require('./manifest.cjs');
 const {limit} = require('./limits.cjs');
+const {auditLumiSemantics} = require('./compatibility.cjs');
 const { attachMathDependency } = require('./math.cjs');
 const user = { id: 'local-author', name: 'Local author', email: '', type: 'local' };
 
@@ -135,6 +136,7 @@ async function main(request) {
     }
     if (!['prepare', 'export'].includes(request.action)) throw new Error('Unknown action');
     const report = await prepareActivity(editor, request.activity, user);
+    await auditLumiSemantics(editor, report, load);
     if (report.ok) {
       const manifest = await preparationManifest(editor, libraries, report.activity, report.mathematics);
       if (request.action === 'export' && request.activity.preparation && !sameManifest(request.activity.preparation, manifest))
