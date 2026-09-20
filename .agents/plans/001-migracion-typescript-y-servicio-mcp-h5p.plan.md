@@ -289,7 +289,7 @@ Verificación del cierre F2: 139 pruebas aprobadas desde el wheel instalado fuer
 - [x] F3.7 Paridad A/B/C: 9 fixtures y 9 proyecciones; JSON, dependencias, medios, UUID y diagnósticos.
 - [x] F3.8 Instalación vacía/cacheada, primeras llamadas, 20 muestras cortas y lotes 10/100 medidos. Regresiones documentadas; caché física del SO no vaciada.
 
-Validación: 139 pruebas del wheel, 6 del núcleo/IPC y navegador aprobados. Evidencia y límites: docs/architecture/006-typescript-core.md y f3-local-summary.json. CI pendiente; la corrección del comparador de fechas de F2 está en `eeb44aa`.
+Commit: `f47fb7b`. Validación: 139 pruebas del wheel, 6 del núcleo/IPC y navegador aprobados. Evidencia y límites: docs/architecture/006-typescript-core.md y f3-local-summary.json. CI pendiente; comparador de fechas de F2 corregido en `eeb44aa`.
 
 **Aceptación:** corpus positivo/negativo equivalente o diferencias aprobadas/documentadas; importación fresca y navegador conservan comportamiento; rollback al runtime Python disponible.
 
