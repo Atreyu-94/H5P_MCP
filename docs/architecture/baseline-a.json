@@ -1,0 +1,219 @@
+{
+  "head": "ac10c502eec1d1c19a8c75caf86bdc5f911407c6",
+  "tree": "?? .agents/\n?? tests/benchmarks/",
+  "remote": "https://github.com/Atreyu-94/H5P_MCP.git",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14 (main, Sep  1 2026, 14:17:39) [MSC v.1944 64 bit (AMD64)]",
+  "node": "v26.7.0",
+  "checksums": {
+    "h5p_mcp/lumi/authoring.cjs": "4efc05bf147d5488f906de2da9df44cd3cdd75f27dad996473ca6553878c401c",
+    "h5p_mcp/lumi/bridge.cjs": "9f7507f26380e1338def2c7bdb06185901a6ee825dcff8a094878d5d6fc13745",
+    "h5p_mcp/lumi/build-upstream.ps1": "08ea4c2783cd5e8bb4e90cb641e3df593eb578617770f5ce2eb0bbdb76a54c86",
+    "h5p_mcp/lumi/limits.cjs": "afd0881f13d9f59985533904965d4e494846b63e48815f3ca17ed1dad0897a69",
+    "h5p_mcp/lumi/lumieducation-h5p-server-10.0.4-h5pmcp.efcfeebc.tgz": "ac81c65d876aa013591add8de83ad05e8354bdd12e893fe86979371af11d0dd0",
+    "h5p_mcp/lumi/manifest.cjs": "1e6332c07fb44b65bd8721a70400f182d93566b9331127b6d671afa2ee64292d",
+    "h5p_mcp/lumi/math.cjs": "031c1ca02971c9162805d5d146aca4d2182e673c256a943df9a25eea16b604c4",
+    "h5p_mcp/lumi/media.cjs": "7cc64d482bb3e1293ea36454a5cb2be3bedc461b148eb8977276f7218256600c",
+    "h5p_mcp/lumi/package-lock.json": "be0c15da0762c96a0c4bb4de9c014db84f26fa251d1768e1204969f58d6b3232",
+    "h5p_mcp/lumi/package.json": "6f65688d0fbb7f8845c0dff9af7dcdabf7fa3b4b8817bf849c8d26f2db9d6f48",
+    "h5p_mcp/lumi/provenance.json": "38eec34aa258ebe2da260d75da4e816df6b09b757ade2ed2dc67b06aeecff6c1",
+    "h5p_mcp/lumi/semantics.cjs": "7e7f70d33501af2e802f33fec241e1f290e8e2be4e2357f4d7c79a50510b6649",
+    "tests/fixtures/README.md": "8c3b3fa757bcfdaadb56884d946350a091052539b934098fb395bf687525e205",
+    "tests/fixtures/libraries.lock.json": "de43a8bad5708cba5bf701da4d2fcd4c170606aa403f6af76e3096976d5b9738",
+    "tests/fixtures/libraries.zip": "7596a179fafa9576b801030b109ae68d58795398883ed218ed5b84e0f2c42b85"
+  },
+  "legacy_exports": {
+    "h5p_mcp/exports/batch_test_001.h5p": "3c9ce70b87750408a6173e6d3e0aadcf9aa0cc8ab92ae26689bc31f212b4fc80",
+    "h5p_mcp/exports/batch_test_002.h5p": "c64ed69e059aabb0dd0117c32b40f99a5efa1853ebb16285f4c47eab02143bc9",
+    "h5p_mcp/exports/batch_test_003.h5p": "f2120269a6d6a7d0ed8990552e6af0a0877706964a3854ea9bd4c7f0ac822943",
+    "h5p_mcp/exports/fill_in_the_blanks.h5p": "eab9c337bff2eeb262aa79daa3d95902500a55af573bbbb5f609fa795c9492be",
+    "h5p_mcp/exports/fill_in_the_blanks_simple.h5p": "ae0a90a466e608419dde61e30661a6e3c5c60b6eb07c2fc924f90a8644e2fb5e",
+    "h5p_mcp/exports/general_knowledge_quiz.h5p": "58472de7ba29c90a7a4c5e48f071098ad441f8d37b3651c6d6082ccd16ae5eca",
+    "h5p_mcp/exports/general_knowledge_quiz_10q.h5p": "abcf1a7616886b4e56300e825f0dfaee50529c0c3e952485e26d86c8948115ef",
+    "h5p_mcp/exports/networks_fill_blank.h5p": "fdb933c8b525059e620f42bdb1c8b2a40fc7211a87c9c9622ab3b8cf4971dc04",
+    "h5p_mcp/exports/networks_fill_blanks.h5p": "f14ab9fde902db5d63ca07e665a301e0dbb0c9a5bcc1564daa9cf19589924296",
+    "h5p_mcp/exports/prerequis_SE_tronc_commun.h5p": "d52e18dfbb180367d0605b0238b62648958a8929ac5f48c3f32443e67752fd6d",
+    "h5p_mcp/exports/sample_blanks_capitals.h5p": "fdab275eb6187d027f996ca3e9be4f0cea7504b4b3c21bd3d589467f02ed57fc",
+    "h5p_mcp/exports/sample_blanks_python.h5p": "edbd3549a17161b111444346006445b3afdfaedddf86df4f85aa188d88fd5000",
+    "h5p_mcp/exports/sample_mcq_basic_math.h5p": "9762598cff85964f0a9959436145ca477263a5994e00ab900d6f1dde2c559f7e",
+    "h5p_mcp/exports/sample_mcq_geography.h5p": "4d1c557454dace66b540954ede6836b6a7b44dc0209b06711bb23605e7cda5d7",
+    "h5p_mcp/exports/sample_questionset_mixed.h5p": "b5afb00aaee676be9506277f271559953bb49fb7f0ca572a7461acf7617f0a67",
+    "h5p_mcp/exports/sample_truefalse_astronomy.h5p": "b345a5cd5db815ea9e9dd3c0398e55d3890a903546ef1de8eb765e5b1c6edddf",
+    "h5p_mcp/exports/sample_truefalse_biology.h5p": "be5b9605023fa2f7051db6faf796a8f2864717202219009deda71faf7665ae3e",
+    "h5p_mcp/exports/simple_general_knowledge_quiz.h5p": "9c1e4bf2a0e5f431bddfcb00306d07a969f71377bc208cf406776da32c4c93d0",
+    "h5p_mcp/exports/test_outputs/test_blanks_capitals.h5p": "dd71c04d8a8c02a1d7196802c48398a6cc7cc2bc8d2b3ed413965ade01c89a5f",
+    "h5p_mcp/exports/test_outputs/test_blanks_library_check.h5p": "9bf7591ca1bb99621a097e7a4848d5945ec444d603a2657bfc778eab7eb6aae0",
+    "h5p_mcp/exports/test_outputs/test_blanks_python.h5p": "1162e213307811d51a17f1c38bee6457f5b4b43ce97a410a5ec7a52eb300a382",
+    "h5p_mcp/exports/test_outputs/test_blanks_question_field.h5p": "73b1a49286bc38f95d07709026de76aaa1dc26554a76fbf4c69f8c8f8e610a3a",
+    "h5p_mcp/exports/test_outputs/test_blanks_single.h5p": "70b92683718ae82338bd9bfaa2f63b5706621fe0268618d9967e54244f29f89e",
+    "h5p_mcp/exports/test_outputs/test_mcq_basic_math.h5p": "eecb383c8bed7f6809602650698684d64a27cd220e9d78b37445e8f34b251d42",
+    "h5p_mcp/exports/test_outputs/test_mcq_geography.h5p": "136686d84708b079ea410f37003268e2366eb092b9f26229e0c4812c088dccd1",
+    "h5p_mcp/exports/test_outputs/test_mcq_library_check.h5p": "bc7832adead07ae2dbdbb3630a32a4f589e220050a6e7a7e0fa9f4fa5015c468",
+    "h5p_mcp/exports/test_outputs/test_mcq_meta.h5p": "6c8ebf5934cc2740ebf77dbf24d53bc4c9f8e449679e761b96eb587bb6ead016",
+    "h5p_mcp/exports/test_outputs/test_mcq_science.h5p": "3bf8b8c2714c1fdce4cb97c0c5474df678378f12d811290c379281d57d70d2f6",
+    "h5p_mcp/exports/test_outputs/test_qs_library_check.h5p": "4b44ce9ba2683f01e8cb0c384bf23656d828ba0be5518069dbb99b381efd5fbd",
+    "h5p_mcp/exports/test_outputs/test_qs_mcq_only.h5p": "6a01eecebc9aa4f258ca9d756c251fb5362cd023cd9c259707a36defed422836",
+    "h5p_mcp/exports/test_outputs/test_qs_mixed.h5p": "735a0c74cbe81d01d855a05b1bc567b842a374e0d0c7001f5f01afa47d46623a",
+    "h5p_mcp/exports/test_outputs/test_qs_tf_only.h5p": "9b7387bd3294a6cc6445fde35e6652f3eee7badf27027599261c1d804d4d678b",
+    "h5p_mcp/exports/test_outputs/test_tf_astronomy.h5p": "7d085d6711729936404542039b309adfa1e36c5bf900a342727815db57542322",
+    "h5p_mcp/exports/test_outputs/test_tf_biology.h5p": "6495f364b59e03fad461b4ba9188ab873946941f427ac06fe5fbb7d28c1de23f",
+    "h5p_mcp/exports/test_outputs/test_tf_history.h5p": "74e39a9c9fd846075656bba3ce6bf38f9b8345bd38f1e520e60dbb56d7cfd67b",
+    "h5p_mcp/exports/test_outputs/test_tf_library_check.h5p": "b0ad83f02a0355481ee8212e0fd3992024a923e1c753889355315ca958ffd30d",
+    "h5p_mcp/exports/test_outputs/test_validate_blanks.h5p": "31cf6e770cfed2c4b82f9e268b131070e07e4db583ed11a5cb07b78ca4eeeaa2",
+    "h5p_mcp/exports/test_outputs/test_validate_mcq.h5p": "a3ab5beaed1d1f9e3b2bfab45f67f07736082e082b60197f662562868b2dbcb8",
+    "h5p_mcp/exports/test_outputs/test_validate_qs.h5p": "75934a0faf533b05f43fe554905f8be5b58780cd807a00c1fc7c64d99f14479c",
+    "h5p_mcp/exports/test_outputs/test_validate_tf.h5p": "fee22a9ffd3188fea7dac67ad18e183aa083612964d69649321faa77bf9a5382",
+    "h5p_mcp/exports/tool_export_blanks.h5p": "88bf1e1d49d2785fb5d78ff2f57373633369a7064dc57d2eb741a0c9112c2ca3",
+    "h5p_mcp/exports/tool_export_mcq.h5p": "81797ae1e0097cae3ad1ae3235d6093eb7f4c247cf27b89eb1db105782665d68",
+    "h5p_mcp/exports/tool_export_qs.h5p": "2b91388eb71b79003de5b9211fc2e0cf2c5bb0bd24e88051239eac368057d3cc",
+    "h5p_mcp/exports/tool_export_tf.h5p": "d2aa7b596178e81a859ba4fda54886d9c4954502f308e1f60db23b3405dfbad1"
+  },
+  "lumi_archive": {
+    "license": "GPL-3.0-or-later",
+    "version": "10.0.4-h5pmcp.efcfeebc",
+    "license_files": [
+      "package/LICENSE"
+    ],
+    "source_files": 64
+  },
+  "measurements": {
+    "setup_clean_npm_cache_uncontrolled": {
+      "samples_ms": [
+        8521.242500006338
+      ],
+      "median_ms": 8521.242500006338,
+      "p95_ms": 8521.242500006338
+    },
+    "setup_ready": {
+      "samples_ms": [
+        450.0408000021707
+      ],
+      "median_ms": 450.0408000021707,
+      "p95_ms": 450.0408000021707
+    },
+    "catalog_first_after_setup": {
+      "samples_ms": [
+        417.00370000035036
+      ],
+      "median_ms": 417.00370000035036,
+      "p95_ms": 417.00370000035036
+    },
+    "catalog": {
+      "samples_ms": [
+        412.80219999316614,
+        413.6877999990247,
+        470.1652999938233,
+        469.80739998980425,
+        472.3502999986522,
+        465.38399999553803,
+        523.64949999901,
+        523.0089999968186,
+        522.5456000043778,
+        574.3550000042887,
+        628.8867999974173,
+        519.5824999973411,
+        470.529300000635,
+        415.8571000007214,
+        522.020500007784,
+        416.9677999889245,
+        416.7496000009123,
+        410.9547999978531,
+        467.22379999118857,
+        576.2762000085786
+      ],
+      "median_ms": 470.34729999722913,
+      "p95_ms": 576.2762000085786
+    },
+    "schema": {
+      "samples_ms": [
+        526.1747000040486,
+        467.419599997811,
+        472.677300000214,
+        466.95859999454115,
+        413.2733000005828,
+        465.42930000578053,
+        522.0619000028819,
+        464.5613000029698,
+        415.12259999581147,
+        463.49259999988135,
+        412.6402000110829,
+        466.6419999994105,
+        518.5866000101669,
+        516.4788999973098,
+        521.7991999961669,
+        519.7778000001563,
+        523.2879999966826,
+        523.3822999871336,
+        522.4215999915032,
+        522.2123999992618
+      ],
+      "median_ms": 494.5780999987619,
+      "p95_ms": 523.3822999871336
+    },
+    "prepare": {
+      "samples_ms": [
+        1379.520100002992,
+        718.2915000012144,
+        721.9086999975843,
+        725.3640000126325,
+        1192.535099995439,
+        1662.4469999951543,
+        776.7503999930341,
+        773.6436999985017,
+        829.7970999992685,
+        1030.1722000003792,
+        725.5739999964135,
+        718.4917999984464,
+        775.9669000079157,
+        720.3964999935124,
+        674.6277999918675,
+        777.0715000078781,
+        876.8069000070682,
+        1033.1349000043701,
+        987.0157999976072,
+        832.1922000031918
+      ],
+      "median_ms": 776.9109500004561,
+      "p95_ms": 1379.520100002992
+    },
+    "export": {
+      "samples_ms": [
+        1183.0383999913465,
+        1180.3280000021914,
+        1185.5289000086486,
+        1123.3206999895629,
+        1128.9417999942088
+      ],
+      "median_ms": 1180.3280000021914,
+      "p95_ms": 1185.5289000086486
+    },
+    "import_fresh": {
+      "samples_ms": [
+        1300.2057999983663,
+        1237.503900003503,
+        1186.536499997601,
+        1538.4381000039866,
+        2095.7090000010794
+      ],
+      "median_ms": 1300.2057999983663,
+      "p95_ms": 2095.7090000010794
+    },
+    "batch_10": {
+      "samples_ms": [
+        17810.79439999303
+      ],
+      "median_ms": 17810.79439999303,
+      "p95_ms": 17810.79439999303
+    }
+  },
+  "not_measured": [
+    "OS page-cache cold start",
+    "process-tree peak RSS",
+    "handles",
+    "contended lock wait",
+    "persistent Node/Bun (not implemented)",
+    "batch 100 with override"
+  ],
+  "export_bytes": 882639,
+  "batch_100_default": "rejected"
+}
