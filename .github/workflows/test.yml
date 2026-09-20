@@ -34,3 +34,32 @@ jobs:
           Copy-Item tests $tests -Recurse
           Set-Location $env:RUNNER_TEMP
           & $python -m pytest $tests -q
+  browser:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.12.0'
+      - uses: astral-sh/setup-uv@d0d8abe699bfb85fec6de9f7adb5ae17292296ff # v6
+        with:
+          python-version: '3.12'
+      - run: uv sync --locked
+      - name: Install pinned browser tooling
+        run: |
+          npm ci --prefix tests/tooling --ignore-scripts --no-audit --no-fund
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node tests/tooling/node_modules/@playwright/test/cli.js install --with-deps chromium
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Verify math feedback and grading on pinned Core
+        env:
+          H5P_MCP_BROWSER_CHANNEL: chromium
+        run: ./tests/tooling/browser-baseline.ps1 -OutputPath browser-report.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: browser-grading
+          path: browser-report.json
