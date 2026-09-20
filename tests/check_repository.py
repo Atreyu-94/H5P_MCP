@@ -9,6 +9,7 @@ files = subprocess.check_output(['git', '-c', f'safe.directory={root.as_posix()}
                                 'ls-files', '-z'], cwd=root).decode().split('\0')
 provenance = json.loads((root/'h5p_mcp/lumi/provenance.json').read_text())
 allowed = {
+    'tests/fixtures/video.webm': '6aeb1819fd19325f9ebde9284c7a7054d313cd80560d10e1fcf207198468b1fa',
     'tests/fixtures/libraries.zip': json.loads((root/'tests/fixtures/libraries.lock.json').read_text())['sha256'],
     'h5p_mcp/lumi/'+provenance['archive']: provenance['sha256'],
 }
@@ -17,7 +18,7 @@ for name in filter(None, files):
     path = PurePosixPath(name)
     if set(path.parts) & {'node_modules', '__pycache__', '.venv', 'dist', 'exports'} or path.suffix in {'.pyc', '.pyo', '.h5p'}:
         errors.append(name)
-    if path.suffix in {'.zip', '.tgz', '.gz', '.whl'}:
+    if path.suffix in {'.zip', '.tgz', '.gz', '.whl', '.webm', '.mp4', '.wav', '.mp3'}:
         if name not in allowed or hashlib.sha256((root/name).read_bytes()).hexdigest() != allowed[name]:
             errors.append(name)
 if errors:

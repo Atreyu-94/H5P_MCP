@@ -33,6 +33,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           bun tests/tooling/verify-toolchain.mjs
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          node tests/tooling/node_modules/oxlint/bin/oxlint --deny-warnings h5p_mcp/lumi
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Compare runtime subset on identical npm dependencies
         run: |
           if ($IsMacOS -and [Runtime.InteropServices.RuntimeInformation]::OSArchitecture -ne 'Arm64') {
@@ -48,6 +50,11 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           uv run python tests/runtime-compat/runtime-probe.py --bun $bun --installer-report b0-installer.json --output b0-bun-tree.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Verify process protocol and stream lifecycle
+        run: |
+          $bun = (Get-Command bun).Source
+          uv run python tests/runtime-compat/process-probe.py --bun $bun --runtime-report b0-runtime.json --output b0-process.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
@@ -57,3 +64,4 @@ jobs:
             b0-installer.json
             b0-installer.bun.lock
             b0-bun-tree.json
+            b0-process.json

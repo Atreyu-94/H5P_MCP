@@ -56,7 +56,9 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       const params = JSON.parse(await fs.readFile(path.join(folder, 'content/content.json')));
       contentParams.push(params);
       const config = new H5PConfig(undefined, { baseUrl: '', coreUrl: '/core',
-        librariesUrl: `/activity-${index}`, contentFilesUrl: `/activity-${index}/content`, contentUserStateSaveInterval: false });
+        librariesUrl: `/activity-${index}`, contentUserStateSaveInterval: false });
+      // H5PConfig's constructor ignores defaults whose initial value is undefined.
+      config.contentFilesUrlPlayerOverride = `/activity-${index}/content`;
       const player = new H5PPlayer(new stores.FileLibraryStorage(folder),
         new stores.FileContentStorage(path.join(root, `store-${index}`)), config,
         { urlLibraries: `/activity-${index}` });
@@ -64,7 +66,8 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       pages.set(`/play-${index}`, html);
     }
     await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-    browser = await chromium.launch({ channel: 'chrome', headless: true });
+    const channel=process.env.H5P_MCP_BROWSER_CHANNEL || 'chrome';
+    browser = await chromium.launch({ ...(channel==='chromium'?{}:{channel}), headless: true });
     for (const [index, name] of names.entries()) {
       const page = await browser.newPage();
       const errors = [];
@@ -74,6 +77,20 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       await page.waitForFunction(() => window.H5P?.instances?.length > 0);
       const frame = page.frames().find(f => f !== page.mainFrame()) || page.mainFrame();
       await frame.locator('.h5p-content').waitFor({ state: 'visible' });
+      const mediaCount=await frame.evaluate(async()=>{
+          // H5P.Audio's minimal player keeps its audio element outside the DOM.
+          const elements=new Set([...document.querySelectorAll('audio,video'),
+            ...(window.H5P?.instances || []).map(instance=>instance.audio).filter(value=>value instanceof HTMLMediaElement)]);
+          for(const media of elements) {
+            media.muted=true;
+            await Promise.race([media.play(),new Promise((_,reject)=>setTimeout(()=>reject(new Error('Media decode/play timeout')),5000))]);
+            if(media.error || !Number.isFinite(media.duration) || media.duration<=0) throw new Error('Invalid decoded media');
+            media.pause();
+          }
+          return elements.size;
+        });
+      if(JSON.stringify(contentParams[index]).match(/"mime":"(?:audio|video)\//) && !mediaCount)
+        throw new Error(`${name}: expected media was not decoded`);
       const start = frame.getByRole('button', { name: /^(Start|Comenzar)/ });
       if (contentParams[index].introPage?.showIntroPage) await start.first().click();
       if (mathMode) {
@@ -153,7 +170,7 @@ const user = { id: 'smoke', name: 'Smoke', email: '', type: 'local' };
       });
       if (score.graded && (!Number.isFinite(score.score) || !(score.maximum > 0))) throw new Error(`${name}: invalid score`);
       if (errors.length) throw new Error(`${name}: ${errors.join('; ')}`);
-      console.log(JSON.stringify({ name, controls, ...score, errors }));
+      console.log(JSON.stringify({ name, controls, decodedMedia:mediaCount, ...score, errors }));
       await page.close();
     }
   } finally {

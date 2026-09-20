@@ -22,6 +22,7 @@ function installBoundedExtraction(load) {
         const directory = name.endsWith('/');
         const parts = (directory ? name.slice(0,-1) : name).split('/');
         const mode = (entry.externalFileAttributes >>> 16) & 0xf000;
+        // oxlint-disable-next-line no-control-regex -- ZIP names must reject control bytes.
         if ((mode && mode !== 0x8000 && mode !== 0x4000) || (mode === 0x4000 && !directory) || /[\\\x00-\x1f<>:"|?*]/.test(name) ||
             parts.length > limit('ZIP_PATH_DEPTH',32) || parts.some(p=>!p || p==='.' || p==='..' || /[ .]$/.test(p) || /^(?:CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³]|CONIN\$|CONOUT\$)(?:\.|$)/i.test(p)))
           throw new Error('Unsafe ZIP extraction path or file type');
