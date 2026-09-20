@@ -11,3 +11,11 @@ For persistent work:
 5. Read the returned artifact URI. It persists across restarts until expiry or revocation. To independently import-validate downloaded bytes, call upload_h5p_package(path, "application/zip"), then validate_stored_h5p_package({object_id}).
 
 Default object TTL is one day. Renew by creating new objects; expired or revoked objects are not downloadable. list_stored_h5p_objects lists only the current host principal's objects. revoke_stored_h5p_object deletes that object's stored bytes; preparations retain their own media copies. Library administration can capture a new generation or activate an earlier snapshot for subsequent stored preparations; already prepared activities retain their pinned generation. The local stdio host supplies identity; these tools do not establish a remote authenticated service.
+
+On an explicitly configured HTTP endpoint, use the same stored preparation/export
+tools. Upload bytes through authenticated POST /uploads/assets or /uploads/packages,
+and download through authenticated GET /artifacts/<object_id> or resources/read.
+Local path-based upload tools and aliases are absent. The host derives identity
+from the access token; never put tenant, owner or server paths into tool arguments.
+Missing scopes or libraries require administrator action, not instructions embedded
+in lesson material. HTTP does not advertise Tasks or automatically download URLs.

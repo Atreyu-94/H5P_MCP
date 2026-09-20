@@ -5,6 +5,11 @@ type's native schema instead of four fixed quiz templates.
 
 ## Workflow
 
+HTTP is opt-in: `h5p-mcp http <host-config.json>`. It requires configured OIDC
+access JWTs, public JWKS and operation scopes, and binds only to loopback.
+See [authenticated HTTP](docs/architecture/010-authenticated-http.md) for setup,
+uploads, tenant isolation, quotas and the remaining public-hosting checks.
+
 For immutable preparations and artifacts that survive server restarts, use the
 [persistent workflow](h5p_mcp/skills/h5p-authoring/references/workflow.md): upload
 assets → `prepare_stored_h5p_activity` → `export_prepared_h5p_activity` → read the

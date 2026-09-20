@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/conformance": "0.1.16",
     "@modelcontextprotocol/server": "2.0.0",
     "@playwright/test": "1.63.0"
   },
