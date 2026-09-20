@@ -33,7 +33,7 @@ async def request(client, method, params):
 def verify_skill(entry, text):
     """Validate the held entry before making this content available for use."""
     assert entry["uri"] == URI
-    assert len(entry["resources"]) == 1
+    assert len(entry["resources"]) == 13
     resource = entry["resources"][0]
     assert resource["uri"] == URI
     raw = text.encode("utf-8")
@@ -74,6 +74,10 @@ def test_skills_stdio_authoring(tmp_path):
             assert content[0].mime_type == "text/markdown"
             text = content[0].text
             verify_skill(entry, text)
+            for item in entry["resources"][1:]:
+                additional = (await client.read_resource(item["uri"]))[0].text.encode("utf-8")
+                assert len(additional) == item["size"]
+                assert "sha256:" + hashlib.sha256(additional).hexdigest() == item["digest"]
             with pytest.raises(AssertionError):
                 verify_skill(entry, text + "tampered")
             altered = json.loads(json.dumps(entry))

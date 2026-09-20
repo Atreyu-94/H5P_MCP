@@ -1,6 +1,7 @@
 """Serve the packaged authoring skill using SEP-2640 and FastMCP's public API."""
 
 from copy import deepcopy
+import json
 from hashlib import sha256
 from importlib.resources import files
 from typing import Any
@@ -26,13 +27,16 @@ class AuthoringSkillsExtension(ServerExtension):
     identifier = EXTENSION_ID
 
     def __init__(self) -> None:
-        raw = files("h5p_mcp").joinpath("skills/h5p-authoring/SKILL.md").read_bytes()
+        root = files("h5p_mcp").joinpath("skills/h5p-authoring")
+        names = json.loads(root.joinpath("resources.json").read_text("utf-8"))
+        self.resources = {"skill://h5p-authoring/" + name: root.joinpath(name).read_bytes() for name in names}
+        raw = self.resources[SKILL_URI]
         self.text = raw.decode("utf-8")
         frontmatter = yaml.safe_load(self.text.split("---", 2)[1])
         self.entry = {
             "uri": SKILL_URI,
             "frontmatter": frontmatter,
-            "resources": [{"uri": SKILL_URI, "digest": "sha256:" + sha256(raw).hexdigest(), "size": len(raw)}],
+            "resources": [{"uri": uri, "digest": "sha256:" + sha256(data).hexdigest(), "size": len(data)} for uri, data in self.resources.items()],
         }
 
     def methods(self):
@@ -64,8 +68,11 @@ def register_authoring_skill(server: FastMCP) -> None:
     metadata = extension.entry["frontmatter"]
     # Serve the same decoded bytes used for the digest, preserving CRLF on Windows.
     # No user-supplied URI is converted into a filesystem path.
-    server.add_resource(TextResource(
-        uri=SKILL_URI, name=metadata["name"], description=metadata["description"],
-        mime_type="text/markdown", text=extension.text,
-    ))
+    for uri, raw in extension.resources.items():
+        server.add_resource(TextResource(
+            uri=uri, name=metadata["name"] if uri == SKILL_URI else uri.rsplit("/", 1)[-1],
+            description=metadata["description"],
+            mime_type="application/json" if uri.endswith(".json") else "text/markdown",
+            text=raw.decode("utf-8"),
+        ))
     server.add_extension(extension)

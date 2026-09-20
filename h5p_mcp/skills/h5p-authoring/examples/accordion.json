@@ -1,0 +1,18 @@
+{
+  "title": "Magnitudes",
+  "library": "H5P.Accordion 1.0",
+  "params": {
+    "panels": [
+      {
+        "title": "Masa",
+        "content": {
+          "library": "H5P.AdvancedText 1.1",
+          "params": {
+            "text": "<p>La masa es escalar: se expresa con un valor y una unidad.</p>"
+          }
+        }
+      }
+    ]
+  }
+}
+
