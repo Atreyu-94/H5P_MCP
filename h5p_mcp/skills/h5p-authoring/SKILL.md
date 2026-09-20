@@ -19,7 +19,8 @@ The four old create_*_quiz tools and Markdown quiz syntax have been removed.
 
 1. Call `search_h5p_types` with a query and pagination. It uses the local cache;
    `list_h5p_activities` remains a legacy alias. Catalog presence and
-   `authoring_supported` indicate eligibility, not verified playback.
+   `structurally_authorable` indicate eligibility, not verified playback. Inspect
+   per-version `evidence.checks`; `not_run` never means verified.
 2. Read `get_h5p_type_contract`. Its `fields` preserve native types, required
    flags, defaults and `constraints`; `sublibraries` lists exact nested versions.
    Read `raw_schema.uri` for the complete canonical schema and metadata; verify
@@ -55,13 +56,15 @@ level. Audio/video fields contain lists of media objects. Lumi uploads copies,
 checks formats, supplies image dimensions and embeds files. Unresolved local
 paths fail. Remote HTTP(S) media remain remote and may fail offline.
 
-1. Call `create_h5p_activity(title, library, params, language, license, assets)`.
-   Inspect `ok`, `errors`, `warnings`; correct errors against the schemas.
-2. Pass the returned `activity` to `export_h5p(activity, output_name)` with a fresh
+1. Call `prepare_h5p_activity(title, library, params, language, license, assets)`.
+   Inspect `ok` and `diagnostics`; correct the JSON Pointer fields against schemas.
+2. Pass the returned `activity` to `export_h5p_activity(activity, output_name)` with a fresh
    name. Export checks again and never overwrites files. Do not hand-build ZIPs.
-3. Call `validate_h5p` on the returned path. It checks JSON roots and imports into
-   empty Lumi storage, preventing cached libraries from hiding missing ones.
-4. Return the path, objective, library versions and observed validation results.
+3. Read the returned artifact resource; it has a digest, size and manifest. For
+   authorized local packages use `validate_h5p_package(path)`, which imports into
+   empty Lumi storage. Legacy `export_h5p` returns a path when that is needed.
+4. Return the artifact link, objective, versions and observed validation results.
+   Remote ID-only schemas in `h5p-contract://v1/profiles` are not executable yet.
 
 `export_h5p_batch(activities, name_prefix)` reports per-item success or errors.
 Successful files remain if another item fails; inspect `succeeded` and individual
@@ -71,7 +74,7 @@ results, not just `count`. Retry failed items with fresh names.
 
 Use explicit LaTeX delimiters `\( ... \)` or `\[ ... \]` for mathematical
 typesetting (escape backslashes in JSON). Do not assume Unicode superscripts or
-plain fractions activate the renderer. Creation returns a `mathematics` report;
+plain fractions activate the renderer. Legacy creation returns a `mathematics` report;
 missing MathDisplay produces an error with explicit local-package installation
 instructions. Export bundles the installed addon as a preloaded dependency.
 

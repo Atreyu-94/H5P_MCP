@@ -126,9 +126,41 @@ En el fixture TrueFalse, el contrato ocupa 5.634 bytes frente a 6.703 del snapsh
 fuente usado para esa medición. No se promete reducción para todos los tipos:
 los metadatos de recurso y las advertencias tienen un costo fijo.
 
-La siguiente tarea es F2.7, evidencia del catálogo. F2 continúa abierta.
+Este fue el cierre del incremento F2.6; el cierre conjunto de F2 se registra abajo.
 
 Cierre local de F2.6: 135 pruebas de la suite completa y 10 pruebas de contratos,
 recursos, skill y stdio desde el wheel instalado fuera del checkout, todas
 aprobadas con las dependencias fijadas. Build, validación de skill y revisión de
 diff aprobados. Estas comprobaciones no son una prueba nueva en Moodle.
+
+## Cierre conjunto de F2.1–F2.9
+
+`operations-v1.json` completa las envolturas de entrada/salida de consultas,
+administración, exportación, validación y batch. El adaptador valida entradas y
+salidas, aplica diagnósticos acotados y distingue validaciones negativas de
+errores operativos. Los aliases legados conservan su interfaz. Los rechazos
+administrativos usan `PERMISSION_DENIED`; los errores de importación reconocidos
+por Lumi son validaciones negativas, sin publicar mensajes internos.
+
+El catálogo añade evidencia por versión instalada: patch, fecha, digest de
+metadata/semánticas y checks estructurales. `authoring_supported` es alias de
+`structurally_authorable`. Preparación de contenido concreto, importación,
+reproducción y grading quedan `not_run` en esa evidencia.
+
+`export_h5p_activity` consume la actividad preparada local, preserva su manifest
+y retorna un ResourceLink con MIME, tamaño, SHA-256 y manifest. El recurso binario
+se recupera por ID opaco y verifica integridad; la respuesta de la herramienta
+no contiene base64. El registro conserva hasta 128 referencias por proceso;
+la lectura admite por defecto 16 MiB. Reinicio/evicción invalidan los IDs sin
+eliminar archivos exportados. La exportación legada permite obtener la ruta local.
+
+`h5p-contract://v1/profiles` publica esquemas local/remoto separados. El remoto
+usa IDs para medios, paquetes, preparación y artefactos; no acepta rutas del host
+en esos campos. Es un contrato sin ejecución habilitada: stores, ownership y
+transporte autenticado siguen en F5/F6. Los parámetros nativos H5P siguen siendo
+dinámicos. Este cierre no adelanta esas fases ni modifica el MCP activo.
+
+Verificación final: 139 pruebas aprobadas desde el wheel instalado fuera del
+checkout en Windows, con dependencias fijadas, en 154,85 s. Build, Oxlint,
+validación de skill y guardia de artefactos aprobados. El CI del cierre queda
+pendiente; F2.6 (`5c3726f`) terminó verde en paquete y Bun/Node.

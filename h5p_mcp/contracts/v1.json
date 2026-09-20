@@ -7,7 +7,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["code", "pointer", "message", "expected", "actual", "retryable", "suggested_fix"],
       "properties": {
-        "code": {"type": "string", "enum": ["LIBRARY_NOT_INSTALLED", "LIBRARY_VERSION_MISMATCH", "SCHEMA_VALIDATION_FAILED", "UNSUPPORTED_SEMANTIC_TYPE", "STALE_PREPARATION", "ASSET_NOT_FOUND", "ASSET_TOO_LARGE", "MIME_MISMATCH", "UNSAFE_ARCHIVE", "OUTPUT_ALREADY_EXISTS", "HUB_UNAVAILABLE", "TARGET_INCOMPATIBLE", "BACKEND_UNAVAILABLE", "BACKEND_TIMEOUT", "INTERNAL_ERROR", "LIMIT_EXCEEDED"]},
+        "code": {"type": "string", "enum": ["LIBRARY_NOT_INSTALLED", "LIBRARY_VERSION_MISMATCH", "SCHEMA_VALIDATION_FAILED", "UNSUPPORTED_SEMANTIC_TYPE", "STALE_PREPARATION", "ASSET_NOT_FOUND", "ASSET_TOO_LARGE", "MIME_MISMATCH", "UNSAFE_ARCHIVE", "OUTPUT_ALREADY_EXISTS", "HUB_UNAVAILABLE", "TARGET_INCOMPATIBLE", "BACKEND_UNAVAILABLE", "BACKEND_TIMEOUT", "INTERNAL_ERROR", "LIMIT_EXCEEDED", "PERMISSION_DENIED"]},
         "pointer": {"type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)*$", "maxLength": 4096},
         "message": {"type": "string", "maxLength": 256},
         "expected": {"type": ["string", "null"], "maxLength": 256},

@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 8: B0/F1 cerrados para los destinos definidos. F2.1–F2.4 permanecen parciales. F2.5 tiene CI completamente verde en bbf8c7e. F2.6 incorpora contratos nativos compactos, recursos canónicos con digest y ejemplos sujetos a semántica/patch probados. F2 sigue abierta; la siguiente tarea es F2.7. Evidencia y pruebas en docs/architecture/005-f2-contracts.md y en la tabla de trazabilidad de F2. Comparación A/B/C permanece en F3.8; no se modifica el MCP activo.
+- Fecha: 2026-09-19. Revisión 9: B0/F1 cerrados para los destinos definidos. F2.1–F2.9 cerradas para el alcance local y contractual: 139 pruebas aprobadas desde el wheel instalado fuera del checkout. La siguiente fase es F3. El contrato remoto está publicado pero su ejecución permanece deshabilitada hasta F5/F6; no se modifica el MCP activo. Evidencia en docs/architecture/005-f2-contracts.md y en la tabla de trazabilidad de F2.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -237,29 +237,29 @@ B0 precede a la migración de runtime, no a todas las correcciones locales F1. S
 | export_h5p_batch | export_h5p_batch | Forma local acotada; tareas negociadas después |
 | refresh/install flags | Herramientas administrativas | Fuera del catálogo remoto ordinario |
 
-- [ ] F2.1 JSON Schema de entrada/salida, propiedades cerradas donde corresponda y params dinámicos. Autoridad contractual compartida Python/TS; snapshots JSON.
-- [ ] F2.2 Diagnósticos: code, JSON Pointer, message, expected/actual acotados, retryable y suggested_fix. No devolver secretos ni material completo. Distinguir reintento transitorio de reparación del input.
-- [ ] F2.3 Mapping versionado de códigos actuales a LIBRARY_NOT_INSTALLED, LIBRARY_VERSION_MISMATCH, SCHEMA_VALIDATION_FAILED, UNSUPPORTED_SEMANTIC_TYPE, STALE_PREPARATION, ASSET_NOT_FOUND, ASSET_TOO_LARGE, MIME_MISMATCH, UNSAFE_ARCHIVE, OUTPUT_ALREADY_EXISTS, HUB_UNAVAILABLE y TARGET_INCOMPATIBLE.
-- [ ] F2.4 Validación negativa retorna informe; fallo operativo usa isError y conserva detalles. Mapear excepciones Python, Node, batch y transporte consistentemente.
+- [x] F2.1 JSON Schema de entrada/salida, propiedades cerradas donde corresponda y params dinámicos. Autoridad contractual compartida Python/TS; snapshots JSON.
+- [x] F2.2 Diagnósticos: code, JSON Pointer, message, expected/actual acotados, retryable y suggested_fix. No devolver secretos ni material completo. Distinguir reintento transitorio de reparación del input.
+- [x] F2.3 Mapping versionado de códigos actuales a LIBRARY_NOT_INSTALLED, LIBRARY_VERSION_MISMATCH, SCHEMA_VALIDATION_FAILED, UNSUPPORTED_SEMANTIC_TYPE, STALE_PREPARATION, ASSET_NOT_FOUND, ASSET_TOO_LARGE, MIME_MISMATCH, UNSAFE_ARCHIVE, OUTPUT_ALREADY_EXISTS, HUB_UNAVAILABLE y TARGET_INCOMPATIBLE.
+- [x] F2.4 Validación negativa retorna informe; fallo operativo usa isError y conserva detalles. Mapear excepciones Python, Node, batch y transporte consistentemente.
 - [x] F2.5 Consultas puras; separar refresh_h5p_catalog, install_h5p_library e install_h5p_library_package. Scopes al listar e invocar; imagen inmutable deshabilita administración. Anotaciones completas coherentes con efectos, nunca usadas como autorización. Implementada en bbf8c7e para el perfil local y el bloqueo por H5P_MCP_IMMUTABLE; la imagen OCI y OAuth corresponden a F6/F7. Ver docs/architecture/005-f2-contracts.md.
 - [x] F2.6 Contrato compacto con requeridos/defaults/tipos/restricciones/subbibliotecas y ejemplos probados. Recurso bruto por URI/digest; x-h5p documenta widgets y límites. Diferencial contra semántica fuente. get_h5p_type_contract conserva reglas nativas y grupos de un campo; ejemplos de TrueFalse sujetos a patch y SHA-256, sin evidencia de Moodle. Recursos acotados al proceso, no stores persistentes de F5.
-- [ ] F2.7 Catálogo con structurally_authorable y checks/versión/digest/fecha/evidencia; compatibilidad temporal del booleano anterior sin atribuirle pruebas inexistentes.
-- [ ] F2.8 Export retorna resource link, MIME, tamaño, SHA-256 y manifest, nunca paquete base64 en respuesta. Recuperación de recursos acotada.
-- [ ] F2.9 Esquemas local/remoto separados: remoto no tiene path para medios, validación, recursos ni administración.
+- [x] F2.7 Catálogo con structurally_authorable y checks/versión/digest/fecha/evidencia; compatibilidad temporal del booleano anterior sin atribuirle pruebas inexistentes.
+- [x] F2.8 Export retorna resource link, MIME, tamaño, SHA-256 y manifest, nunca paquete base64 en respuesta. Recuperación de recursos acotada.
+- [x] F2.9 Esquemas local/remoto separados: remoto no tiene path para medios, validación, recursos ni administración. Esquemas publicados y probados; ejecución remota deshabilitada hasta F5/F6.
 
 ### Trazabilidad de F2
 
 | Tarea | Estado y alcance implementado | Commits | Verificación y pendiente |
 |---|---|---|---|
-| F2.1 | Parcial: JSON Schema compartido para entrada/salida de preparación local y recursos con los contratos empaquetados. | `0e2093c`, `9ad543b` | 114 pruebas desde wheel y 15 de contratos/stdio con dependencias fijadas. Faltan los contratos de las demás operaciones. |
-| F2.2 | Parcial: diagnósticos de preparación con JSON Pointer, códigos, límites y recomendaciones; sin copiar valores sensibles ni mensajes internos. | `0e2093c`, `9ad543b` | Pruebas de escapes, campos ausentes, truncación y errores operativos. Falta aplicar el formato al resto de operaciones. |
-| F2.3 | Parcial: mapping versionado y códigos concretos en preparación y medios; códigos de Hub y versión en administración. | `0e2093c`, `bbf8c7e` | Mapping validado contra el contrato. Falta integrar todos los códigos en las interfaces vNext de paquetes/exportación. |
-| F2.4 | Parcial: preparación distingue validación negativa de fallo operativo mediante `kind` e `isError`. | `0e2093c`, `9ad543b` | Cliente MCP real y errores simulados. Falta homogeneizar validación de paquetes, exportación y batch. |
+| F2.1 | Completa: autoridad JSON compartida y validación de entradas/salidas de todas las operaciones vNext locales. | `0e2093c`, `9ad543b` + cierre F2 | Esquemas resueltos publicados por recurso; parámetros H5P permanecen dinámicos. |
+| F2.2 | Completa: diagnósticos públicos acotados para preparación, consultas, administración, exportación, validación y batch. | Cierre F2 | Pruebas de punteros, límites, datos sensibles y errores operativos. |
+| F2.3 | Completa: mapping versionado aplicado a las nuevas interfaces, con PERMISSION_DENIED adicional. | Cierre F2 | ZIP inseguro, archivo ausente, colisión, fallos del backend y rechazo administrativo. |
+| F2.4 | Completa: informes negativos frente a isError operativo, también por elemento del lote; aliases legados conservados. | Cierre F2 | Cliente MCP real, stdio, importación real y fallos simulados. |
 | F2.5 | Completada para el perfil local: herramientas administrativas separadas, scopes al listar/invocar, modo inmutable y consultas sin mutación de bibliotecas/caché. | `bbf8c7e` | 128 pruebas completas y 30 desde wheel externo; build, Oxlint y validación de skill aprobados. OAuth e imagen OCI se verifican en F6/F7. |
 | F2.6 | Implementada: proyección nativa, campos/defaults/restricciones/subbibliotecas, notas x-h5p y recurso canónico acotado con URI/SHA-256. Dos ejemplos TrueFalse probados; otros tipos devuelven ejemplos vacíos. | `21d3284` | 135 pruebas completas y 10 desde wheel externo aprobadas. Diferencial sobre los 9 archivos de semánticas, preparación de ejemplos y restricciones, integridad/evicción/límites, lectura MCP y ausencia de mutación. CI del nuevo incremento pendiente. |
-| F2.7 | Pendiente: evidencia por versión y `structurally_authorable` en el catálogo. | — | Sigue a F2.6; no confundir elegibilidad actual con reproducción verificada. |
-| F2.8 | Pendiente: recurso de exportación con MIME, tamaño, SHA-256 y manifest; lectura acotada. | — | La exportación actual conserva la respuesta local legada. |
-| F2.9 | Pendiente: contratos local/remoto separados sin rutas en el perfil remoto. | — | El runtime sigue siendo local; persistencia/ownership corresponden a F5. |
+| F2.7 | Completa: evidencia por versión/patch, digest, fecha, checks y structurally_authorable. Booleano anterior es alias. | Cierre F2 | Preparación, importación, reproducción y grading permanecen not_run en evidencia del catálogo. |
+| F2.8 | Completa: export_h5p_activity devuelve ResourceLink, MIME, tamaño, SHA-256 y manifest; lectura por ID con límite e integridad. | Cierre F2 | Exportación y lectura real; cambios de bytes, ID desconocido y exceso de tamaño rechazados. IDs locales acotados al proceso. |
+| F2.9 | Completa: perfiles publicados local/remoto, entradas remotas cerradas basadas en IDs. | Cierre F2 | Rechazo de rutas en campos de entrada remotos. Persistencia/ownership y transporte corresponden a F5/F6. |
 
 CI aprobado de `9ad543b` para la entrega parcial F2.1–F2.4:
 [paquete y navegador](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488159953),
@@ -268,6 +268,8 @@ CI aprobado de `9ad543b` para la entrega parcial F2.1–F2.4:
 CI de `bbf8c7e` para F2.5, al actualizar esta revisión:
 [paquete y navegador aprobado](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764390);
 [matriz Bun/Node aprobada](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35488764477).
+
+Verificación del cierre F2: 139 pruebas aprobadas desde el wheel instalado fuera del checkout en Windows, con dependencias fijadas, en 154,85 s. Build, Oxlint, skill y guardia de artefactos aprobados. CI del cierre pendiente; no se atribuyen a este cambio los resultados previos. El CI de F2.6 (`5c3726f`) terminó aprobado: [paquete](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35489543309) y [Bun/Node](https://github.com/Atreyu-94/H5P_MCP/actions/runs/35489543275).
 
 **Aceptación:** consultas ordinarias sin mutación/red oculta; administración directa sin scope falla; clientes legados funcionan en modo local; errores permiten reparar campos concretos.
 

@@ -24,6 +24,7 @@ class ExportResult:
     output_path: Path
     h5p_json: dict[str, Any]
     content_json: dict[str, Any]
+    preparation_manifest: dict[str, Any] | None = None
 
 
 class H5PExporter:
@@ -51,7 +52,7 @@ class H5PExporter:
             # including two concurrent exports with the same output name.
             check_cancelled()
             publish_exclusive(package, out_path)
-        return ExportResult(output_path=out_path, h5p_json=result["h5p_json"], content_json=result["content_json"])
+        return ExportResult(output_path=out_path, h5p_json=result["h5p_json"], content_json=result["content_json"], preparation_manifest=result.get('preparation_manifest'))
 
 
 def publish_exclusive(source: Path, destination: Path) -> None:

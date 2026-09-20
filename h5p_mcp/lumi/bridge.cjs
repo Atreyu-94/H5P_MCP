@@ -5,6 +5,7 @@ const path = require('node:path');
 const os = require('node:os');
 const { finished } = require('node:stream/promises');
 const { createRequire } = require('node:module');
+const {createHash} = require('node:crypto');
 const load = createRequire(path.join(process.env.H5P_MCP_LUMI_RUNTIME || __dirname, 'package.json'));
 const { H5PEditor, H5PConfig, fsImplementations: stores } = load('@lumieducation/h5p-server');
 require('./extraction.cjs').installBoundedExtraction(load);
@@ -99,8 +100,39 @@ async function main(request) {
         (!request.installed_only || item.installed_versions.length) &&
         `${item.machine_name} ${item.title} ${item.summary || ''}`.toLowerCase().includes(query)
       ).sort((a, b) => a.machine_name.localeCompare(b.machine_name));
+      const page = all.slice(request.offset, request.offset + request.limit);
+      let inspected = 0;
+      for (const item of page) {
+        item.evidence = [];
+        for (const version of sortVersions(installed[item.machine_name] || [])) {
+          if (++inspected > limit('LIBRARIES',1000)) throw Object.assign(new Error('Evidence budget exceeded'), {code:'INPUT_TOO_LARGE'});
+          const metadata = await manager.getLibrary(version);
+          const semantics = await manager.getSemantics(version);
+          require('./limits.cjs').checkTree(semantics);
+          const pending = [...semantics], unsupported = new Set();
+          const types = new Set(['group','list','library','text','number','boolean','select','image','file','audio','video']);
+          while (pending.length) {
+            const field = pending.pop();
+            if (!types.has(field.type)) unsupported.add(field.type);
+            if (field.type === 'group') pending.push(...(field.fields || []));
+            if (field.type === 'list' && field.field) pending.push(field.field);
+          }
+          const runnable = Number(metadata.runnable) === 1;
+          const coreCompatible = compatible(metadata.coreApi?.majorVersion,metadata.coreApi?.minorVersion) !== false;
+          item.evidence.push({library:`${item.machine_name} ${version.majorVersion}.${version.minorVersion}`,
+            patch_version:metadata.patchVersion, checked_at:new Date().toISOString(),
+            schema_sha256:createHash('sha256').update(JSON.stringify({metadata,semantics})).digest('hex'),
+            digest_format:'UTF-8 JSON.stringify({metadata,semantics})',
+            structurally_authorable:runnable && coreCompatible && !unsupported.size,
+            checks:{runnable:runnable?'passed':'failed',core:coreCompatible?'passed':'failed',
+              native_types:unsupported.size?'failed':'passed',preparation:'not_run',importation:'not_run',playback:'not_run',grading:'not_run'},
+            unsupported_types:[...unsupported], source:'installed library metadata and semantics; nested dependencies and concrete params not verified'});
+        }
+        item.structurally_authorable = item.evidence.some(e => e.structurally_authorable);
+        item.authoring_supported = item.structurally_authorable;
+      }
       return { core: editor.config.h5pVersion, last_updated: await editor.contentTypeCache.getLastUpdate() || null,
-        total: all.length, offset: request.offset, activities: all.slice(request.offset, request.offset + request.limit),
+        total: all.length, offset: request.offset, activities: page,
         note: 'Hub compatibility is not Moodle verification. Generic authoring uses native schemas; support does not guarantee every editor widget or playback behavior.' };
     }
     const name = request.machine_name;
@@ -146,7 +178,11 @@ async function main(request) {
     const editor = await editorAt(job, request.action === 'validate' ? path.join(job, 'libraries') : libraries, request.action === 'export');
     if (request.action === 'catalog') return { libraries: await catalog(editor), core: editor.config.h5pVersion };
     if (request.action === 'validate') {
-      const imported = await editor.packageImporter.addPackageLibrariesAndTemporaryFiles(request.path, user);
+      const H5pError = load('@lumieducation/h5p-server/build/src/helpers/H5pError').default;
+      const imported = await editor.packageImporter.addPackageLibrariesAndTemporaryFiles(request.path, user).catch(error => {
+        if (error instanceof H5pError) error.code = 'SCHEMA_VALIDATION_FAILED';
+        throw error;
+      });
       return { ok: true, errors: [], warnings: [], engine: 'Lumi', libraries: imported.installedLibraries.length };
     }
     if (!['prepare', 'export'].includes(request.action)) throw new Error('Unknown action');
@@ -184,7 +220,7 @@ async function main(request) {
     const finalManifest = await preparationManifest(editor, libraries, report.activity, report.mathematics);
     if (!sameManifest(report.activity.preparation, finalManifest)) throw Object.assign(new Error('Dependencies changed during export'), {code:'STALE_PREPARATION'});
     const saved = await editor.getContent(id, user);
-    return { h5p_json: saved.h5p, content_json: saved.params.params };
+    return { h5p_json: saved.h5p, content_json: saved.params.params, preparation_manifest:report.activity.preparation };
   } finally {
     await fsp.rm(job, { recursive: true, force: true });
   }

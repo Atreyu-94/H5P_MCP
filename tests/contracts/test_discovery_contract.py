@@ -137,5 +137,6 @@ def test_new_contract_has_no_implicit_install_option():
             assert set(tool.input_schema['properties']) == {'machine_name', 'major_version', 'minor_version'}
             assert tool.annotations.read_only_hint and not tool.annotations.open_world_hint
             result = await client.call_tool('get_h5p_type_contract', {'machine_name': 'H5P.TrueFalse', 'major_version': 99, 'minor_version': 99}, raise_on_error=False)
-            assert result.is_error
+            assert not result.is_error and not result.data['ok']
+            assert result.data['diagnostics'][0]['code'] == 'LIBRARY_NOT_INSTALLED'
     asyncio.run(run())

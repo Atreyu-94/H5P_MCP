@@ -77,7 +77,7 @@ def test_package_rejected_before_install(monkeypatch, tmp_path):
     archive = tmp_path / 'unsafe.h5p'
     with ZipFile(archive, 'w') as package:
         package.writestr('../escape', 'unsafe')
-    with pytest.raises(ValueError, match='Unsafe ZIP'):
+    with pytest.raises(RuntimeError, match='Unsafe ZIP'):
         server.install_h5p_library_package(str(archive))
     monkeypatch.setenv('H5P_MCP_PACKAGE_ROOTS', '[]')
     with pytest.raises(ValueError):

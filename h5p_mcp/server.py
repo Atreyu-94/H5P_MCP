@@ -9,6 +9,8 @@ from h5p_mcp.skills_extension import register_authoring_skill
 from h5p_mcp.contracts.tool import register_preparation
 from h5p_mcp import administration
 from h5p_mcp.contracts.discovery import compact_contract, read_snapshot
+from h5p_mcp.contracts import OPERATIONS, diagnostic
+from h5p_mcp.contracts.operations import register_operations, register_artifact, read_artifact, operation_report, failure
 
 from h5p_mcp.exporters.h5p_exporter import H5PExporter
 from h5p_mcp.models.activity import Activity
@@ -16,7 +18,7 @@ from h5p_mcp.models.reports import PreparationReport, ExportReport, ValidationRe
 from h5p_mcp.lumi_backend import run_lumi
 from h5p_mcp.limits import limit
 from h5p_mcp.jobs import cancellable, check_cancelled
-from h5p_mcp.validators.package_validator import validate_h5p_package
+from h5p_mcp.validators.package_validator import validate_h5p_package as validate_package
 
 
 def _configure_logging() -> None:
@@ -49,10 +51,17 @@ def native_schema_snapshot(digest: str) -> str:
     return read_snapshot(digest)
 
 
+@mcp.resource('h5p-artifact://package/{identifier}', mime_type='application/zip')
+def exported_package(identifier: str) -> bytes:
+    """Read a registered local export, bounded and checked against its digest."""
+    return read_artifact(identifier)
+
+
 def local_tool(**options):
     """Keep the Python API synchronous, with cancellable MCP registration."""
     def register(function):
-        mcp.tool(**options)(cancellable(function))
+        if function.__name__ not in OPERATIONS['local']:
+            mcp.tool(**options)(cancellable(function))
         return function
     return register
 
@@ -148,9 +157,14 @@ def install_h5p_library_package(path: str) -> dict[str, Any]:
     from pathlib import Path
     from h5p_mcp.validators.package_validator import prevalidate_archive
     from h5p_mcp.utils.file_utils import authorized_path
+    from h5p_mcp.lumi_backend import BackendError
+    from zipfile import BadZipFile
     administration.require('libraries:install')
     package = authorized_path(Path(path), 'H5P_MCP_PACKAGE_ROOTS')
-    prevalidate_archive(package)
+    try:
+        prevalidate_archive(package)
+    except (ValueError, BadZipFile) as error:
+        raise BackendError('Unsafe ZIP archive', 'UNSAFE_ARCHIVE') from error
     return run_lumi('setup', packages=[str(package)])
 
 
@@ -192,7 +206,7 @@ def export_h5p(activity: Activity, output_name: str) -> ExportReport:
 @local_tool(annotations={"readOnlyHint": True, "destructiveHint": False, "idempotentHint": True, "openWorldHint": False})
 def validate_h5p(path: str) -> ValidationReport:
     """Check JSON roots and import a package into empty Lumi storage, not playback."""
-    res = validate_h5p_package(path)
+    res = validate_package(path)
     return {"ok": res.ok, "errors": res.errors, "warnings": res.warnings, "verification": res.verification}
 
 
@@ -213,8 +227,31 @@ def export_h5p_batch(activities: list[Activity], name_prefix: str = "activity") 
             exported = exporter.export(Activity.model_validate(activity), output_name=name)
             results.append({"ok": True, "output_name": name, "output_path": str(exported.output_path)})
         except (ValueError, RuntimeError, OSError) as error:
-            results.append({"ok": False, "output_name": name, "error": str(error)})
+            diagnostics, operational = failure(error)
+            results.append({"ok": False, "output_name": name, "error": diagnostics[0]['message'],
+                            "kind": 'operational_error' if operational else 'validation', 'diagnostics': diagnostics})
     return {"count": len(results), "succeeded": sum(r["ok"] for r in results), "results": results}
+
+
+def export_h5p_activity(activity: dict, output_name: str) -> dict:
+    """Export a local prepared activity, returning a resource link, digest and manifest.
+
+    Preserve the preparation manifest for stale detection. Persistent preparation
+    IDs belong to F5. Resources expire on restart/eviction; files are not deleted.
+    """
+    result = H5PExporter().export(Activity.model_validate(activity), output_name=output_name)
+    artifact = register_artifact(result.output_path, {'h5p': result.h5p_json, 'preparation': result.preparation_manifest})
+    return operation_report(kind='export', artifact=artifact, checks=verification(structure='passed', semantics='passed'))
+
+
+def validate_h5p_package(path: str) -> dict:
+    """Validate an authorized local package. Invalid content is a report; backend failure is an execution error."""
+    result = validate_package(path, strict_operations=True)
+    diagnostics = [diagnostic('SCHEMA_VALIDATION_FAILED', '/path') for _ in result.errors[:101]]
+    return operation_report(diagnostics=diagnostics, checks=result.verification)
+
+
+register_operations(mcp, globals())
 
 
 def main() -> None:
