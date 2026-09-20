@@ -25,7 +25,7 @@ export async function stdio() {
   return {resources:[...service.resources.texts.values()].map(({uri,name,mimeType})=>({uri,name,mimeType}))};
  });
  server.setRequestHandler('resources/read',async request=>{
-  try{return await service.resources.read(request.params.uri);}
+  try{return await service.readResource(request.params.uri);}
   catch{throw new ProtocolError(-32602,'Unknown or unavailable resource');}
  });
  const complete=(payload:Native)=>({resultType:'complete',ttlMs:300000,cacheScope:'public',...payload});

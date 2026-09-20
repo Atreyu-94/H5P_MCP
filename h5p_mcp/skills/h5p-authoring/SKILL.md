@@ -15,6 +15,11 @@ export_h5p_activity → validate_h5p_package. Read schemas for nested libraries.
 Deliver the artifact resource; distinguish structural checks from actual Moodle
 playback, accessibility and grading. Never invent a passed check.
 
+For persistent, reproducible authoring, prefer prepare_stored_h5p_activity and
+export_prepared_h5p_activity. Upload local media with upload_h5p_asset first;
+use its object_id in the activity assets map. Read workflow.md for IDs,
+idempotency, target inventories and validation. Legacy local tools remain valid.
+
 Read resources under skill://h5p-authoring/references/ as needed:
 workflow.md, selecting-content-types.md, native-semantics.md, media.md,
 mathematics.md, moodle-handoff.md, validation-errors.md and security.md.

@@ -6,9 +6,10 @@ import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
 import {Client} from '@modelcontextprotocol/client';
 import {StdioClientTransport} from '@modelcontextprotocol/client/stdio';
+import {storageProbe} from './storage-probe.mjs';
 const [bun,entry,libraries]=process.argv.slice(2);
 const root=await fs.mkdtemp(path.join(os.tmpdir(),'h5p-f4-'));
-const env={...process.env,PATH:path.dirname(bun),H5P_MCP_DATA_DIR:path.join(root,'data'),H5P_MCP_EXPORT_DIR:path.join(root,'exports'),H5P_MCP_ADMIN_SCOPES:''};
+const env={...process.env,PATH:path.dirname(bun),H5P_MCP_DATA_DIR:path.join(root,'data'),H5P_MCP_EXPORT_DIR:path.join(root,'exports'),H5P_MCP_ADMIN_SCOPES:'',H5P_MCP_ASSET_ROOTS:JSON.stringify([root])};
 delete env.H5P_MCP_LUMI_RUNTIME;
 if(libraries) await fs.cp(libraries,path.join(root,'data/libraries'),{recursive:true});
 const shape={'~standard':{version:1,vendor:'probe',validate(value){return {value};}}};
@@ -70,7 +71,13 @@ for(const modern of [false,true]) {
     console.log(type+': prepare/export/import passed');
    }
   }
-  if(modern) {
+  if(modern&&libraries) {
+   await storageProbe(client,root,async(scopes)=>{
+    const reopened=new Client({name:'f5-restart',version:'1'},{versionNegotiation:{mode:'auto'}});
+    await reopened.connect(new StdioClientTransport({command:bun,args,cwd:root,env:{...env,H5P_MCP_ADMIN_SCOPES:scopes},stderr:'pipe'}));
+    return reopened;
+   });
+  } else if(modern) {
    await fs.mkdir(path.join(root,'data/.core-lock'));
    const pending=client.callTool({name:'search_h5p_types',arguments:{}}).then(()=>false,()=>true);
    await new Promise(resolve=>setTimeout(resolve,30));await client.close();assert(await pending);

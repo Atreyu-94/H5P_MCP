@@ -2,7 +2,7 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-20. Revisión 13: F4 y F4-R implementadas y aprobadas en CI multiplataforma. Siguiente: F5. Configuración MCP activa sin cambios.
+- Fecha: 2026-09-20. Revisión 14: F5 implementada y verificada localmente; CI multiplataforma pendiente. Siguiente: F6. Configuración MCP activa sin cambios.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
 - Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
@@ -325,13 +325,15 @@ F4-R: `592e166` (controles) y `3d3ac45` (retirada). Tabla de paridad: docs/archi
 
 ## 9. F5 — Stores, snapshots e idempotencia
 
-- [ ] F5.1 asset_id, package_id, preparation_id y artifact_id opacos con owner/tenant/TTL. Los IDs no son credenciales: autorización por objeto en cada acceso.
-- [ ] F5.2 Upload en staging con límites incrementales, firma/MIME, hash y nombre interno asignado por servidor; publicar únicamente tras validar.
-- [ ] F5.3 Preparaciones inmutables con parámetros normalizados, medios copiados y library_snapshot_id. Expiración/ausencia/integridad producen diagnóstico específico.
-- [ ] F5.4 Idempotency key ligada a tenant y digest: misma clave/input reutiliza resultado; input diferente produce conflicto. Probar carrera y caída entre escritura y registro.
-- [ ] F5.5 Artifact store con publicación transaccional, hash/tamaño/MIME, retención, huérfanos y borrado autorizado. URLs firmadas breves o descarga autenticada; expiración y revocación probadas.
-- [ ] F5.6 libraries.lock de producción con máquina/major/minor/patch, hashes, fuente y evidencia; no confundirlo con lock ZIP de tests. Administración crea generación nueva; rollback de generación.
-- [ ] F5.7 Perfiles destino: Core, bibliotecas/parches permitidos, permiso de instalación y fecha de inventario. TARGET_INCOMPATIBLE explica dependencias ausentes, incluida MathDisplay. Inventario desconocido no se declara compatible.
+- [x] F5.1 asset_id, package_id, preparation_id y artifact_id opacos con owner/tenant/TTL. Los IDs no son credenciales: autorización por objeto en cada acceso.
+- [x] F5.2 Upload en staging con límites incrementales, firma/MIME, hash y nombre interno asignado por servidor; publicar únicamente tras validar.
+- [x] F5.3 Preparaciones inmutables con parámetros normalizados, medios copiados y library_snapshot_id. Expiración/ausencia/integridad producen diagnóstico específico.
+- [x] F5.4 Idempotency key ligada a tenant y digest: misma clave/input reutiliza resultado; input diferente produce conflicto. Probar carrera y caída entre escritura y registro.
+- [x] F5.5 Artifact store con publicación transaccional, hash/tamaño/MIME, retención, huérfanos y borrado autorizado. Lectura MCP ligada al principal local, expiración y revocación probadas; autenticación/descarga HTTP corresponde a F6.
+- [x] F5.6 libraries.lock de producción con máquina/major/minor/patch, hashes, fuente y evidencia; no confundirlo con lock ZIP de tests. Administración crea generación nueva; rollback de generación.
+- [x] F5.7 Perfiles destino: Core, bibliotecas/parches permitidos, permiso de instalación y fecha de inventario. TARGET_INCOMPATIBLE explica dependencias ausentes, incluida MathDisplay. Inventario desconocido no se declara compatible.
+
+F5: almacenamiento en `8c2242c`; integración stdio/Skills y prueba SDK en el commit de cierre. Build/lint y 19 pruebas Bun (118 assertions) aprobados; tarball externo verifica medios/bibliotecas originales modificados, exportación/importación, MathDisplay, reinicio, rollback y revocación. Detalles operativos: docs/architecture/009-persistent-storage.md. CI pendiente; sin HTTP ni nuevas afirmaciones de Moodle.
 
 **Aceptación:** modificar originales no altera preparación; tenant ajeno no enumera/recupera objetos; claves no colisionan entre tenants; TTL y recuperación no publican parciales.
 
