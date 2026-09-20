@@ -1,5 +1,7 @@
 # Core 1.28 verification
 
+> Historical evidence. Python tests and commands below are available in the `python-final-f4` checkout. Current tests use `bun test tests/core` and `tests/tooling/package-probe.ps1`.
+
 ## MathDisplay (2026-09-17)
 
 Official addon: H5P.MathDisplay 1.0.50 from

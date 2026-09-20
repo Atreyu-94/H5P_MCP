@@ -1,5 +1,7 @@
 # B0 — Compatibilidad Bun, primera ejecución local
 
+> Registro histórico. Para reproducir los probes Python, usar el checkout `python-final-f4`. La matriz actual usa tests/tooling/retirement-parity.mjs.
+
 2026-09-19. Estado: **B0 parcial; Bun no adoptado**. Producto base 30f6719, Windows x64, Node 26.7.0 y Bun 1.4.2. No se ejecutó todavía la referencia Node 22/24 ni la matriz Linux/macOS.
 
 ## Resultado verificado

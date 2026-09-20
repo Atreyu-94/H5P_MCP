@@ -29,8 +29,11 @@ El fallback nativo se prueba explícitamente; no se hace una copia parcial al de
 - Rollback congelado: tag python-final-f4, commit
   93060c52195bde9b590dba11e533bdedba3d2cc1. Su CI automático sigue activo,
   incluyendo wheel, navegador y matriz histórica. No se publicó una release npm/PyPI.
-- Los archivos Python restantes bajo tests son referencia histórica; sus pruebas
-  se ejecutan sobre el checkout congelado, nunca como dependencia del producto.
+- Se retiraron también los 25 archivos Python históricos bajo tests y los
+  lanzadores browser-baseline.ps1/sdk-probe.mjs. Sus pruebas siguen disponibles
+  en el checkout congelado; el CI de rollback usa ese SHA y no main.
+  El inventario de licencias anterior se reproduce allí; F7 debe actualizarlo
+  para bun.lock, pues su script Python dependía del lock npm ya retirado.
 - El comparador Node/Bun se conserva al menos dos releases estables. Node es
   herramienta de pruebas, sin fallback de ejecución del producto.
 - Si el cliente usa uvx siguiendo main, debe migrarse al comando Bun del README
