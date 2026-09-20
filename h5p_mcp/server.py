@@ -12,6 +12,7 @@ from h5p_mcp.models.activity import Activity
 from h5p_mcp.models.reports import PreparationReport, ExportReport, ValidationReport, BatchReport, verification
 from h5p_mcp.lumi_backend import run_lumi
 from h5p_mcp.limits import limit
+from h5p_mcp.jobs import cancellable, check_cancelled
 from h5p_mcp.validators.package_validator import validate_h5p_package
 
 
@@ -37,7 +38,15 @@ mcp = FastMCP("h5p-authoring")
 register_authoring_skill(mcp)
 
 
-@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
+def local_tool(**options):
+    """Keep the Python API synchronous, with cancellable MCP registration."""
+    def register(function):
+        mcp.tool(**options)(cancellable(function))
+        return function
+    return register
+
+
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
 def list_h5p_activities(query: str = "", installed_only: bool = False,
                         refresh: bool = False, offset: int = 0, limit: int = 20) -> dict[str, Any]:
     """Discover Hub activities and installed versions. Cached/offline by default.
@@ -52,7 +61,7 @@ def list_h5p_activities(query: str = "", installed_only: bool = False,
                     refresh=refresh, offset=offset, limit=limit)
 
 
-@mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
+@local_tool(annotations={"readOnlyHint": False, "destructiveHint": False, "openWorldHint": True})
 def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
                             minor_version: int | None = None,
                             install_if_missing: bool = False) -> dict[str, Any]:
@@ -75,7 +84,7 @@ def get_h5p_activity_schema(machine_name: str, major_version: int | None = None,
                     minor_version=minor_version, install_if_missing=install_if_missing)
 
 
-@mcp.tool()
+@local_tool()
 def create_h5p_activity(title: str, library: str, params: dict[str, Any],
                         language: str = "en", license: str = "U",
                         assets: dict[str, str] | None = None) -> PreparationReport:
@@ -98,7 +107,7 @@ def create_h5p_activity(title: str, library: str, params: dict[str, Any],
     return report
 
 
-@mcp.tool()
+@local_tool()
 def export_h5p(activity: Activity, output_name: str) -> ExportReport:
     """Recheck a native activity and export it with libraries and local assets.
 
@@ -110,14 +119,14 @@ def export_h5p(activity: Activity, output_name: str) -> ExportReport:
             "content_json": result.content_json, "verification": verification(structure="passed", semantics="passed")}
 
 
-@mcp.tool()
+@local_tool()
 def validate_h5p(path: str) -> ValidationReport:
     """Check JSON roots and import a package into empty Lumi storage, not playback."""
     res = validate_h5p_package(path)
     return {"ok": res.ok, "errors": res.errors, "warnings": res.warnings, "verification": res.verification}
 
 
-@mcp.tool()
+@local_tool()
 def export_h5p_batch(activities: list[Activity], name_prefix: str = "activity") -> BatchReport:
     """Export native activities independently, returning per-item errors and paths.
 
@@ -128,6 +137,7 @@ def export_h5p_batch(activities: list[Activity], name_prefix: str = "activity") 
     exporter = H5PExporter()
     results = []
     for idx, activity in enumerate(activities):
+        check_cancelled()
         name = f"{name_prefix}_{idx+1:03d}"
         try:
             exported = exporter.export(Activity.model_validate(activity), output_name=name)

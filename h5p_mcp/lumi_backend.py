@@ -12,6 +12,7 @@ import time
 
 from filelock import FileLock, Timeout
 from h5p_mcp.limits import limit, check_tree
+from h5p_mcp.jobs import check_cancelled
 
 class BackendError(RuntimeError):
     def __init__(self, message, code="BACKEND_ERROR", details=None):
@@ -44,6 +45,7 @@ def _node() -> str:
 
 
 def _invoke(action: str, *, deadline: float | None = None, **payload) -> dict:
+    check_cancelled()
     deadline = deadline if deadline is not None else time.monotonic() + limit("SECONDS", 300)
     runtime = runtime_dir()
     if not (runtime / ".ready").is_file():
@@ -65,6 +67,7 @@ def _invoke(action: str, *, deadline: float | None = None, **payload) -> dict:
                                    stdout=outgoing, stderr=errors, env=env)
         try:
             while process.poll() is None:
+                check_cancelled()
                 if time.monotonic() >= deadline:
                     raise BackendError(f"Lumi {action} timed out", "BACKEND_TIMEOUT")
                 if any(os.fstat(f.fileno()).st_size > limit("OUTPUT_BYTES", 33554432) for f in (outgoing, errors)):
@@ -96,8 +99,19 @@ def run_lumi(action: str, **payload) -> dict:
     # Separate MCP processes may share the same library cache. Serialize updates
     # and exports so an installation cannot change libraries halfway through a ZIP.
     try:
-        with FileLock(str(root / "backend.lock"), timeout=max(0, deadline-time.monotonic())):
+        lock = FileLock(str(root / "backend.lock"))
+        while True:
+            check_cancelled()
+            try:
+                lock.acquire(timeout=min(0.1, max(0, deadline-time.monotonic())))
+                break
+            except Timeout:
+                if time.monotonic() >= deadline:
+                    raise
+        try:
             return _invoke(action, deadline=deadline, **payload)
+        finally:
+            lock.release()
     except Timeout as error:
         raise BackendError('Backend deadline exceeded while waiting for lock', 'BACKEND_TIMEOUT') from error
 

@@ -13,6 +13,7 @@ from typing import Any
 from h5p_mcp.models.activity import Activity
 from h5p_mcp.utils.file_utils import resolve_export_dir, safe_filename
 from h5p_mcp.lumi_backend import run_lumi
+from h5p_mcp.jobs import check_cancelled
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class H5PExporter:
             result = run_lumi("export", activity=activity.model_dump(), path=str(package))
             # Same-filesystem, exclusive publication: no partial output or overwrite,
             # including two concurrent exports with the same output name.
+            check_cancelled()
             publish_exclusive(package, out_path)
         return ExportResult(output_path=out_path, h5p_json=result["h5p_json"], content_json=result["content_json"])
 
