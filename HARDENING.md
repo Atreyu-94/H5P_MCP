@@ -96,7 +96,9 @@ rejected. Magic bytes do not establish codec validity or browser playback. The s
 bounded bytes inspected for MIME are sent to Lumi; remote playback URLs are not
 downloaded. Dependency manifests bound nodes, edges and depth and reject cycles.
 
-The backend deadline includes lock contention. Publication uses an exclusive hardlink
+The MCP call deadline includes thread admission, lock contention and all batch
+items; it does not restart for each item. Cleanup completes before timeout returns.
+Publication uses an exclusive hardlink
 or a platform no-replace rename; it never copies to a visible final filename.
 Unsupported atomic primitives fail explicitly. Linux/macOS fallback implementation
 is covered by portable tests but requires execution on those platforms.

@@ -2,10 +2,10 @@
 
 ## Estado y alcance
 
-- Fecha: 2026-09-19. Revisión 3: F0 cerrado para la línea base local disponible; comparación A/B/C trasladada explícitamente a F3.8 por depender de núcleos aún no implementados. B0 en ejecución parcial: Windows x64 con Node 26/Bun 1.4.2; evidencia y pendientes en docs/architecture/002-bun-compatibility.md. Bun no adoptado.
+- Fecha: 2026-09-19. Revisión 4: trabajo local B0/F1 implementado y probado; evidencia en docs/architecture/004-b0-f1-local-completion.md. CI de 060220c pasó empaquetado, navegador Linux y seis combinaciones Bun/Node con identidad binaria. Las ampliaciones finales de cancelación/plazo total requieren su ejecución CI antes del cierre global. F0 cerrado; comparación A/B/C permanece en F3.8. El MCP activo no se migra en B0.
 - Segunda fuente: [propuesta Bun](C:/Users/Vic/.codex/attachments/fb9aad3d-d4d0-4d62-8736-1df7b90267a4/Texto%20pegado.txt). No se instaló Bun ni se ejecutó B0 para editar este documento; la consulta de PATH no encontró bun.
 - Repositorio: `D:\victorla\Documentos\School\Programming\IA\MCPs\H5P_MCP`.
-- Base local inspeccionada: `ac10c50`, main, cinco commits por delante de la referencia local origin/main. No se actualizó el remoto durante esta revisión.
+- Base de la planificación inicial: `ac10c50`. La ejecución posterior usa main y pushes incrementales a Atreyu-94/H5P_MCP; consultar el informe de cierre local para commits y CI.
 - Auditoría recibida: revisión de `1a7aa54d3daa0e0f3bdacf79bcc8f459be6e7bce`, anterior a los cinco commits de endurecimiento.
 - Fuente: [auditoría adjunta](C:/Users/Vic/.codex/attachments/42395509-bfd6-49a1-a518-76b1a149268d/Texto%20pegado.txt).
 - La preparación de este plan incluyó inspección de archivos y documentación. Las 57 pruebas del wheel y la prueba de puntuación True/False pertenecen a la ejecución anterior de esta tarea; no se repitieron durante esta planificación.

@@ -1,6 +1,6 @@
 # B0/F1: ejecución local y gates pendientes
 
-Fecha: 2026-09-19. Producto comprobado: `08e0663`; CI ampliado: `060220c`.
+Fecha: 2026-09-19. Producto ampliado: `53a10b9`; CI previo verificado: `060220c`.
 Repositorio y destino de todos los pushes: **Atreyu-94/H5P_MCP**, fork de
 0xMarik/H5P_MCP. Oxlint es el linter ejecutado dentro de ese CI.
 
@@ -8,7 +8,7 @@ Repositorio y destino de todos los pushes: **Atreyu-94/H5P_MCP**, fork de
 
 | Comprobación | Resultado observado |
 |---|---|
-| Suite Python/stdio/Lumi aislada | 98 passed, 81,86 s, Windows x64; dos pruebas adicionales de cancelación real: passed, 15,04 s |
+| Suite Python/stdio/Lumi aislada final | 101 passed, 84,60 s, Windows x64, incluidas cancelación real y deadline global de lotes |
 | Corpus diferencial sobre dependencias npm | Nueve actividades, incluidos PNG, WAV, WebM y matemáticas; exportación e importación cruzada correctas |
 | Corpus sobre instalación frozen de Bun | Nueve actividades, CRC nativo, UUID inválidos/duplicados, paquetes incompletos, MathDisplay ausente, no-overwrite y preparación obsoleta: passed |
 | Navegador sobre paquetes Node y Bun | Nueve paquetes por runtime, cero errores; Audio y Video efectivamente decodificados/reproducidos |
@@ -56,11 +56,12 @@ El commit `fc2b687` pasó los cuatro jobs de wheel y los seis jobs Bun, incluyen
 TS7/Oxlint, publicación sin hardlinks y cancelación. El commit `08e0663` pasó el
 workflow de wheel con la ampliación semántica y de medios. Las ejecuciones de
 `060220c` incluyen además identidad de binario y navegador Linux. El workflow de
-empaquetado/navegador ya pasó; identidad de binario en la matriz Bun aún estaba
-en ejecución al registrar esta evidencia.
+empaquetado/navegador y las seis combinaciones de identidad binaria ya pasaron.
+Los últimos tests de cancelación real y la corrección del plazo total de llamada
+MCP se verifican localmente y deben completar su propio CI.
 
-Windows tiene evidencia local completa del corpus implementado. Linux/macOS
-quedan sujetos al resultado del corpus ampliado y hashes en CI. Linux ARM64,
+Windows tiene evidencia local del corpus implementado. Linux/macOS pasaron
+el corpus ampliado, procesos e identidad binaria de 060220c. Linux ARM64,
 musl, proxy HTTPS configurado y Moodle gradebook no forman parte de este gate
 local; no se anuncian como verificados. Bun no se promueve al MCP activo.
 
