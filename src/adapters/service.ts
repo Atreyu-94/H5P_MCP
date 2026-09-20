@@ -6,9 +6,17 @@ import type {CoreRequest,Native} from '../domain/types.js';
 import {checkTree,limit} from '../domain/limits.js';
 import {projectSemantics} from '../domain/contracts.js';
 import {Resources,hash,canonical} from './resources.js';
-import {base,operations,codes,examples,schema,valid,report,failure,diagnostic,verification} from './contracts.js';
+import {base,operations,codes,examples,schema,valid,invalidInput,report,failure,diagnostic,verification} from './contracts.js';
 const scopes:Record<string,string>={refresh_h5p_catalog:'catalog:refresh',install_h5p_library:'libraries:install',install_h5p_library_package:'libraries:install'};
 export const aliases:Record<string,string>={list_h5p_activities:'search_h5p_types',get_h5p_activity_schema:'get_h5p_type_contract',create_h5p_activity:'prepare_h5p_activity',export_h5p:'export_h5p_activity',validate_h5p:'validate_h5p_package'};
+async function resolved(filename:string):Promise<string> {
+ const absolute=path.resolve(filename);
+ try{return await fs.realpath(absolute);}catch(error:Native){
+  if(error.code!=='ENOENT') throw error;
+  const parent=path.dirname(absolute);if(parent===absolute) throw error;
+  return path.join(await resolved(parent),path.basename(absolute));
+ }
+}
 export class Service {
  engine=new Engine();
  resources=new Resources();
@@ -26,7 +34,7 @@ export class Service {
    if(setting===undefined) continue;
    const roots=JSON.parse(setting);
    if(!Array.isArray(roots)||roots.some(r=>typeof r!=='string'||!path.isAbsolute(r))) throw new Error('Invalid authorized roots');
-   this.roots[kind]=await Promise.all(roots.map(r=>fs.realpath(r)));
+   this.roots[kind]=await Promise.all(roots.map(r=>resolved(r)));
   }
   await this.resources.initialize();
   for(const [name,value] of Object.entries({schema:base,codes,profiles:operations})) {
@@ -50,8 +58,7 @@ export class Service {
   return tools;
  }
  async authorize(filename:string,kind:string) {
-  if(!path.isAbsolute(filename)) throw failure('PERMISSION_DENIED');
-  const real=await fs.realpath(filename);
+  const real=await resolved(filename);
   const roots=this.roots[kind];
   if(roots&&!roots.some(root=>{const rel=path.relative(root,real);return !rel||(!rel.startsWith('..'+path.sep)&&rel!=='..'&&!path.isAbsolute(rel));})) throw failure('PERMISSION_DENIED');
   return real;
@@ -83,10 +90,7 @@ export class Service {
    return report('validation',true,[],{structure:'passed',importation:'passed'});
   }
   if(name==='export_h5p_activity') {
-   // Resolve the existing ancestor before creating anything inside a configured root.
-   let ancestor=this.exportDir;
-   while(true) {try {await fs.stat(ancestor);break;} catch(e:Native) {if(e.code!=='ENOENT') throw e;const parent=path.dirname(ancestor);if(parent===ancestor) throw e;ancestor=parent;}}
-   await this.authorize(ancestor,'EXPORT');
+   await this.authorize(this.exportDir,'EXPORT');
    await fs.mkdir(this.exportDir,{recursive:true});
    const directory=await this.authorize(this.exportDir,'EXPORT');
    const filename=(args.output_name.replace(/[^A-Za-z0-9._-]/g,'_').replace(/^[._-]+|[._-]+$/g,'')||'export').replace(/\.h5p$/i,'')+'.h5p';
@@ -114,7 +118,8 @@ export class Service {
   let result:Native;
   try {
    checkTree(args);
-   if(!definition||!valid(definition[0],args)) throw failure('SCHEMA_VALIDATION_FAILED');
+   if(!definition) throw failure('SCHEMA_VALIDATION_FAILED');
+   if(!valid(definition[0],args)) throw invalidInput(definition[0]);
    result=await this.dispatch(name,args,signal);
    if(!valid(definition[1],result)) throw failure('INTERNAL_ERROR');
    if(Buffer.byteLength(JSON.stringify(result))>limit('OUTPUT_BYTES',16777216)) throw failure('LIMIT_EXCEEDED');

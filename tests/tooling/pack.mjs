@@ -11,7 +11,7 @@ delete manifest.dependencies['@lumieducation/h5p-server'];
 delete manifest.devDependencies;
 delete manifest.scripts;
 for(const folder of ['dist/core','h5p_mcp/contracts','h5p_mcp/skills','h5p_mcp/lumi']) {
- await fs.cp(path.join(repo,folder),path.join(stage,folder),{recursive:true,filter:source=>!source.includes('node_modules')&&!source.includes('__pycache__')&&!source.endsWith('.py')});
+ await fs.cp(path.join(repo,folder),path.join(stage,folder),{recursive:true,filter:source=>!source.includes('node_modules')&&!source.includes('__pycache__')&&!source.endsWith('.py')&&!/[\\/]adapters[\\/]ipc\.(?:js|d\.ts)$/.test(source)});
 }
 for(const entry of await fs.readdir(repo)) if(/^(LICENSE|NOTICE)/.test(entry)) await fs.copyFile(path.join(repo,entry),path.join(stage,entry));
 await fs.writeFile(path.join(stage,'package.json'),JSON.stringify(manifest,null,2)+'\n');

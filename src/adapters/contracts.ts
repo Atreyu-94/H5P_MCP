@@ -19,6 +19,12 @@ export function valid(name:string,value:unknown) {
  if(!validators.has(name)) validators.set(name,ajv.compile(schema(name)));
  return validators.get(name)!(value);
 }
+export function invalidInput(name:string) {
+ const error=validators.get(name)?.errors?.[0];
+ const child=error?.params.missingProperty||error?.params.additionalProperty;
+ const pointer=(error?.instancePath||'')+(child?'/'+String(child).replaceAll('~','~0').replaceAll('/','~1'):'');
+ return Object.assign(failure('SCHEMA_VALIDATION_FAILED'),{pointer});
+}
 export const verification=(updates:Native={})=>({structure:'not_run',semantics:'not_run',importation:'not_run',playback:'not_run',grading:'not_run',...updates});
 export function diagnostic(error:Native) {
  const code=codes.aliases[error?.code]||error?.code;

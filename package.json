@@ -4,7 +4,7 @@
   "private": true,
   "bundledDependencies": ["@lumieducation/h5p-server"],
   "type": "module",
-  "bin": {"h5p-mcp-bun": "dist/core/cli.js"},
+  "bin": {"h5p-mcp": "dist/core/cli.js", "h5p-mcp-bun": "dist/core/cli.js"},
   "files": ["dist/core", "h5p_mcp/contracts/*.json", "h5p_mcp/skills", "h5p_mcp/lumi/*.cjs", "h5p_mcp/lumi/*.json", "h5p_mcp/lumi/*.tgz", "LICENSE*", "NOTICE*"],
   "packageManager": "bun@1.4.2",
   "scripts": {

@@ -1,6 +1,6 @@
 # H5P MCP authoring
 
-Create H5P activities through FastMCP and Lumi, using each installed content
+Create H5P activities through Bun, the official MCP SDK and Lumi, using each installed content
 type's native schema instead of four fixed quiz templates.
 
 ## Workflow
@@ -106,44 +106,52 @@ refresh tool discovery after restarting.
 
 ## Installation
 
-Requires uv, Python 3.12+, Node.js 22.12+ and npm. From the repository:
+Requires Bun 1.4.2. Python, uv, Node and npm are not product runtime dependencies.
 
 ```powershell
-uv sync --locked
-uv run --locked h5p-mcp --setup-lumi
-uv run --locked h5p-mcp
+bun install --frozen-lockfile --ignore-scripts
+bun run build
+bun dist/core/cli.js stdio
 ```
 
-Setup installs pinned Node dependencies. Choose libraries through explicit schema
-downloads, or install libraries from trusted local packages:
+For a standalone local tarball, run `bun tests/tooling/pack.mjs C:/output`
+after building, then:
 
 ```powershell
-uv run --locked h5p-mcp --setup-lumi --lumi-package C:/absolute/example.h5p
+bun x --bun --package C:/output/h5p-mcp-core-0.1.0.tgz h5p-mcp stdio
 ```
 
-`--lumi-package` is repeatable and installs libraries, not authored content.
-`H5P_MCP_DATA_DIR` overrides the shared runtime/library cache.
-`H5P_MCP_EXPORT_DIR` selects an absolute writable export directory; otherwise
-files go to `exports/` in the server's working directory.
-
-For uvx, use the same source for setup and server startup:
+The package is private and has not been published to npm. Both bin names,
+`h5p-mcp` and `h5p-mcp-bun`, execute the same Bun entry point. Do not use the
+source checkout's raw `bun pm pack`: the packaging script prepares the vendored
+Lumi dependency without a checkout-relative installation path.
 
 ```powershell
-uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@COMMIT" h5p-mcp --setup-lumi
-uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@COMMIT" h5p-mcp
+$env:H5P_MCP_ADMIN_SCOPES = 'libraries:install'
+bun dist/core/cli.js admin package C:/absolute/example.h5p
+bun dist/core/cli.js admin install H5P.TrueFalse
+bun dist/core/cli.js export C:/absolute/activity.json activity
+bun dist/core/cli.js validate C:/absolute/activity.h5p
 ```
 
-Replace COMMIT with a full commit SHA. This fork is not published on PyPI. uvx
-resolves dependencies independently of uv.lock; use a locked checkout for exact
-reproduction. MCP uses stdio. For local development, client command `uv` can use
-arguments `run --directory C:/absolute/H5P_MCP --locked h5p-mcp`. Allow 300 seconds
-for explicit library downloads.
+`H5P_MCP_DATA_DIR` selects the library store; `H5P_MCP_EXPORT_DIR` selects the
+output directory (default: `exports` in the working directory). Use explicit
+paths when migrating and test against a copy of the existing store.
+
+**uvx migration:** change the client command to Bun only when ready. This change
+does not edit client configuration. An old uvx command following main no longer
+works after upgrading; freeze it at commit
+`93060c52195bde9b590dba11e533bdedba3d2cc1` (tag `python-final-f4`) for rollback:
+
+```powershell
+uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@93060c52195bde9b590dba11e533bdedba3d2cc1" h5p-mcp
+```
 
 ## Educational skill
 
 The packaged [h5p-authoring skill](h5p_mcp/skills/h5p-authoring/SKILL.md) guides
 activity selection, schemas, feedback, assets, export and Moodle handoff.
-The server exposes `io.modelcontextprotocol/skills` through FastMCP's public API.
+The server exposes `io.modelcontextprotocol/skills` through the official MCP SDK.
 `skills/list` and `skills/get` are tested on protocol `2026-07-28`. Read
 `skill://h5p-authoring/SKILL.md` using `resources/read`. Entries carry frontmatter,
 raw-byte SHA-256 and size; no directory-reading extension is advertised.
@@ -171,29 +179,24 @@ Desktop or Moodle Core.
 
 ## Development checks
 
-Integration tests require installed TrueFalse 1.8, MultiChoice 1.16, Blanks 1.14,
-QuestionSet 1.21, Accordion 1.0 and dependencies including AdvancedText 1.1 and
-Image 1.1. Install explicitly through administrative tools or trusted packages. Tests
-never silently fetch missing activity libraries.
-
 ```powershell
-uv run --locked pytest
-uv build
-$wheel = (Resolve-Path ./dist/h5p_mcp-0.1.0-py3-none-any.whl).Path
-$env:H5P_MCP_TEST_COMMAND = ConvertTo-Json -Compress -InputObject @('uvx', '--from', $wheel, 'h5p-mcp')
-try {
-    uv run --locked pytest tests/test_skills_stdio.py tests/test_mcp_stdio.py
-} finally {
-    Remove-Item Env:H5P_MCP_TEST_COMMAND
-}
+bun run build
+bun run lint
+bun test tests/core
+node tests/tooling/retirement-parity.mjs (Get-Command bun).Source retirement-parity.json
+$report = Get-Content retirement-parity.json -Raw | ConvertFrom-Json
+./tests/tooling/package-probe.ps1 -Bun (Get-Command bun).Source -Libraries (Join-Path $report.artifacts 'data/libraries')
 ```
 
-Stdio tests use reference clients and fixed fixtures, not autonomous LLM
-selection. Browser/Core evidence is in [tests/CORE_1_28.md](tests/CORE_1_28.md).
+Node is only the differential oracle and SDK test client, retained for at least
+two stable Bun releases. CI runs the current Bun product on three operating
+systems and automatically verifies the frozen Python rollback separately.
+Historical Python tests remaining under tests/ belong to that frozen checkout;
+they are not the current product test command.
 
 ## License
 
-Python project: Apache 2.0. Bundled Lumi server and corresponding source:
+Project source: Apache 2.0. Bundled Lumi server and corresponding source:
 GPL-3.0-or-later, with LICENSE included in the npm archive. Other dependencies
 retain their authors' licenses.
 
