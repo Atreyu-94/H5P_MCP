@@ -4,7 +4,6 @@ import {Pool} from '../infrastructure/pool.js';
 import {Generations,exclusive} from '../infrastructure/generations.js';
 import {isolated} from '../infrastructure/worker.js';
 import {publish} from '../infrastructure/publication.js';
-import {execute} from './execute.js';
 export class Engine {
  private pool=new Pool(limit('WORKERS',2),limit('QUEUE',8));
  private generations=new Generations(limit('GENERATIONS',4));
@@ -19,6 +18,8 @@ export class Engine {
     // Keep untrusted semantics/ZIP work killable; persistent queries share the bounded schema cache.
     if(request.action==='export') return await publish(pinned,signal);
     if(['prepare','validate'].includes(request.action)) return await isolated(pinned,signal);
+    // Load the editor only for execution, not MCP discovery or isolated jobs.
+    const {execute}=await import('./execute.js');
     return await execute(pinned);
    } finally {await snapshot.release();}
   },signal);
