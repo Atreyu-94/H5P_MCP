@@ -1,4 +1,6 @@
 import fs from 'node:fs/promises';
+import {createReadStream} from 'node:fs';
+import {limit} from '../domain/limits.js';
 import path from 'node:path';
 import {createHash,randomBytes} from 'node:crypto';
 import {repositoryRoot} from '../infrastructure/runtime.js';
@@ -39,9 +41,12 @@ export class Resources {
   return {uri,sha256,mime_type:'application/json',size:Buffer.byteLength(text),lifetime:'process lifetime; bounded cache'};
  }
  async artifact(filename:string,manifest:Native,content:Native=null) {
-  const bytes=await readBounded(filename,16777216),uri='h5p-artifact://package/'+randomBytes(16).toString('hex');
-  const entry={filename,size:bytes.length,sha256:hash(bytes),content};
-  if(this.artifacts.size>=128) this.artifacts.delete(this.artifacts.keys().next().value!);
+  // Registration describes an exported file; only resource reads enforce the inline byte limit.
+  const digest=createHash('sha256');let size=0;
+  for await(const chunk of createReadStream(filename)){size+=chunk.length;digest.update(chunk);}
+  const uri='h5p-artifact://package/'+randomBytes(16).toString('hex');
+  const entry={filename,size,sha256:digest.digest('hex'),content};
+  while(this.artifacts.size>=limit('ARTIFACTS',128)) this.artifacts.delete(this.artifacts.keys().next().value!);
   this.artifacts.set(uri,entry);
   return {uri,mime_type:'application/zip',size:entry.size,sha256:entry.sha256,manifest};
  }
@@ -50,7 +55,12 @@ export class Resources {
   if(text) return {contents:[{uri,mimeType:text.mimeType,text:text.text}]};
   const entry=this.artifacts.get(uri);
   if(!entry) throw failure('PERMISSION_DENIED');
-  const bytes=await readBounded(entry.filename,16777216);
+  const maximum=limit('RESOURCE_BYTES',16777216);
+  if(entry.size>maximum) throw failure('LIMIT_EXCEEDED');
+  const bytes=await readBounded(entry.filename,maximum).catch(error=>{
+   if(error.code==='ASSET_TOO_LARGE') throw failure('LIMIT_EXCEEDED');
+   throw error;
+  });
   if(bytes.length!==entry.size||hash(bytes)!==entry.sha256) throw failure('STALE_PREPARATION');
   return {contents:[{uri,mimeType:'application/zip',blob:bytes.toString('base64')}]};
  }

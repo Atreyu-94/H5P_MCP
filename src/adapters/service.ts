@@ -54,7 +54,7 @@ export class Service {
  async readResource(uri:string):Promise<Native> {
   if(!uri.startsWith('h5p-artifact://stored/'))return this.resources.read(uri);
   const vault=await this.vault(),id=uri.slice('h5p-artifact://stored/'.length),value=await vault.objects.get(id,'artifact');
-  if(value.files.payload.size>limit('OUTPUT_BYTES',16777216))throw failure('LIMIT_EXCEEDED');
+  if(value.files.payload.size>limit('RESOURCE_BYTES',16777216))throw failure('LIMIT_EXCEEDED');
   return {contents:[{uri,mimeType:'application/zip',blob:(await vault.objects.read(id,'artifact')).toString('base64')}]};
  }
  async initialize() {
