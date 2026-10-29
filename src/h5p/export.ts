@@ -12,8 +12,11 @@ export async function exportActivity(editor: Native,request: Native,libraries: s
     const activity = uploaded.activity;
     const mainLibrary = activity.library;
     const params = activity.params;
+    const [machineName, version] = mainLibrary.split(' ');
+    const [majorVersion, minorVersion] = version.split('.').map(Number);
+    const libraryMetadata = await editor.libraryManager.getLibrary({machineName, majorVersion, minorVersion});
     const metadata = { title: activity.title, language: activity.language, license: activity.license,
-      embedTypes: ['div'], mainLibrary: mainLibrary.split(' ')[0] };
+      embedTypes: libraryMetadata.embedTypes || ['div'], mainLibrary: machineName };
     const id = await editor.saveOrUpdateContent(undefined, params, metadata, mainLibrary, user);
     await attachMathDependency(editor, id, user);
     const output = fs.createWriteStream(request.path, { flags: 'wx' });
