@@ -205,8 +205,8 @@ $report = Get-Content retirement-parity.json -Raw | ConvertFrom-Json
 Node is only the differential oracle and SDK test client, retained for at least
 two stable Bun releases. CI runs the current Bun product on three operating
 systems and automatically verifies the frozen Python rollback separately.
-Historical Python tests remaining under tests/ belong to that frozen checkout;
-they are not the current product test command.
+Historical Python tests live in the frozen rollback checkout; they have been
+removed from main and are not the current product test command.
 
 ## License
 
@@ -235,8 +235,10 @@ do not return the activity or raw backend messages. Unexecuted verification
 stages remain `not_run`; preparation does not certify Moodle playback/grading.
 
 Read `h5p-contract://v1/schema` and `h5p-contract://v1/codes` through MCP resources
-for the packaged JSON authority. This increment has no persistent preparation
-IDs or remote profile; those require the later storage phase. See
+for the packaged JSON authority. The local preparation interface returns an
+activity object. F5 additionally
+provides persistent preparation IDs, and F6 exposes the authenticated remote
+profile. See
 [F2 implementation status](docs/architecture/005-f2-contracts.md) for the scope
 and remaining increments.
 
@@ -282,9 +284,10 @@ Labels, descriptions and UI grouping flags are available in the raw resource.
 `raw_schema` returns a URI, SHA-256, MIME and byte length of a canonical UTF-8
 JSON snapshot containing complete native semantics and library metadata. The
 digest refers to those exact resource bytes, not the original file formatting.
-Resources are bounded process-local snapshots: defaults are 2 MiB per resource,
-16 snapshots and 16 MiB total. Configure `H5P_MCP_MAX_SCHEMA_BYTES`,
-`H5P_MCP_MAX_SCHEMA_SNAPSHOTS` and `H5P_MCP_MAX_SCHEMA_CACHE_BYTES` if needed.
+Raw-schema resources use a fixed process-local cache of eight snapshots, each
+at most 2 MiB (at most 16 MiB total). The previously documented
+`H5P_MCP_MAX_SCHEMA_BYTES`, `H5P_MCP_MAX_SCHEMA_SNAPSHOTS` and
+`H5P_MCP_MAX_SCHEMA_CACHE_BYTES` are not supported configuration options.
 After eviction or restart, call the tool again; resource reads never resolve
 user-supplied filesystem paths or download anything.
 
@@ -296,8 +299,10 @@ they do not claim playback or grading evidence in Moodle.
 ## F2 operation contracts and evidence
 
 `h5p-contract://v1/profiles` publishes resolved input/output schemas for the
-local operations and separate ID-only remote input schemas. Remote execution is
-disabled: durable preparation IDs/ownership require F5, and HTTP/auth requires F6.
+local operations and separate ID-only remote input schemas. The opt-in F6 HTTP
+transport publishes its executable remote tool profile at the same resource URI
+and uses F5 durable objects and ownership checks. Public hosting remains
+pending; see the HTTP deployment gates above.
 Local export accepts the prepared activity object and its dependency manifest.
 Native `params` remain dynamic; remote assets bind opaque IDs, never host paths.
 
@@ -311,9 +316,21 @@ Invalid content has `ok=false` without MCP `isError`; operational failures set
 `isError=true`. Batch retains per-item results and marks operational failures;
 successful files remain. Legacy tool names and synchronous APIs stay available.
 
-Export tools return a `resource_link`, never package base64. Binary resource reads
-use the MCP protocol encoding, verify size/digest and default to 16 MiB maximum
-(`H5P_MCP_MAX_RESOURCE_BYTES`). The process keeps at most 128 registered artifacts
-(`H5P_MCP_MAX_ARTIFACTS`); eviction/restart invalidates their IDs without deleting
-exported files. The manifest includes the exact preparation dependency snapshot.
-Oversized resources require a higher local read limit or a smaller package.
+Export tools return a `resource_link`, never package base64. Registration hashes
+the exported file incrementally and does not impose the inline resource-read
+limit. An export larger than that limit still succeeds and remains on disk.
+Binary resource reads verify size/digest and default to 16 MiB of raw package
+bytes (`H5P_MCP_MAX_RESOURCE_BYTES`) for both local and persistent artifacts,
+independently of `H5P_MCP_MAX_OUTPUT_BYTES`. Base64 adds transport overhead;
+HTTP also caps the full MCP response at 16 MiB. Use the authenticated
+`/artifacts/<object_id>` route for large remote artifacts.
+
+The local registry retains 128 artifacts by default (`H5P_MCP_MAX_ARTIFACTS`).
+Eviction/restart invalidates their IDs without deleting exported files. The
+manifest includes the exact preparation dependency snapshot. Configure a higher
+resource-read limit before startup when needed. Old process-local resource IDs
+are unavailable after restart; persistent IDs survive until expiry/revocation.
+
+Exports preserve the `embedTypes` declared by the main library, including iframe-only
+libraries; `div` is the fallback when the metadata omits that field. Package
+metadata tests do not establish browser or Moodle playback.

@@ -20,7 +20,7 @@ TTL predeterminado: 24 horas; snapshots: un año. Los perfiles de destino caduca
 
 Cambiar la generación activa afecta a futuras preparaciones persistentes; no modifica preparaciones existentes ni restaura la carpeta mutable usada por herramientas locales antiguas. Cada preparación requiere que su snapshot siga disponible. Revocar una generación puede invalidar las preparaciones que la necesitan; los artefactos ya publicados son independientes.
 
-La lectura MCP limita respuestas a 16 MiB por defecto. HTTP/OAuth, descarga autenticada remota y cuotas por solicitud corresponden a F6. Aquí se prueba aislamiento de los stores con principals distintos; no se anuncia aislamiento remoto ni verificación de reproducción/calificación en Moodle.
+La lectura MCP limita los bytes brutos del artefacto a 16 MiB por defecto, configurable mediante `H5P_MCP_MAX_RESOURCE_BYTES`, independientemente de `OUTPUT_BYTES`. El registro de exportaciones locales calcula su digest en streaming sin aplicar ese límite de lectura. F6 ya implementa HTTP/OAuth, descarga autenticada remota y cuotas por solicitud; véase `010-authenticated-http.md` para sus límites y gates de despliegue. La evidencia F5 aquí descrita cubre stores con principals distintos, no reproducción/calificación en Moodle.
 
 ## Evidencia reproducible
 

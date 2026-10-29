@@ -69,16 +69,17 @@ reserved names/ADS, Unicode NFC/case-fold collisions and file/directory conflict
 Explicit directory entries remain allowed. Package validation and administrative
 installation share this preflight. A version-specific adapter bounds Lumi's ZIP
 extraction in the isolated worker, including streamed bytes and exclusive files.
-The worker also rejects portable path collisions (NFC/lowercase); Python preflight
-additionally applies full Unicode case folding. The preflight and later import are not an immutable
-file snapshot. JSON reads are bounded. Node input and Python output collection are
-bounded. Process timeout and local interruption kill and reap the child.
+The Bun preflight rejects portable path collisions, including the tested Unicode
+case-fold aliases. JSON input and worker output collection are bounded. Process
+timeout and local interruption kill and reap the child. Python is only the frozen
+rollback implementation, not part of this production path.
 The parent owns the worker's TMP/TEMP/TMPDIR and removes its temporary files
 even when a hard kill prevents JavaScript finally blocks from executing.
-Output is monitored in temporary files at 50 ms intervals; these are operational
-budgets, not an OS memory/disk sandbox. MCP tools run in a cancellable thread
-boundary: cancellation is polled during lock waits, ZIP reads and subprocess
-execution; the child is killed/reaped and staging cleaned before acknowledgement.
+Worker stdout/stderr are collected through bounded pipes; these are operational
+budgets, not an OS memory/disk sandbox. Admission and lock waits are cancellable;
+prepare/validate/export jobs run in subprocesses that are killed and reaped
+before staging cleanup completes. Preflight and subsequent import are not an
+immutable filesystem snapshot.
 Cancellation does not undo already completed batch items. OS calls blocked on a
 faulty local filesystem may delay cooperative cleanup.
 
@@ -100,8 +101,8 @@ The MCP call deadline includes thread admission, lock contention and all batch
 items; it does not restart for each item. Cleanup completes before timeout returns.
 Publication uses an exclusive hardlink
 or a platform no-replace rename; it never copies to a visible final filename.
-Unsupported atomic primitives fail explicitly. Linux/macOS fallback implementation
-is covered by portable tests but requires execution on those platforms.
+Unsupported atomic primitives fail explicitly. The F4-R record documents prior
+Linux/macOS/Windows CI execution; new local changes still require their own CI.
 
 MathDisplay remains the only explicitly resolved addon. Other installed addons
 are not exported indiscriminately. Add new adapters only with a real content
@@ -120,3 +121,21 @@ whose correct answer is True, with retry enabled and LaTeX in both feedback
 branches. This exercises exact wrong/correct scores and retry, not a Moodle
 gradebook or all activity types. Browser prerequisites remain explicit in the
 smoke script; browser tests are not part of the Python CI matrix.
+
+## Resource registration and reads
+
+Export registration computes size and SHA-256 by streaming the completed file;
+it does not load the whole package or reject it for exceeding the inline read
+limit. Local and persistent resource reads enforce `H5P_MCP_MAX_RESOURCE_BYTES`
+(default 16 MiB of raw bytes). `H5P_MCP_MAX_OUTPUT_BYTES` remains a separate tool/
+worker output budget. HTTP also limits the encoded MCP response to 16 MiB; use
+the authenticated artifact download route for larger remote packages.
+
+The local artifact registry retains 128 entries by default, configurable with
+`H5P_MCP_MAX_ARTIFACTS`. Eviction invalidates a resource ID, not the exported file.
+Raw-schema resources have a fixed cache of eight snapshots of at most 2 MiB each.
+
+Regression tests cover large-file registration, configurable read limits for both
+artifact stores, integrity, registry eviction and main-library embed modes in
+actual Lumi-generated packages. The embed-mode test mutates a disposable
+TrueFalse fixture; it does not certify InteractiveBook playback or Moodle grading.

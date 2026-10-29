@@ -1,5 +1,7 @@
 # F2 — Contratos incrementales
 
+> Registro histórico de F2. El núcleo Bun actual usa ocho snapshots de esquema de hasta 2 MiB cada uno; F5 ya implementa persistencia y F6 ejecución HTTP optativa autenticada. Las cifras de pruebas y restricciones de ejecución descritas abajo corresponden a sus incrementos originales. Para configuración y límites vigentes, consultar README y los documentos 009/010.
+
 ## F2.1–F2.4: preparación local y diagnósticos v1 (parcial)
 
 La autoridad contractual está en `h5p_mcp/contracts/v1.json` y el mapping en
