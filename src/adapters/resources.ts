@@ -17,7 +17,7 @@ export class Resources {
  snapshots:string[]=[];
  skill:Native;
  async initialize() {
-  const root=path.join(repositoryRoot,'h5p_mcp/skills/h5p-authoring');
+  const root=path.join(repositoryRoot,'.agents/skills/h5p-authoring');
   const names:string[]=JSON.parse(await fs.readFile(path.join(root,'resources.json'),'utf8'));
   const resources=[];
   for(const name of names) {

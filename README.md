@@ -11,7 +11,7 @@ See [authenticated HTTP](docs/architecture/010-authenticated-http.md) for setup,
 uploads, tenant isolation, quotas and the remaining public-hosting checks.
 
 For immutable preparations and artifacts that survive server restarts, use the
-[persistent workflow](h5p_mcp/skills/h5p-authoring/references/workflow.md): upload
+[persistent workflow](.agents/skills/h5p-authoring/references/workflow.md): upload
 assets → `prepare_stored_h5p_activity` → `export_prepared_h5p_activity` → read the
 artifact resource. It provides ownership checks, TTL, idempotent retries and
 library snapshots. Optional destination inventories check dependencies such as
@@ -155,15 +155,15 @@ paths when migrating and test against a copy of the existing store.
 **uvx migration:** change the client command to Bun only when ready. This change
 does not edit client configuration. An old uvx command following main no longer
 works after upgrading; freeze it at commit
-`93060c52195bde9b590dba11e533bdedba3d2cc1` (tag `python-final-f4`) for rollback:
+`4d721aef540dd088d82db7799eac946499194033` (tag `python-final-f4`) for rollback:
 
 ```powershell
-uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@93060c52195bde9b590dba11e533bdedba3d2cc1" h5p-mcp
+uvx --from "git+https://github.com/Atreyu-94/H5P_MCP.git@4d721aef540dd088d82db7799eac946499194033" h5p-mcp
 ```
 
 ## Educational skill
 
-The packaged [h5p-authoring skill](h5p_mcp/skills/h5p-authoring/SKILL.md) guides
+The packaged [h5p-authoring skill](.agents/skills/h5p-authoring/SKILL.md) guides
 activity selection, schemas, feedback, assets, export and Moodle handoff.
 The server exposes `io.modelcontextprotocol/skills` through the official MCP SDK.
 `skills/list` and `skills/get` are tested on protocol `2026-07-28`. Read

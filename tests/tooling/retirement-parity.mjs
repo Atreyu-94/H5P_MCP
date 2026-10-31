@@ -46,7 +46,7 @@ try {
  await compare({action:'catalog'});
  await compare({action:'discover',offset:0,limit:100,installed_only:true});
  const examples=[];
- for(const name of ['true-false','multiple-choice','accordion','question-set']) examples.push(JSON.parse(await fs.readFile(path.join(repo,'h5p_mcp/skills/h5p-authoring/examples',name+'.json'),'utf8')));
+ for(const name of ['true-false','multiple-choice','accordion','question-set']) examples.push(JSON.parse(await fs.readFile(path.join(repo,'.agents/skills/h5p-authoring/examples',name+'.json'),'utf8')));
  examples.push({title:'Blanks',library:'H5P.Blanks 1.14',params:{text:'<p>Complete</p>',questions:['A *metre*.']}});
  examples.push({title:'Math',library:'H5P.TrueFalse 1.8',params:{question:'<p>\\(1+1=2\\)</p>',correct:'true'}});
  const image=path.join(root,'source.png'),audio=path.join(root,'source.wav'),video=path.join(root,'source.webm');
@@ -65,6 +65,6 @@ try {
   const result=await compare({action:'prepare',activity:{title:'Invalid',library:'H5P.TrueFalse 1.8',params,language:'en',license:'U',assets:{}}});
   assert(result.ok&&!result.result.ok,JSON.stringify(result));
  }
- const report={status:'passed',comparisons,artifacts:root,oracle:'Node versus Bun; Python baseline frozen at 93060c5',retain_until:'two stable Bun releases'};
+ const report={status:'passed',comparisons,artifacts:root,oracle:'Node versus Bun; Python baseline frozen at 4d721ae',retain_until:'two stable Bun releases'};
  await fs.writeFile(output,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }finally{await Promise.all(clients.map(client=>client.close()));}
